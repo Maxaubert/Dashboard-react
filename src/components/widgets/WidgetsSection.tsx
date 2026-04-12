@@ -79,7 +79,7 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
               borderRadius: 14,
               padding: '14px 16px',
               // Match HabitWidget width
-              width: 180,
+              width: 164,
               boxSizing: 'border-box',
               alignSelf: 'stretch',
               display: 'flex',

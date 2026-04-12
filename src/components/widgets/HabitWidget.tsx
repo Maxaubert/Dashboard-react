@@ -31,9 +31,9 @@ export function HabitWidget({ habit, onToggleDay, onUpdate, onRemove }: HabitWid
               background: hexWithAlpha(habit.color, 0.015),
               border: `1px solid ${hexWithAlpha(habit.color, 0.1)}`,
               borderRadius: 14,
-              padding: '14px 16px',
+              padding: '12px 10px',
               // Fixed width so sibling widgets and the "+" card all align.
-              width: 180,
+              width: 164,
               boxSizing: 'border-box',
               boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.018), 0 1px 2px rgba(0, 0, 0, 0.4)',
               position: 'relative',
