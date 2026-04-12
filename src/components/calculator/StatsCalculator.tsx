@@ -8,7 +8,7 @@ export function StatsCalculator() {
   return (
     <div>
       <StatsGrid selected={selected} onSelect={setSelected} />
-      {selected && <StatsForm key={selected} fn={selected} />}
+      {selected && <StatsForm fn={selected} />}
     </div>
   );
 }

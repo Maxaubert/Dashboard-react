@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { StatFunction } from './StatsGrid';
 import {
   parseDataset,
@@ -149,6 +149,16 @@ export function StatsForm({ fn }: StatsFormProps) {
   // Result state
   const [result, setResult] = useState<StatResult | null>(null);
   const [error, setError] = useState<string>('');
+
+  // Clear result/error when switching functions (but keep inputs)
+  const prevFn = useRef(fn);
+  useEffect(() => {
+    if (prevFn.current !== fn) {
+      setResult(null);
+      setError('');
+      prevFn.current = fn;
+    }
+  }, [fn]);
 
   function setErr(msg: string) {
     setError(msg);
