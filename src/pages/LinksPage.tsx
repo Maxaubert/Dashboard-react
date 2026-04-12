@@ -9,6 +9,8 @@ import { LINK_COLOR_PRESETS } from '@/data/linkColors';
 import { cn } from '@/lib/cn';
 import { groupLinks } from '@/lib/groupLinks';
 import { SectionHeader } from '@/components/links/SectionHeader';
+import { CategoryPickerRow } from '@/components/links/CategoryPickerRow';
+import { useCategories } from '@/hooks/useCategories';
 
 /**
  * Lenker page — faithful port of links.html.
@@ -301,6 +303,9 @@ function LinkEditModal({ item, onClose, onSave, onDelete }: LinkEditModalProps) 
     }
   );
   const pickerRef = useRef<IconPickerHandle>(null);
+  const { categories, create: createCategory } = useCategories();
+  const { data: envelope } = useLinks();
+  const allLinks = envelope?.links ?? [];
 
   function update<K extends keyof LinkItem>(key: K, value: LinkItem[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -404,6 +409,18 @@ function LinkEditModal({ item, onClose, onSave, onDelete }: LinkEditModalProps) 
             />
           </div>
         </div>
+      </div>
+
+      {/* Category */}
+      <div className="modal-row">
+        <label>Kategori</label>
+        <CategoryPickerRow
+          categories={categories}
+          links={allLinks}
+          value={form.category}
+          onChange={(next) => update('category', next)}
+          onCreate={createCategory}
+        />
       </div>
 
       {/* Icon picker */}
