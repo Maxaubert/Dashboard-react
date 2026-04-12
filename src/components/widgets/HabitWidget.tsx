@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { MoreHorizontal } from 'lucide-react';
+import * as ContextMenu from '@radix-ui/react-context-menu';
 import { calcStreak, type Habit } from '@/hooks/useHabits';
 import { HabitGrid } from './HabitGrid';
 import { AddHabitModal } from './AddHabitModal';
@@ -19,83 +18,68 @@ export function HabitWidget({ habit, onToggleDay, onUpdate, onRemove }: HabitWid
   const streak = calcStreak(habit.completedDays);
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-      style={{
-        background: hexWithAlpha(habit.color, 0.015),
-        border: `1px solid ${hexWithAlpha(habit.color, 0.1)}`,
-        borderRadius: 14,
-        padding: '14px 16px',
-        // Fixed width so sibling widgets and the "+" card all align. 7 cells × 14px + 6 gaps × 3px + 32px padding = 148px.
-        width: 148,
-        boxSizing: 'border-box',
-        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.018), 0 1px 2px rgba(0, 0, 0, 0.4)',
-        position: 'relative',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-        <span style={{ color: 'rgba(255, 255, 255, 0.85)', fontSize: '0.78rem', fontWeight: 700 }}>
-          {habit.name}
-        </span>
-        {streak > 0 && (
-          <span style={{ color: '#f59e0b', fontSize: '0.65rem', fontWeight: 700, marginLeft: 4 }}>
-            🔥 {streak}
-          </span>
-        )}
+    <>
+      <ContextMenu.Root>
+        <ContextMenu.Trigger asChild>
+          <motion.div
+            layout
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            style={{
+              background: hexWithAlpha(habit.color, 0.015),
+              border: `1px solid ${hexWithAlpha(habit.color, 0.1)}`,
+              borderRadius: 14,
+              padding: '14px 16px',
+              // Fixed width so sibling widgets and the "+" card all align.
+              width: 180,
+              boxSizing: 'border-box',
+              boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.018), 0 1px 2px rgba(0, 0, 0, 0.4)',
+              position: 'relative',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <span style={{ color: 'rgba(255, 255, 255, 0.85)', fontSize: '0.78rem', fontWeight: 700 }}>
+                {habit.name}
+              </span>
+              {streak > 0 && (
+                <span style={{ color: '#f59e0b', fontSize: '0.65rem', fontWeight: 700, marginLeft: 'auto' }}>
+                  🔥 {streak}
+                </span>
+              )}
+            </div>
 
-        <DropdownMenu.Root>
-          <DropdownMenu.Trigger asChild>
-            <button
-              type="button"
-              aria-label="Habit options"
-              style={{
-                marginLeft: 'auto',
-                background: 'none',
-                border: 'none',
-                padding: 2,
-                color: 'rgba(255, 255, 255, 0.3)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-              }}
+            <HabitGrid habit={habit} onToggle={onToggleDay} />
+          </motion.div>
+        </ContextMenu.Trigger>
+        <ContextMenu.Portal>
+          <ContextMenu.Content
+            style={{
+              background: '#0a0a0a',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: 8,
+              padding: 4,
+              minWidth: 140,
+              zIndex: 50,
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.5)',
+            }}
+          >
+            <ContextMenu.Item
+              onSelect={() => setEditOpen(true)}
+              style={{ padding: '6px 10px', color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.78rem', cursor: 'pointer', borderRadius: 4, outline: 'none' }}
             >
-              <MoreHorizontal size={14} />
-            </button>
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Portal>
-            <DropdownMenu.Content
-              align="end"
-              style={{
-                background: '#0a0a0a',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: 8,
-                padding: 4,
-                minWidth: 140,
-                zIndex: 50,
-              }}
+              Edit
+            </ContextMenu.Item>
+            <ContextMenu.Item
+              onSelect={() => setConfirmRemove(true)}
+              style={{ padding: '6px 10px', color: '#ef4444', fontSize: '0.78rem', cursor: 'pointer', borderRadius: 4, outline: 'none' }}
             >
-              <DropdownMenu.Item
-                onSelect={() => setEditOpen(true)}
-                style={{ padding: '6px 10px', color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.78rem', cursor: 'pointer', borderRadius: 4, outline: 'none' }}
-              >
-                Edit
-              </DropdownMenu.Item>
-              <DropdownMenu.Item
-                onSelect={() => setConfirmRemove(true)}
-                style={{ padding: '6px 10px', color: '#ef4444', fontSize: '0.78rem', cursor: 'pointer', borderRadius: 4, outline: 'none' }}
-              >
-                Remove
-              </DropdownMenu.Item>
-            </DropdownMenu.Content>
-          </DropdownMenu.Portal>
-        </DropdownMenu.Root>
-      </div>
-
-      <HabitGrid habit={habit} onToggle={onToggleDay} />
+              Remove
+            </ContextMenu.Item>
+          </ContextMenu.Content>
+        </ContextMenu.Portal>
+      </ContextMenu.Root>
 
       <AddHabitModal
         open={editOpen}
@@ -165,7 +149,7 @@ export function HabitWidget({ habit, onToggleDay, onUpdate, onRemove }: HabitWid
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </>
   );
 }
 

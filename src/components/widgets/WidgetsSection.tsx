@@ -78,8 +78,8 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
               border: '1px dashed rgba(255, 255, 255, 0.08)',
               borderRadius: 14,
               padding: '14px 16px',
-              // Match HabitWidget outer dimensions: 7 cells × 14px + 6 gaps × 3px + 32px horizontal padding = 148px
-              width: 148,
+              // Match HabitWidget width
+              width: 180,
               boxSizing: 'border-box',
               alignSelf: 'stretch',
               display: 'flex',
