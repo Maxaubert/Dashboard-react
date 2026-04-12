@@ -5,6 +5,18 @@ import {
   computeVariance,
   computeStdDev,
   computeRange,
+  computeNormalCdf,
+  computeNormalInv,
+  computeTCdf,
+  computeTInv,
+  computeChi2Cdf,
+  computeChi2Inv,
+  computeFCdf,
+  computeFInv,
+  computeBinomialPmf,
+  computeBinomialCdf,
+  computePoissonPmf,
+  computePoissonCdf,
 } from './statistics';
 
 let failed = 0;
@@ -120,6 +132,134 @@ console.log('computeRange:');
   check(steps[0].label === 'FORMULA', 'first step has label FORMULA');
   check(steps.some((s) => s.label === 'SUBSTITUTED'), 'has SUBSTITUTED step');
   check(steps.some((s) => s.label === 'RESULT'), 'has RESULT step');
+}
+
+// ── computeNormalCdf ──────────────────────────────────────────────────────────
+
+console.log('computeNormalCdf:');
+{
+  const left = computeNormalCdf(1.96, 'left');
+  check(approxEq(left.result as number, 0.975, 0.001), 'P(Z ≤ 1.96) ≈ 0.975');
+  check(left.steps.length >= 3, 'returns at least 3 steps');
+  check(left.steps[0].label === 'FORMULA', 'first step is FORMULA');
+
+  const right = computeNormalCdf(1.96, 'right');
+  check(approxEq(right.result as number, 0.025, 0.001), 'P(Z ≥ 1.96) ≈ 0.025');
+
+  const two = computeNormalCdf(1.96, 'two');
+  check(approxEq(two.result as number, 0.05, 0.001), 'two-tail P(|Z| ≥ 1.96) ≈ 0.05');
+}
+
+// ── computeNormalInv ──────────────────────────────────────────────────────────
+
+console.log('computeNormalInv:');
+{
+  const { result, steps } = computeNormalInv(0.975);
+  check(approxEq(result as number, 1.96, 0.001), 'inv(0.975) ≈ 1.96');
+  check(steps.length >= 3, 'returns at least 3 steps');
+  check(steps[0].label === 'FORMULA', 'first step is FORMULA');
+}
+
+// ── computeTCdf ───────────────────────────────────────────────────────────────
+
+console.log('computeTCdf:');
+{
+  const left = computeTCdf(2.228, 10, 'left');
+  check(approxEq(left.result as number, 0.975, 0.001), 'P(T ≤ 2.228, df=10) ≈ 0.975');
+  check(left.steps.length >= 3, 'returns at least 3 steps');
+  check(left.steps[0].label === 'FORMULA', 'first step is FORMULA');
+}
+
+// ── computeTInv ───────────────────────────────────────────────────────────────
+
+console.log('computeTInv:');
+{
+  const { result, steps } = computeTInv(0.975, 10);
+  check(approxEq(result as number, 2.228, 0.001), 'inv(0.975, df=10) ≈ 2.228');
+  check(steps.length >= 3, 'returns at least 3 steps');
+  check(steps[0].label === 'FORMULA', 'first step is FORMULA');
+}
+
+// ── computeChi2Cdf ────────────────────────────────────────────────────────────
+
+console.log('computeChi2Cdf:');
+{
+  const left = computeChi2Cdf(18.307, 10, 'left');
+  check(approxEq(left.result as number, 0.95, 0.001), 'P(X² ≤ 18.307, df=10) ≈ 0.95');
+  check(left.steps.length >= 3, 'returns at least 3 steps');
+  check(left.steps[0].label === 'FORMULA', 'first step is FORMULA');
+}
+
+// ── computeChi2Inv ────────────────────────────────────────────────────────────
+
+console.log('computeChi2Inv:');
+{
+  const { result, steps } = computeChi2Inv(0.95, 10);
+  check(approxEq(result as number, 18.307, 0.01), 'inv(0.95, df=10) ≈ 18.307');
+  check(steps.length >= 3, 'returns at least 3 steps');
+  check(steps[0].label === 'FORMULA', 'first step is FORMULA');
+}
+
+// ── computeFCdf ───────────────────────────────────────────────────────────────
+
+console.log('computeFCdf:');
+{
+  const left = computeFCdf(3.35, 3, 20, 'left');
+  check(approxEq(left.result as number, 0.96, 0.01), 'P(F ≤ 3.35, df1=3, df2=20) ≈ 0.96');
+  check(left.steps.length >= 3, 'returns at least 3 steps');
+  check(left.steps[0].label === 'FORMULA', 'first step is FORMULA');
+}
+
+// ── computeFInv ───────────────────────────────────────────────────────────────
+
+console.log('computeFInv:');
+{
+  const { result, steps } = computeFInv(0.95, 3, 20);
+  check(approxEq(result as number, 3.10, 0.05), 'inv(0.95, df1=3, df2=20) ≈ 3.10');
+  check(steps.length >= 3, 'returns at least 3 steps');
+  check(steps[0].label === 'FORMULA', 'first step is FORMULA');
+}
+
+// ── computeBinomialPmf ────────────────────────────────────────────────────────
+
+console.log('computeBinomialPmf:');
+{
+  const { result, steps } = computeBinomialPmf(10, 0.5, 5);
+  check(approxEq(result as number, 0.2461, 0.001), 'PMF(n=10, p=0.5, k=5) ≈ 0.2461');
+  check(steps.length >= 3, 'returns at least 3 steps');
+  check(steps[0].label === 'FORMULA', 'first step is FORMULA');
+}
+
+// ── computeBinomialCdf ────────────────────────────────────────────────────────
+
+console.log('computeBinomialCdf:');
+{
+  const { result, steps } = computeBinomialCdf(10, 0.5, 5);
+  check(approxEq(result as number, 0.623, 0.001), 'CDF(n=10, p=0.5, k=5) ≈ 0.623');
+  check(steps.length >= 3, 'returns at least 3 steps');
+  check(steps[0].label === 'FORMULA', 'first step is FORMULA');
+}
+
+// ── computePoissonPmf ─────────────────────────────────────────────────────────
+
+console.log('computePoissonPmf:');
+{
+  // PMF(λ=3, k=2): (3^2 * e^-3) / 2! = (9 * 0.0498) / 2 ≈ 0.224
+  const { result, steps } = computePoissonPmf(3, 2);
+  check(approxEq(result as number, 0.224, 0.001), 'PMF(λ=3, k=2) ≈ 0.224');
+  check(steps.length >= 3, 'returns at least 3 steps');
+  check(steps[0].label === 'FORMULA', 'first step is FORMULA');
+}
+
+// ── computePoissonCdf ─────────────────────────────────────────────────────────
+
+console.log('computePoissonCdf:');
+{
+  // CDF(λ=2, k=3): P(X≤3 | λ=2) ≈ 0.857
+  const { result, steps } = computePoissonCdf(2, 3);
+  check(approxEq(result as number, 0.857, 0.001), 'CDF(λ=2, k=3) ≈ 0.857');
+  check(steps.length >= 3, 'returns at least 3 steps');
+  check(steps[0].label === 'FORMULA', 'first step is FORMULA');
 }
 
 // ── summary ───────────────────────────────────────────────────────────────────
