@@ -1,8 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { linksApi } from '@/api/links';
-import type { LinkItem } from '@/api/types';
+import type { LinksEnvelope } from '@/api/types';
 import { queryKeys } from './queryKeys';
 
+/**
+ * Fetches the full links library as a v2 envelope: { version, links, categories }.
+ * Consumers that only need the flat link array can do `const { data } = useLinks(); const links = data?.links ?? [];`.
+ */
 export function useLinks() {
   return useQuery({
     queryKey: queryKeys.links,
@@ -11,13 +15,18 @@ export function useLinks() {
   });
 }
 
+/**
+ * Saves the entire envelope. Callers construct the full next envelope and call
+ * `.mutate(envelope)`. Optimistic update swaps in the next envelope immediately
+ * and rolls back on error.
+ */
 export function useSaveLinks() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (links: LinkItem[]) => linksApi.saveAll(links),
+    mutationFn: (envelope: LinksEnvelope) => linksApi.saveAll(envelope),
     onMutate: async (next) => {
       await qc.cancelQueries({ queryKey: queryKeys.links });
-      const previous = qc.getQueryData<LinkItem[]>(queryKeys.links);
+      const previous = qc.getQueryData<LinksEnvelope>(queryKeys.links);
       qc.setQueryData(queryKeys.links, next);
       return { previous };
     },
