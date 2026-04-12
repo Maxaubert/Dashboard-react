@@ -11,6 +11,23 @@ import { groupLinks } from '@/lib/groupLinks';
 import { SectionHeader } from '@/components/links/SectionHeader';
 import { CategoryPickerRow } from '@/components/links/CategoryPickerRow';
 import { useCategories } from '@/hooks/useCategories';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 /**
  * Lenker page — faithful port of links.html.
@@ -51,6 +68,12 @@ export function LinksLibrary() {
   const [creating, setCreating] = useState(false);
 
   const sections = useMemo(() => groupLinks(links, categories), [links, categories]);
+
+  const { reorder: reorderCategories } = useCategories();
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   function persist(nextLinks: LinkItem[]) {
     saveLinks.mutate(
@@ -116,34 +139,41 @@ export function LinksLibrary() {
           </div>
         </div>
       ) : (
-        sections.map((section) => (
-          <div key={section.category.id} className="links-section">
-            <SectionHeader
-              title={section.kind === 'favorites' ? '★ Favorites' : section.category.name}
-              count={section.links.length}
-            />
-            <SortableList
-              items={section.links}
-              onReorder={(next) =>
-                handleReorderWithinSection(
-                  next,
-                  section.kind,
-                  section.kind === 'user' ? section.category.id : undefined,
-                )
-              }
-              layout="grid"
-              className="links-grid"
-              renderItem={(link) => (
-                <LinkCard
-                  link={link}
-                  onEdit={() => setEditing(link)}
-                  onDelete={() => handleDelete(link.id)}
-                  onToggleFavorite={() => toggleFavorite(link.id)}
-                />
-              )}
-            />
-          </div>
-        ))
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={(e: DragEndEvent) => {
+            const { active, over } = e;
+            if (!over || active.id === over.id) return;
+            const sectionIds = sections.map((s) => s.category.id);
+            const oldIndex = sectionIds.indexOf(String(active.id));
+            const newIndex = sectionIds.indexOf(String(over.id));
+            if (oldIndex < 0 || newIndex < 0) return;
+            const nextOrder = arrayMove(sectionIds, oldIndex, newIndex);
+            const visible = new Set(nextOrder);
+            const hidden = categories
+              .filter((c) => !visible.has(c.id))
+              .sort((a, b) => a.order - b.order)
+              .map((c) => c.id);
+            reorderCategories([...nextOrder, ...hidden]);
+          }}
+        >
+          <SortableContext
+            items={sections.map((s) => s.category.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {sections.map((section) => (
+              <SortableSection
+                key={section.category.id}
+                section={section}
+                onReorderLinks={handleReorderWithinSection}
+                onEdit={(l) => setEditing(l)}
+                onDelete={handleDelete}
+                onToggleFavorite={toggleFavorite}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
       )}
 
       {(editing || creating) && (
@@ -158,6 +188,70 @@ export function LinksLibrary() {
         />
       )}
     </>
+  );
+}
+
+/* ── Sortable section wrapper ────────────────────────────────────────────── */
+function SortableSection({
+  section,
+  onReorderLinks,
+  onEdit,
+  onDelete,
+  onToggleFavorite,
+}: {
+  section: ReturnType<typeof groupLinks>[number];
+  onReorderLinks: (
+    nextSectionLinks: LinkItem[],
+    sectionKind: 'favorites' | 'user' | 'other',
+    categoryId?: string,
+  ) => void;
+  onEdit: (link: LinkItem) => void;
+  onDelete: (id: string) => void;
+  onToggleFavorite: (id: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: section.category.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="links-section" {...attributes}>
+      <SectionHeader
+        title={section.kind === 'favorites' ? '★ Favorites' : section.category.name}
+        count={section.links.length}
+        gripListeners={listeners as React.HTMLAttributes<HTMLElement>}
+        dragging={isDragging}
+      />
+      <SortableList
+        items={section.links}
+        onReorder={(next) =>
+          onReorderLinks(
+            next,
+            section.kind,
+            section.kind === 'user' ? section.category.id : undefined,
+          )
+        }
+        layout="grid"
+        className="links-grid"
+        renderItem={(link) => (
+          <LinkCard
+            link={link}
+            onEdit={() => onEdit(link)}
+            onDelete={() => onDelete(link.id)}
+            onToggleFavorite={() => onToggleFavorite(link.id)}
+          />
+        )}
+      />
+    </div>
   );
 }
 

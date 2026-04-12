@@ -6626,3 +6626,18 @@
 .cat-picker-row.create-input { gap: 6px; }
 .cat-picker-row.create-input input { flex: 1; background: #22262f; border: 1px solid #2f333d; border-radius: 4px; color: #e6e8ec; padding: 4px 6px; font-size: 12px; }
 .cat-picker-row.create-input button { background: #a78bfa; color: #0f1115; border: none; border-radius: 4px; padding: 4px 10px; font-size: 11px; font-weight: 600; }
+
+.links-section-grip {
+  color: #6b7180;
+  cursor: grab;
+  font-size: 13px;
+  letter-spacing: -2px;
+  user-select: none;
+  padding: 0 2px;
+}
+.links-section-grip:active { cursor: grabbing; }
+.links-section-header.dragging {
+  opacity: 0.65;
+  background: rgba(167,139,250,0.08);
+  border-radius: 4px;
+}
