@@ -1695,6 +1695,34 @@
     .tt-adjust-btn { padding: 8px 14px; font-size: 0.78rem; }
   }
 
+/* Pill toggle (replaces .tt-mode-tabs) */
+.tt-pill-container {
+  display: inline-flex;
+  background: #08080a;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 24px;
+  padding: 4px;
+  margin-bottom: 18px;
+}
+.tt-pill-option {
+  position: relative;
+  padding: 6px 18px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 20px;
+  transition: color 0.2s;
+}
+.tt-pill-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+}
+
   /* ── Reader mode tool ────────────────────────────────────────────────── */
   .reader-form {
     margin-bottom: 24px;
