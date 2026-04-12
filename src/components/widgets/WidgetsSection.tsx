@@ -78,14 +78,16 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
               border: '1px dashed rgba(255, 255, 255, 0.08)',
               borderRadius: 14,
               padding: '14px 16px',
-              minWidth: hasWidgets ? 80 : 180,
-              minHeight: hasWidgets ? undefined : 120,
+              // Match HabitWidget outer dimensions: 7 cells × 14px + 6 gaps × 3px + 32px horizontal padding = 148px
+              width: 148,
+              boxSizing: 'border-box',
+              alignSelf: 'stretch',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
               color: 'rgba(255, 255, 255, 0.25)',
-              fontSize: hasWidgets ? 32 : 14,
+              fontSize: hasWidgets ? 32 : 13,
               fontWeight: 300,
               transition: 'border-color 0.15s, color 0.15s',
             }}
@@ -98,7 +100,7 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
               e.currentTarget.style.color = 'rgba(255, 255, 255, 0.25)';
             }}
           >
-            {hasWidgets ? '+' : '+ Add your first habit'}
+            {hasWidgets ? '+' : 'Add first habit'}
           </button>
         </div>
       </section>

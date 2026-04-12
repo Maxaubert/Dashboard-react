@@ -30,6 +30,9 @@ export function HabitWidget({ habit, onToggleDay, onUpdate, onRemove }: HabitWid
         border: `1px solid ${hexWithAlpha(habit.color, 0.1)}`,
         borderRadius: 14,
         padding: '14px 16px',
+        // Fixed width so sibling widgets and the "+" card all align. 7 cells × 14px + 6 gaps × 3px + 32px padding = 148px.
+        width: 148,
+        boxSizing: 'border-box',
         boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.018), 0 1px 2px rgba(0, 0, 0, 0.4)',
         position: 'relative',
       }}
