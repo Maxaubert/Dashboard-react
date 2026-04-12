@@ -71,7 +71,7 @@ export function LinksLibrary() {
 
   const sections = useMemo(() => groupLinks(links, categories), [links, categories]);
 
-  const { reorder: reorderCategories } = useCategories();
+  const { reorder: reorderCategories, rename: renameCategory, remove: removeCategory } = useCategories();
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -209,6 +209,19 @@ export function LinksLibrary() {
               <SortableSection
                 key={section.category.id}
                 section={section}
+                readonly={section.kind !== 'user'}
+                onRename={(next) => renameCategory(section.category.id, next)}
+                onDeleteSection={() => {
+                  if (
+                    confirm(
+                      section.links.length === 0
+                        ? `Slett kategorien «${section.category.name}»?`
+                        : `Slett «${section.category.name}»? ${section.links.length} lenker flyttes til Other.`,
+                    )
+                  ) {
+                    removeCategory(section.category.id);
+                  }
+                }}
                 onEdit={(l) => setEditing(l)}
                 onDelete={handleDelete}
                 onToggleFavorite={toggleFavorite}
@@ -259,13 +272,19 @@ function SortableLinkCard({
 /* ── Sortable section wrapper ────────────────────────────────────────────── */
 function SortableSection({
   section,
+  readonly,
   onEdit,
   onDelete,
+  onDeleteSection,
+  onRename,
   onToggleFavorite,
 }: {
   section: ReturnType<typeof groupLinks>[number];
+  readonly: boolean;
   onEdit: (link: LinkItem) => void;
   onDelete: (id: string) => void;
+  onDeleteSection: () => void;
+  onRename: (next: string) => void;
   onToggleFavorite: (id: string) => void;
 }) {
   const {
@@ -287,6 +306,9 @@ function SortableSection({
       <SectionHeader
         title={section.kind === 'favorites' ? '★ Favorites' : section.category.name}
         count={section.links.length}
+        readonly={readonly}
+        onRename={onRename}
+        onDelete={onDeleteSection}
         gripListeners={listeners as React.HTMLAttributes<HTMLElement>}
         dragging={isDragging}
       />
