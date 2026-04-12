@@ -3,7 +3,7 @@ import { AnimatePresence } from 'framer-motion';
 import { useHabits } from '@/hooks/useHabits';
 import { useWidgets } from '@/hooks/useWidgets';
 import { HabitWidget } from './HabitWidget';
-import { AddHabitModal } from './AddHabitModal';
+import { AddWidgetDialog } from './AddWidgetDialog';
 
 type HandleProps = Record<string, unknown>;
 
@@ -25,7 +25,7 @@ function GripHandle({ handleProps }: { handleProps?: HandleProps }) {
 export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
   const { habits, addHabit, updateHabit, removeHabit, toggleDay } = useHabits();
   const { widgets, addWidget, removeWidgetByRefId } = useWidgets();
-  const [habitModalOpen, setHabitModalOpen] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
 
   const hasWidgets = widgets.length > 0;
   const habitMap = new Map(habits.map((h) => [h.id, h]));
@@ -71,7 +71,7 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
           {/* Dashed "+" card to add a new widget, always at end */}
           <button
             type="button"
-            onClick={() => setHabitModalOpen(true)}
+            onClick={() => setAddDialogOpen(true)}
             aria-label="Add widget"
             style={{
               background: 'rgba(255, 255, 255, 0.002)',
@@ -105,10 +105,10 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
         </div>
       </section>
 
-      <AddHabitModal
-        open={habitModalOpen}
-        onOpenChange={setHabitModalOpen}
-        onCreate={handleAddHabit}
+      <AddWidgetDialog
+        open={addDialogOpen}
+        onOpenChange={setAddDialogOpen}
+        onCreateHabit={handleAddHabit}
       />
     </>
   );
