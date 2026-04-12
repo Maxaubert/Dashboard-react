@@ -6833,4 +6833,51 @@
   opacity: 0.3;
   cursor: default;
 }
+
+/* Pomodoro inline settings */
+.tt-pomo-inline {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 18px;
+}
+.tt-inline-field {
+  text-align: center;
+}
+.tt-inline-label {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  margin-bottom: 4px;
+}
+.tt-inline-value {
+  background: #08080a;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 4px 10px;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.tt-inline-value:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+.tt-inline-suffix {
+  color: var(--color-text-muted);
+  font-size: 0.65rem;
+  margin-left: 2px;
+}
+.tt-inline-input {
+  background: #08080a;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 6px;
+  padding: 4px 6px;
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  text-align: center;
+  outline: none;
+}
 .section-context-menu .del { color: #f87171; }
