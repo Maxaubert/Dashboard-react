@@ -1,4 +1,4 @@
-import { groupLinks, type SectionRender } from './groupLinks';
+import { groupLinks } from './groupLinks';
 import type { Category, LinkItem } from '../api/types';
 import { FAVORITES_CATEGORY_ID, OTHER_CATEGORY_ID } from '../api/types';
 

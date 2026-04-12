@@ -6591,4 +6591,22 @@
   .btn-delete-todo:hover {
     background: rgba(248, 113, 113, 0.10);
   }
+
+  /* Category section headers */
+  .links-section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin: 18px 0 8px;
+    color: #e6e8ec;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .links-section-header:first-child { margin-top: 0; }
+  .links-section-title {}
+  .links-section-count {
+    font-size: 11px;
+    font-weight: 500;
+    color: #6b7180;
+  }
 }

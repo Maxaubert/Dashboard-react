@@ -248,9 +248,10 @@ function KategorierSection({ handleProps }: { handleProps?: HandleProps }) {
 // ─── Eksterne lenker (favourites carousel) ───────────────────────────────
 
 function EksterneLenkerSection({ handleProps }: { handleProps?: HandleProps }) {
-  const { data: links } = useLinks();
+  const { data: envelope } = useLinks();
+  const links = envelope?.links ?? [];
   const favorites = useMemo(
-    () => (links ?? []).filter((l) => l.favorite),
+    () => links.filter((l: LinkItem) => l.favorite),
     [links]
   );
 

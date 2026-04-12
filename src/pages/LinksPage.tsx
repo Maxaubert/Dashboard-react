@@ -7,6 +7,8 @@ import { faviconUrl } from '@/api/pdf';
 import { resolveSvgIcon } from '@/data/svgIcons';
 import { LINK_COLOR_PRESETS } from '@/data/linkColors';
 import { cn } from '@/lib/cn';
+import { groupLinks } from '@/lib/groupLinks';
+import { SectionHeader } from '@/components/links/SectionHeader';
 
 /**
  * Lenker page — faithful port of links.html.
@@ -36,30 +38,33 @@ export function LinksPage() {
  * callers don't need to thread edit/create props through.
  */
 export function LinksLibrary() {
-  const { data: links } = useLinks();
+  const { data } = useLinks();
   const saveLinks = useSaveLinks();
   const { toast } = useToast();
+
+  const envelope = data ?? { version: 2 as const, links: [], categories: [] };
+  const { links, categories } = envelope;
 
   const [editing, setEditing] = useState<LinkItem | null>(null);
   const [creating, setCreating] = useState(false);
 
-  // Server stores order positionally — no `order` field. Render in array order.
-  const sortedLinks = useMemo(() => links ?? [], [links]);
+  const sections = useMemo(() => groupLinks(links, categories), [links, categories]);
 
-  function persist(next: LinkItem[]) {
-    saveLinks.mutate(next, {
-      onError: () => toast({ tone: 'danger', title: 'Klarte ikke å lagre' }),
-    });
+  function persist(nextLinks: LinkItem[]) {
+    saveLinks.mutate(
+      { ...envelope, links: nextLinks },
+      { onError: () => toast({ tone: 'danger', title: 'Klarte ikke å lagre' }) },
+    );
   }
 
   function handleSave(item: LinkItem) {
-    const idx = sortedLinks.findIndex((l) => l.id === item.id);
+    const idx = links.findIndex((l) => l.id === item.id);
     let next: LinkItem[];
     if (idx >= 0) {
-      next = [...sortedLinks];
+      next = [...links];
       next[idx] = { ...item, updatedAt: Date.now() };
     } else {
-      next = [...sortedLinks, { ...item, createdAt: Date.now(), updatedAt: Date.now() }];
+      next = [...links, { ...item, createdAt: Date.now(), updatedAt: Date.now() }];
     }
     persist(next);
     setEditing(null);
@@ -67,16 +72,21 @@ export function LinksLibrary() {
   }
 
   function handleDelete(id: string) {
-    persist(sortedLinks.filter((l) => l.id !== id));
+    persist(links.filter((l) => l.id !== id));
     setEditing(null);
   }
 
   function toggleFavorite(id: string) {
-    persist(sortedLinks.map((l) => (l.id === id ? { ...l, favorite: !l.favorite } : l)));
+    persist(links.map((l) => (l.id === id ? { ...l, favorite: !l.favorite } : l)));
   }
 
-  function handleReorder(next: LinkItem[]) {
-    persist(next);
+  function handleReorderWithinSection(nextSectionLinks: LinkItem[], sectionKind: 'favorites' | 'user' | 'other', categoryId?: string) {
+    const keep = links.filter((l) => {
+      if (sectionKind === 'favorites') return l.favorite !== true;
+      if (sectionKind === 'other') return l.favorite === true || (l.category !== undefined && categories.some((c) => c.id === l.category));
+      return l.favorite === true || l.category !== categoryId;
+    });
+    persist([...keep, ...nextSectionLinks]);
   }
 
   return (
@@ -95,7 +105,7 @@ export function LinksLibrary() {
         </button>
       </div>
 
-      {sortedLinks.length === 0 ? (
+      {sections.length === 0 ? (
         <div className="links-grid">
           <div className="links-empty">
             Ingen lenker ennå.
@@ -104,20 +114,34 @@ export function LinksLibrary() {
           </div>
         </div>
       ) : (
-        <SortableList
-          items={sortedLinks}
-          onReorder={handleReorder}
-          layout="grid"
-          className="links-grid"
-          renderItem={(link) => (
-            <LinkCard
-              link={link}
-              onEdit={() => setEditing(link)}
-              onDelete={() => handleDelete(link.id)}
-              onToggleFavorite={() => toggleFavorite(link.id)}
+        sections.map((section) => (
+          <div key={section.category.id} className="links-section">
+            <SectionHeader
+              title={section.kind === 'favorites' ? '★ Favorites' : section.category.name}
+              count={section.links.length}
             />
-          )}
-        />
+            <SortableList
+              items={section.links}
+              onReorder={(next) =>
+                handleReorderWithinSection(
+                  next,
+                  section.kind,
+                  section.kind === 'user' ? section.category.id : undefined,
+                )
+              }
+              layout="grid"
+              className="links-grid"
+              renderItem={(link) => (
+                <LinkCard
+                  link={link}
+                  onEdit={() => setEditing(link)}
+                  onDelete={() => handleDelete(link.id)}
+                  onToggleFavorite={() => toggleFavorite(link.id)}
+                />
+              )}
+            />
+          </div>
+        ))
       )}
 
       {(editing || creating) && (
