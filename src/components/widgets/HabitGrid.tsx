@@ -6,7 +6,7 @@ interface HabitGridProps {
   onToggle: (date: string) => void;
 }
 
-const CELL = 16;
+const CELL = 18;
 const GAP = 3;
 
 export function HabitGrid({ habit, onToggle }: HabitGridProps) {
