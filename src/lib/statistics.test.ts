@@ -17,6 +17,12 @@ import {
   computeBinomialCdf,
   computePoissonPmf,
   computePoissonCdf,
+  computeZTest,
+  computeOneSampleTTest,
+  computeTwoSampleTTest,
+  computePairedTTest,
+  computeAnova,
+  computePValue,
 } from './statistics';
 
 let failed = 0;
@@ -260,6 +266,83 @@ console.log('computePoissonCdf:');
   check(approxEq(result as number, 0.857, 0.001), 'CDF(λ=2, k=3) ≈ 0.857');
   check(steps.length >= 3, 'returns at least 3 steps');
   check(steps[0].label === 'FORMULA', 'first step is FORMULA');
+}
+
+// ── computeZTest ──────────────────────────────────────────────────────────────
+
+console.log('computeZTest:');
+{
+  const { result, steps } = computeZTest(105, 100, 15, 36, 'two');
+  const r = result as Record<string, number>;
+  check(approxEq(r.z, 2.0, 0.01), 'z ≈ 2.0');
+  check(approxEq(r.p, 0.0455, 0.005), 'p ≈ 0.0455');
+  check(steps.length >= 3, 'returns at least 3 steps');
+  check(steps[0].label === 'FORMULA', 'first step is FORMULA');
+}
+
+// ── computeOneSampleTTest ─────────────────────────────────────────────────────
+
+console.log('computeOneSampleTTest:');
+{
+  const { result, steps } = computeOneSampleTTest(5.2, 5.0, 0.3, 25, 'two');
+  const r = result as Record<string, number>;
+  check(approxEq(r.t, 3.333, 0.01), 't ≈ 3.333');
+  check(r.p < 0.01, 'p < 0.01');
+  check(r.df === 24, 'df = 24');
+  check(steps.length >= 3, 'returns at least 3 steps');
+  check(steps[0].label === 'FORMULA', 'first step is FORMULA');
+}
+
+// ── computeTwoSampleTTest ─────────────────────────────────────────────────────
+
+console.log('computeTwoSampleTTest:');
+{
+  const { result, steps } = computeTwoSampleTTest(24.5, 4.2, 30, 21.8, 3.9, 28, 'two');
+  const r = result as Record<string, number>;
+  check(approxEq(r.t, 2.53, 0.05), 't ≈ 2.53');
+  check(r.p < 0.05, 'p < 0.05');
+  check(steps.length >= 3, 'returns at least 3 steps');
+  check(steps[0].label === 'FORMULA', 'first step is FORMULA');
+}
+
+// ── computePairedTTest ────────────────────────────────────────────────────────
+
+console.log('computePairedTTest:');
+{
+  const { result, steps } = computePairedTTest([85, 90, 78, 92, 88], [88, 95, 82, 94, 91], 'two');
+  const r = result as Record<string, number>;
+  check(approxEq(Math.abs(r.t), 6.667, 0.1), '|t| ≈ 6.667');
+  check(r.p < 0.01, 'p < 0.01');
+  check(r.df === 4, 'df = 4');
+  check(steps.length >= 3, 'returns at least 3 steps');
+  check(steps[0].label === 'FORMULA', 'first step is FORMULA');
+}
+
+// ── computeAnova ──────────────────────────────────────────────────────────────
+
+console.log('computeAnova:');
+{
+  const { result, steps } = computeAnova([[23, 25, 27, 22, 26], [30, 32, 29, 31, 33], [18, 20, 19, 21, 17]]);
+  const r = result as Record<string, number>;
+  check(r.F > 10, 'F > 10');
+  check(r.p < 0.01, 'p < 0.01');
+  check(r.dfBetween === 2, 'dfBetween = 2');
+  check(r.dfWithin === 12, 'dfWithin = 12');
+  check(steps.length >= 3, 'returns at least 3 steps');
+  check(steps[0].label === 'FORMULA', 'first step is FORMULA');
+}
+
+// ── computePValue ─────────────────────────────────────────────────────────────
+
+console.log('computePValue:');
+{
+  const normal = computePValue(1.96, 'normal', 'two', {});
+  check(approxEq(normal.result as number, 0.05, 0.005), 'normal two-tail p(1.96) ≈ 0.05');
+  check(normal.steps.length >= 3, 'returns at least 3 steps');
+  check(normal.steps[0].label === 'FORMULA', 'first step is FORMULA');
+
+  const t = computePValue(2.228, 't', 'two', { df: 10 });
+  check(approxEq(t.result as number, 0.05, 0.005), 't two-tail p(2.228, df=10) ≈ 0.05');
 }
 
 // ── summary ───────────────────────────────────────────────────────────────────

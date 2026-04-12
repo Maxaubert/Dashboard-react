@@ -475,3 +475,249 @@ export function computePoissonCdf(lambda: number, k: number): StatResult {
 
   return { result: cumProb, steps };
 }
+
+// ── Hypothesis Test Helpers ───────────────────────────────────────────────────
+
+function mean(data: number[]): number {
+  return data.reduce((acc, x) => acc + x, 0) / data.length;
+}
+
+function stddev(data: number[]): number {
+  const m = mean(data);
+  const variance = data.reduce((acc, x) => acc + (x - m) ** 2, 0) / (data.length - 1);
+  return Math.sqrt(variance);
+}
+
+function pFromZ(z: number, tail: Tail): number {
+  const leftP = jStat.normal.cdf(z, 0, 1);
+  return applyTail(leftP, tail);
+}
+
+function pFromT(t: number, df: number, tail: Tail): number {
+  const leftP = jStat.studentt.cdf(t, df);
+  return applyTail(leftP, tail);
+}
+
+// ── computeZTest ──────────────────────────────────────────────────────────────
+
+/**
+ * One-sample z-test: z = (x̄ − μ₀) / (σ / √n)
+ */
+export function computeZTest(
+  xbar: number,
+  mu0: number,
+  sigma: number,
+  n: number,
+  tail: Tail,
+): StatResult {
+  const SE = sigma / Math.sqrt(n);
+  const z = (xbar - mu0) / SE;
+  const p = pFromZ(z, tail);
+
+  const steps: FormulaStep[] = [
+    { label: 'FORMULA', content: 'z = (x̄ − μ₀) / (σ / √n),  SE = σ / √n' },
+    {
+      label: 'SUBSTITUTED',
+      content: `SE = ${+sigma.toFixed(6)} / √${+n.toFixed(6)} = ${+SE.toFixed(6)};  z = (${+xbar.toFixed(6)} − ${+mu0.toFixed(6)}) / ${+SE.toFixed(6)} = ${+z.toFixed(6)}`,
+    },
+    { label: 'RESULT', content: `z = ${+z.toFixed(6)}, p = ${+p.toFixed(6)}` },
+  ];
+
+  return { result: { z, p }, steps };
+}
+
+// ── computeOneSampleTTest ─────────────────────────────────────────────────────
+
+/**
+ * One-sample t-test: t = (x̄ − μ₀) / (s / √n), df = n − 1
+ */
+export function computeOneSampleTTest(
+  xbar: number,
+  mu0: number,
+  s: number,
+  n: number,
+  tail: Tail,
+): StatResult {
+  const SE = s / Math.sqrt(n);
+  const t = (xbar - mu0) / SE;
+  const df = n - 1;
+  const p = pFromT(t, df, tail);
+
+  const steps: FormulaStep[] = [
+    { label: 'FORMULA', content: 't = (x̄ − μ₀) / (s / √n),  df = n − 1' },
+    {
+      label: 'SUBSTITUTED',
+      content: `SE = ${+s.toFixed(6)} / √${+n.toFixed(6)} = ${+SE.toFixed(6)};  t = (${+xbar.toFixed(6)} − ${+mu0.toFixed(6)}) / ${+SE.toFixed(6)} = ${+t.toFixed(6)};  df = ${df}`,
+    },
+    { label: 'RESULT', content: `t = ${+t.toFixed(6)}, p = ${+p.toFixed(6)}, df = ${df}` },
+  ];
+
+  return { result: { t, p, df }, steps };
+}
+
+// ── computeTwoSampleTTest ─────────────────────────────────────────────────────
+
+/**
+ * Welch's two-sample t-test.
+ */
+export function computeTwoSampleTTest(
+  xbar1: number,
+  s1: number,
+  n1: number,
+  xbar2: number,
+  s2: number,
+  n2: number,
+  tail: Tail,
+): StatResult {
+  const v1 = s1 ** 2 / n1;
+  const v2 = s2 ** 2 / n2;
+  const SE = Math.sqrt(v1 + v2);
+  const t = (xbar1 - xbar2) / SE;
+
+  // Welch-Satterthwaite degrees of freedom
+  const num = (v1 + v2) ** 2;
+  const den = v1 ** 2 / (n1 - 1) + v2 ** 2 / (n2 - 1);
+  const df = num / den;
+  const p = pFromT(t, df, tail);
+
+  const steps: FormulaStep[] = [
+    {
+      label: 'FORMULA',
+      content:
+        'SE = √(s₁²/n₁ + s₂²/n₂),  t = (x̄₁ − x̄₂) / SE,  df = (s₁²/n₁ + s₂²/n₂)² / [(s₁²/n₁)²/(n₁−1) + (s₂²/n₂)²/(n₂−1)]',
+    },
+    {
+      label: 'SUBSTITUTED',
+      content: `v1=${+v1.toFixed(6)}, v2=${+v2.toFixed(6)};  SE=${+SE.toFixed(6)};  t=(${+xbar1.toFixed(6)}−${+xbar2.toFixed(6)})/${+SE.toFixed(6)}=${+t.toFixed(6)};  df=${+df.toFixed(6)}`,
+    },
+    { label: 'RESULT', content: `t = ${+t.toFixed(6)}, p = ${+p.toFixed(6)}, df = ${+df.toFixed(6)}` },
+  ];
+
+  return { result: { t, p, df }, steps };
+}
+
+// ── computePairedTTest ────────────────────────────────────────────────────────
+
+/**
+ * Paired t-test: differences = sample1[i] − sample2[i], then one-sample t on diffs.
+ */
+export function computePairedTTest(
+  sample1: number[],
+  sample2: number[],
+  tail: Tail,
+): StatResult {
+  const diffs = sample1.map((x, i) => x - sample2[i]);
+  const n = diffs.length;
+  const dbar = mean(diffs);
+  const sd = stddev(diffs);
+  const SE = sd / Math.sqrt(n);
+  const t = dbar / SE;
+  const df = n - 1;
+  const p = pFromT(t, df, tail);
+
+  const steps: FormulaStep[] = [
+    { label: 'FORMULA', content: 'dᵢ = x₁ᵢ − x₂ᵢ,  t = d̄ / (sd / √n),  df = n − 1' },
+    {
+      label: 'SUBSTITUTED',
+      content: `diffs=[${diffs.map((d) => +d.toFixed(6)).join(', ')}];  d̄=${+dbar.toFixed(6)};  sd=${+sd.toFixed(6)};  SE=${+SE.toFixed(6)};  t=${+t.toFixed(6)};  df=${df}`,
+    },
+    {
+      label: 'RESULT',
+      content: `t = ${+t.toFixed(6)}, p = ${+p.toFixed(6)}, df = ${df}, d̄ = ${+dbar.toFixed(6)}, sd = ${+sd.toFixed(6)}`,
+    },
+  ];
+
+  return { result: { t, p, df, dbar, sd }, steps };
+}
+
+// ── computeAnova ──────────────────────────────────────────────────────────────
+
+/**
+ * One-way ANOVA (F-test).
+ */
+export function computeAnova(groups: number[][]): StatResult {
+  const k = groups.length;
+  const N = groups.reduce((acc, g) => acc + g.length, 0);
+  const allValues = groups.flat();
+  const grandMean = mean(allValues);
+
+  const groupMeans = groups.map((g) => mean(g));
+
+  const SSB = groups.reduce((acc, g, i) => acc + g.length * (groupMeans[i] - grandMean) ** 2, 0);
+  const SSW = groups.reduce(
+    (acc, g, i) => acc + g.reduce((s, x) => s + (x - groupMeans[i]) ** 2, 0),
+    0,
+  );
+
+  const dfBetween = k - 1;
+  const dfWithin = N - k;
+  const MSB = SSB / dfBetween;
+  const MSW = SSW / dfWithin;
+  const F = MSB / MSW;
+  const p = 1 - jStat.centralF.cdf(F, dfBetween, dfWithin);
+
+  const steps: FormulaStep[] = [
+    {
+      label: 'FORMULA',
+      content:
+        'SSB = Σnⱼ(x̄ⱼ − x̄)²,  SSW = ΣΣ(xᵢⱼ − x̄ⱼ)²,  F = (SSB/dfB) / (SSW/dfW)',
+    },
+    {
+      label: 'SUBSTITUTED',
+      content: `k=${k}, N=${N}, grandMean=${+grandMean.toFixed(6)};  SSB=${+SSB.toFixed(6)}, SSW=${+SSW.toFixed(6)};  dfB=${dfBetween}, dfW=${dfWithin};  MSB=${+MSB.toFixed(6)}, MSW=${+MSW.toFixed(6)};  F=${+F.toFixed(6)}`,
+    },
+    {
+      label: 'RESULT',
+      content: `F = ${+F.toFixed(6)}, p = ${+p.toFixed(6)}, dfBetween = ${dfBetween}, dfWithin = ${dfWithin}`,
+    },
+  ];
+
+  return { result: { F, p, SSB, SSW, MSB, MSW, dfBetween, dfWithin }, steps };
+}
+
+// ── computePValue ─────────────────────────────────────────────────────────────
+
+/**
+ * Generic p-value lookup for a test statistic given a distribution type.
+ */
+export function computePValue(
+  testStat: number,
+  dist: 'normal' | 't' | 'chi2' | 'f',
+  tail: Tail,
+  params: { df?: number; df1?: number; df2?: number },
+): StatResult {
+  let leftP: number;
+  let distDesc: string;
+
+  switch (dist) {
+    case 'normal':
+      leftP = jStat.normal.cdf(testStat, 0, 1);
+      distDesc = 'standard normal';
+      break;
+    case 't':
+      leftP = jStat.studentt.cdf(testStat, params.df!);
+      distDesc = `t(df=${params.df})`;
+      break;
+    case 'chi2':
+      leftP = jStat.chisquare.cdf(testStat, params.df!);
+      distDesc = `χ²(df=${params.df})`;
+      break;
+    case 'f':
+      leftP = jStat.centralF.cdf(testStat, params.df1!, params.df2!);
+      distDesc = `F(df1=${params.df1}, df2=${params.df2})`;
+      break;
+  }
+
+  const p = applyTail(leftP!, tail);
+
+  const steps: FormulaStep[] = [
+    { label: 'FORMULA', content: `p-value lookup using ${distDesc!} CDF, tail=${tail}` },
+    {
+      label: 'SUBSTITUTED',
+      content: `testStat=${+testStat.toFixed(6)}, leftP=${+leftP!.toFixed(6)}`,
+    },
+    { label: 'RESULT', content: `p = ${+p.toFixed(6)}` },
+  ];
+
+  return { result: p, steps };
+}
