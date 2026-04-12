@@ -23,6 +23,11 @@ import {
   computePairedTTest,
   computeAnova,
   computePValue,
+  computeRegression,
+  computeCorrelation,
+  computeRSquared,
+  computeRegressionPredict,
+  computeResidualSE,
 } from './statistics';
 
 let failed = 0;
@@ -343,6 +348,59 @@ console.log('computePValue:');
 
   const t = computePValue(2.228, 't', 'two', { df: 10 });
   check(approxEq(t.result as number, 0.05, 0.005), 't two-tail p(2.228, df=10) ≈ 0.05');
+}
+
+// ── Regression ────────────────────────────────────────────────────────────────
+
+{
+  const xs = [1, 2, 3, 4, 5, 6];
+  const ys = [2.1, 4.0, 5.8, 8.1, 9.9, 12.2];
+
+  console.log('computeRegression:');
+  {
+    const res = computeRegression(xs, ys);
+    const r = res.result as Record<string, number>;
+    check(approxEq(r.slope, 2.0, 0.1), `slope ≈ 2.0 (got ${r.slope.toFixed(4)})`);
+    check(approxEq(r.intercept, 0.0, 0.5), `intercept ≈ 0.0 (got ${r.intercept.toFixed(4)})`);
+    check(res.steps.length === 3, 'returns 3 steps');
+    check(res.steps[0].label === 'FORMULA', 'first step is FORMULA');
+  }
+
+  console.log('computeCorrelation:');
+  {
+    const res = computeCorrelation(xs, ys);
+    const r = res.result as number;
+    check(approxEq(r, 0.999, 0.01), `r ≈ 0.999 (got ${r.toFixed(6)})`);
+    check(res.steps.length === 3, 'returns 3 steps');
+    check(res.steps[0].label === 'FORMULA', 'first step is FORMULA');
+  }
+
+  console.log('computeRSquared:');
+  {
+    const res = computeRSquared(xs, ys);
+    const r2 = res.result as number;
+    check(approxEq(r2, 0.998, 0.01), `R² ≈ 0.998 (got ${r2.toFixed(6)})`);
+    check(res.steps.length === 3, 'returns 3 steps');
+    check(res.steps[0].label === 'FORMULA', 'first step is FORMULA');
+  }
+
+  console.log('computeRegressionPredict:');
+  {
+    const res = computeRegressionPredict(xs, ys, 7);
+    const yhat = res.result as number;
+    check(approxEq(yhat, 14.0, 0.5), `predict(7) ≈ 14.0 (got ${yhat.toFixed(4)})`);
+    check(res.steps.length === 3, 'returns 3 steps');
+    check(res.steps[0].label === 'FORMULA', 'first step is FORMULA');
+  }
+
+  console.log('computeResidualSE:');
+  {
+    const res = computeResidualSE(xs, ys);
+    const se = res.result as number;
+    check(se < 0.5, `SE < 0.5 (got ${se.toFixed(6)})`);
+    check(res.steps.length === 3, 'returns 3 steps');
+    check(res.steps[0].label === 'FORMULA', 'first step is FORMULA');
+  }
 }
 
 // ── summary ───────────────────────────────────────────────────────────────────

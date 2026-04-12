@@ -721,3 +721,171 @@ export function computePValue(
 
   return { result: p, steps };
 }
+
+// ── Regression helpers ────────────────────────────────────────────────────────
+
+function regressionCoeffs(
+  xs: number[],
+  ys: number[],
+): { slope: number; intercept: number; xbar: number; ybar: number } {
+  const n = xs.length;
+  const xbar = xs.reduce((a, x) => a + x, 0) / n;
+  const ybar = ys.reduce((a, y) => a + y, 0) / n;
+  const ssxy = xs.reduce((a, x, i) => a + (x - xbar) * (ys[i] - ybar), 0);
+  const ssxx = xs.reduce((a, x) => a + (x - xbar) ** 2, 0);
+  const slope = ssxy / ssxx;
+  const intercept = ybar - slope * xbar;
+  return { slope, intercept, xbar, ybar };
+}
+
+// ── computeRegression ─────────────────────────────────────────────────────────
+
+/**
+ * Simple linear regression via least squares.
+ * Returns { slope, intercept } as a Record<string, number>.
+ */
+export function computeRegression(xs: number[], ys: number[]): StatResult {
+  const { slope, intercept, xbar, ybar } = regressionCoeffs(xs, ys);
+  const ssxy = xs.reduce((a, x, i) => a + (x - xbar) * (ys[i] - ybar), 0);
+  const ssxx = xs.reduce((a, x) => a + (x - xbar) ** 2, 0);
+
+  const steps: FormulaStep[] = [
+    {
+      label: 'FORMULA',
+      content: 'b₁ = Σ(xᵢ−x̄)(yᵢ−ȳ) / Σ(xᵢ−x̄)²,  b₀ = ȳ − b₁·x̄',
+    },
+    {
+      label: 'SUBSTITUTED',
+      content: `Σ(xᵢ−x̄)(yᵢ−ȳ)=${+ssxy.toFixed(6)}, Σ(xᵢ−x̄)²=${+ssxx.toFixed(6)}, x̄=${+xbar.toFixed(6)}, ȳ=${+ybar.toFixed(6)}`,
+    },
+    {
+      label: 'RESULT',
+      content: `slope = ${+slope.toFixed(6)}, intercept = ${+intercept.toFixed(6)}`,
+    },
+  ];
+
+  return { result: { slope, intercept }, steps };
+}
+
+// ── computeCorrelation ────────────────────────────────────────────────────────
+
+/**
+ * Pearson's r = Σ(xᵢ−x̄)(yᵢ−ȳ) / √[Σ(xᵢ−x̄)²·Σ(yᵢ−ȳ)²]
+ */
+export function computeCorrelation(xs: number[], ys: number[]): StatResult {
+  const n = xs.length;
+  const xbar = xs.reduce((a, x) => a + x, 0) / n;
+  const ybar = ys.reduce((a, y) => a + y, 0) / n;
+  const ssxy = xs.reduce((a, x, i) => a + (x - xbar) * (ys[i] - ybar), 0);
+  const ssxx = xs.reduce((a, x) => a + (x - xbar) ** 2, 0);
+  const ssyy = ys.reduce((a, y) => a + (y - ybar) ** 2, 0);
+  const r = ssxy / Math.sqrt(ssxx * ssyy);
+
+  const steps: FormulaStep[] = [
+    {
+      label: 'FORMULA',
+      content: 'r = Σ(xᵢ−x̄)(yᵢ−ȳ) / √[Σ(xᵢ−x̄)²·Σ(yᵢ−ȳ)²]',
+    },
+    {
+      label: 'SUBSTITUTED',
+      content: `Σ(xᵢ−x̄)(yᵢ−ȳ)=${+ssxy.toFixed(6)}, Σ(xᵢ−x̄)²=${+ssxx.toFixed(6)}, Σ(yᵢ−ȳ)²=${+ssyy.toFixed(6)}`,
+    },
+    {
+      label: 'RESULT',
+      content: `r = ${+r.toFixed(6)}`,
+    },
+  ];
+
+  return { result: r, steps };
+}
+
+// ── computeRSquared ───────────────────────────────────────────────────────────
+
+/**
+ * R² = r²  (coefficient of determination)
+ */
+export function computeRSquared(xs: number[], ys: number[]): StatResult {
+  const corrResult = computeCorrelation(xs, ys);
+  const r = corrResult.result as number;
+  const r2 = r * r;
+
+  const steps: FormulaStep[] = [
+    {
+      label: 'FORMULA',
+      content: 'R² = r²',
+    },
+    {
+      label: 'SUBSTITUTED',
+      content: `r = ${+r.toFixed(6)}`,
+    },
+    {
+      label: 'RESULT',
+      content: `R² = ${+r2.toFixed(6)}`,
+    },
+  ];
+
+  return { result: r2, steps };
+}
+
+// ── computeRegressionPredict ──────────────────────────────────────────────────
+
+/**
+ * Predict ŷ = slope·x₀ + intercept for a new x₀.
+ */
+export function computeRegressionPredict(
+  xs: number[],
+  ys: number[],
+  x0: number,
+): StatResult {
+  const { slope, intercept } = regressionCoeffs(xs, ys);
+  const yhat = slope * x0 + intercept;
+
+  const steps: FormulaStep[] = [
+    {
+      label: 'FORMULA',
+      content: 'ŷ = slope·x₀ + intercept',
+    },
+    {
+      label: 'SUBSTITUTED',
+      content: `slope=${+slope.toFixed(6)}, intercept=${+intercept.toFixed(6)}, x₀=${+x0.toFixed(6)}`,
+    },
+    {
+      label: 'RESULT',
+      content: `ŷ = ${+yhat.toFixed(6)}`,
+    },
+  ];
+
+  return { result: yhat, steps };
+}
+
+// ── computeResidualSE ─────────────────────────────────────────────────────────
+
+/**
+ * Residual standard error: SE = √[Σ(yᵢ−ŷᵢ)² / (n−2)]
+ */
+export function computeResidualSE(xs: number[], ys: number[]): StatResult {
+  const n = xs.length;
+  const { slope, intercept } = regressionCoeffs(xs, ys);
+  const sse = xs.reduce((a, x, i) => {
+    const yhat = slope * x + intercept;
+    return a + (ys[i] - yhat) ** 2;
+  }, 0);
+  const se = Math.sqrt(sse / (n - 2));
+
+  const steps: FormulaStep[] = [
+    {
+      label: 'FORMULA',
+      content: 'SE = √[Σ(yᵢ−ŷᵢ)² / (n−2)]',
+    },
+    {
+      label: 'SUBSTITUTED',
+      content: `SSE=${+sse.toFixed(6)}, n=${n}, n−2=${n - 2}`,
+    },
+    {
+      label: 'RESULT',
+      content: `SE = ${+se.toFixed(6)}`,
+    },
+  ];
+
+  return { result: se, steps };
+}
