@@ -77,8 +77,40 @@ export interface LinkItem {
   iconType?: LinkIconType;
   iconValue?: string;
   favorite?: boolean;
+  /** Category id. Undefined → renders in the synthetic "__other" section. */
+  category?: string;
   createdAt?: number;
   updatedAt?: number;
+}
+
+/**
+ * A category groups links under a named section on the Lenker page.
+ * Two reserved ids anchor the derived sections:
+ *   - `__favorites` — rendered as "★ Favorites" (membership = links with favorite === true)
+ *   - `__other`     — rendered as "Other"      (membership = links with no `category` set)
+ * Reserved ids exist only to give those derived sections a position in the
+ * drag order; their membership is always computed at render time.
+ */
+export interface Category {
+  id: string;
+  name: string;
+  /** Ascending sort key — lower numbers render higher on the page. */
+  order: number;
+  createdAt?: number;
+  updatedAt?: number;
+}
+
+export const FAVORITES_CATEGORY_ID = '__favorites';
+export const OTHER_CATEGORY_ID = '__other';
+
+/**
+ * v2 envelope for /api/links. The backend accepts both v1 (bare array)
+ * and v2 (this shape) on read, and always writes v2 on save.
+ */
+export interface LinksEnvelope {
+  version: 2;
+  links: LinkItem[];
+  categories: Category[];
 }
 
 // ─── Notes ───────────────────────────────────────────────────────────────
