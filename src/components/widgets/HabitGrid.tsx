@@ -15,15 +15,11 @@ export function HabitGrid({ habit, onToggle }: HabitGridProps) {
   const year = now.getFullYear();
   const month = now.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7; // Mon-first
 
   const completedSet = new Set(habit.completedDays);
 
+  // Grid always starts top-left — day 1 at position [0,0]. No weekday offset.
   const cells: Array<{ key: string; date?: string; state: 'past-done' | 'past-miss' | 'today-done' | 'today-miss' | 'future' | 'empty' }> = [];
-
-  for (let i = 0; i < firstWeekday; i++) {
-    cells.push({ key: `empty-${i}`, state: 'empty' });
-  }
 
   for (let day = 1; day <= daysInMonth; day++) {
     const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;

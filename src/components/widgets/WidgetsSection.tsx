@@ -4,7 +4,6 @@ import { useHabits } from '@/hooks/useHabits';
 import { useWidgets } from '@/hooks/useWidgets';
 import { HabitWidget } from './HabitWidget';
 import { AddHabitModal } from './AddHabitModal';
-import { AddWidgetMenu } from './AddWidgetMenu';
 
 type HandleProps = Record<string, unknown>;
 
@@ -49,41 +48,59 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
             <GripHandle handleProps={handleProps} />
             Widgets
           </span>
-          <AddWidgetMenu onAddHabit={() => setHabitModalOpen(true)} />
         </div>
-        {hasWidgets ? (
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <AnimatePresence>
-              {widgets.map((w) => {
-                if (w.type === 'habit') {
-                  const habit = habitMap.get(w.refId);
-                  if (!habit) return null;
-                  return (
-                    <HabitWidget
-                      key={w.id}
-                      habit={habit}
-                      onToggleDay={(date) => toggleDay(habit.id, date)}
-                      onUpdate={(patch) => updateHabit(habit.id, patch)}
-                      onRemove={() => handleRemoveHabit(habit.id)}
-                    />
-                  );
-                }
-                return null;
-              })}
-            </AnimatePresence>
-          </div>
-        ) : (
-          <div
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <AnimatePresence>
+            {widgets.map((w) => {
+              if (w.type === 'habit') {
+                const habit = habitMap.get(w.refId);
+                if (!habit) return null;
+                return (
+                  <HabitWidget
+                    key={w.id}
+                    habit={habit}
+                    onToggleDay={(date) => toggleDay(habit.id, date)}
+                    onUpdate={(patch) => updateHabit(habit.id, patch)}
+                    onRemove={() => handleRemoveHabit(habit.id)}
+                  />
+                );
+              }
+              return null;
+            })}
+          </AnimatePresence>
+          {/* Dashed "+" card to add a new widget, always at end */}
+          <button
+            type="button"
+            onClick={() => setHabitModalOpen(true)}
+            aria-label="Add widget"
             style={{
+              background: 'rgba(255, 255, 255, 0.002)',
+              border: '1px dashed rgba(255, 255, 255, 0.08)',
+              borderRadius: 14,
+              padding: '14px 16px',
+              minWidth: hasWidgets ? 80 : 180,
+              minHeight: hasWidgets ? undefined : 120,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
               color: 'rgba(255, 255, 255, 0.25)',
-              fontSize: '0.78rem',
-              fontStyle: 'italic',
-              padding: '4px 0',
+              fontSize: hasWidgets ? 32 : 14,
+              fontWeight: 300,
+              transition: 'border-color 0.15s, color 0.15s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+              e.currentTarget.style.color = 'rgba(255, 255, 255, 0.5)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+              e.currentTarget.style.color = 'rgba(255, 255, 255, 0.25)';
             }}
           >
-            No widgets yet. Click "+ Add widget" to get started.
-          </div>
-        )}
+            {hasWidgets ? '+' : '+ Add your first habit'}
+          </button>
+        </div>
       </section>
 
       <AddHabitModal

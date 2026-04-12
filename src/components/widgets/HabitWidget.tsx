@@ -26,8 +26,8 @@ export function HabitWidget({ habit, onToggleDay, onUpdate, onRemove }: HabitWid
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
       style={{
-        background: 'rgba(255, 255, 255, 0.006)',
-        border: '1px solid rgba(255, 255, 255, 0.028)',
+        background: hexWithAlpha(habit.color, 0.015),
+        border: `1px solid ${hexWithAlpha(habit.color, 0.1)}`,
         borderRadius: 14,
         padding: '14px 16px',
         boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.018), 0 1px 2px rgba(0, 0, 0, 0.4)',
@@ -35,8 +35,7 @@ export function HabitWidget({ habit, onToggleDay, onUpdate, onRemove }: HabitWid
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-        <div style={{ width: 8, height: 8, borderRadius: '50%', background: habit.color }} />
-        <span style={{ color: 'rgba(255, 255, 255, 0.75)', fontSize: '0.78rem', fontWeight: 600 }}>
+        <span style={{ color: 'rgba(255, 255, 255, 0.85)', fontSize: '0.78rem', fontWeight: 700 }}>
           {habit.name}
         </span>
         {streak > 0 && (
@@ -165,4 +164,12 @@ export function HabitWidget({ habit, onToggleDay, onUpdate, onRemove }: HabitWid
       </AnimatePresence>
     </motion.div>
   );
+}
+
+function hexWithAlpha(hex: string, alpha: number): string {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
