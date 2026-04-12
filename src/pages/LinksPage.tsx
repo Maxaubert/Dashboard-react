@@ -1,8 +1,9 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useLinks, useSaveLinks } from '@/hooks/useLinks';
+import { OTHER_CATEGORY_ID } from '@/api/types';
 import type { LinkItem } from '@/api/types';
 import { Modal, useToast } from '@/components/ui';
-import { IconPicker, type IconPickerHandle, SortableList } from '@/components/patterns';
+import { IconPicker, type IconPickerHandle } from '@/components/patterns';
 import { faviconUrl } from '@/api/pdf';
 import { resolveSvgIcon } from '@/data/svgIcons';
 import { LINK_COLOR_PRESETS } from '@/data/linkColors';
@@ -24,6 +25,7 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
+  rectSortingStrategy,
   useSortable,
   arrayMove,
 } from '@dnd-kit/sortable';
@@ -105,15 +107,6 @@ export function LinksLibrary() {
     persist(links.map((l) => (l.id === id ? { ...l, favorite: !l.favorite } : l)));
   }
 
-  function handleReorderWithinSection(nextSectionLinks: LinkItem[], sectionKind: 'favorites' | 'user' | 'other', categoryId?: string) {
-    const keep = links.filter((l) => {
-      if (sectionKind === 'favorites') return l.favorite !== true;
-      if (sectionKind === 'other') return l.favorite === true || (l.category !== undefined && categories.some((c) => c.id === l.category));
-      return l.favorite === true || l.category !== categoryId;
-    });
-    persist([...keep, ...nextSectionLinks]);
-  }
-
   return (
     <>
       <div className="lenker-header">
@@ -145,17 +138,67 @@ export function LinksLibrary() {
           onDragEnd={(e: DragEndEvent) => {
             const { active, over } = e;
             if (!over || active.id === over.id) return;
+
+            const activeId = String(active.id);
+            const overId = String(over.id);
+
             const sectionIds = sections.map((s) => s.category.id);
-            const oldIndex = sectionIds.indexOf(String(active.id));
-            const newIndex = sectionIds.indexOf(String(over.id));
-            if (oldIndex < 0 || newIndex < 0) return;
-            const nextOrder = arrayMove(sectionIds, oldIndex, newIndex);
-            const visible = new Set(nextOrder);
-            const hidden = categories
-              .filter((c) => !visible.has(c.id))
-              .sort((a, b) => a.order - b.order)
-              .map((c) => c.id);
-            reorderCategories([...nextOrder, ...hidden]);
+            const activeIsSection = sectionIds.includes(activeId);
+            const overIsSection = sectionIds.includes(overId);
+
+            if (activeIsSection && overIsSection) {
+              const oldIndex = sectionIds.indexOf(activeId);
+              const newIndex = sectionIds.indexOf(overId);
+              const nextOrder = arrayMove(sectionIds, oldIndex, newIndex);
+              const visible = new Set(nextOrder);
+              const hidden = categories.filter((c) => !visible.has(c.id)).sort((a, b) => a.order - b.order).map((c) => c.id);
+              reorderCategories([...nextOrder, ...hidden]);
+              return;
+            }
+
+            const findSection = (linkId: string) => sections.find((s) => s.links.some((l) => l.id === linkId));
+            const sourceSection = findSection(activeId);
+            if (!sourceSection) return;
+
+            let targetSection = findSection(overId);
+            if (!targetSection && overIsSection) {
+              targetSection = sections.find((s) => s.category.id === overId);
+            }
+            if (!targetSection) return;
+
+            if (sourceSection === targetSection) {
+              const ids = targetSection.links.map((l) => l.id);
+              const oldIndex = ids.indexOf(activeId);
+              const newIndex = ids.indexOf(overId);
+              if (oldIndex < 0 || newIndex < 0) return;
+              const reordered = arrayMove(targetSection.links, oldIndex, newIndex);
+              const keep = links.filter((l) => {
+                if (targetSection!.kind === 'favorites') return l.favorite !== true;
+                if (targetSection!.kind === 'other') {
+                  return l.favorite === true || (l.category !== undefined && categories.some((c) => c.id === l.category && c.id !== OTHER_CATEGORY_ID));
+                }
+                return l.favorite === true || l.category !== targetSection!.category.id;
+              });
+              persist([...keep, ...reordered]);
+              return;
+            }
+
+            const movedLink = links.find((l) => l.id === activeId);
+            if (!movedLink) return;
+            const nextLinkPartial: Partial<LinkItem> = {};
+            if (targetSection.kind === 'favorites') {
+              nextLinkPartial.favorite = true;
+            } else if (targetSection.kind === 'other') {
+              nextLinkPartial.category = undefined;
+              nextLinkPartial.favorite = false;
+            } else {
+              nextLinkPartial.category = targetSection.category.id;
+              nextLinkPartial.favorite = false;
+            }
+            const nextLinks = links.map((l) =>
+              l.id === activeId ? { ...l, ...nextLinkPartial, updatedAt: Date.now() } : l,
+            );
+            persist(nextLinks);
           }}
         >
           <SortableContext
@@ -166,7 +209,6 @@ export function LinksLibrary() {
               <SortableSection
                 key={section.category.id}
                 section={section}
-                onReorderLinks={handleReorderWithinSection}
                 onEdit={(l) => setEditing(l)}
                 onDelete={handleDelete}
                 onToggleFavorite={toggleFavorite}
@@ -191,20 +233,37 @@ export function LinksLibrary() {
   );
 }
 
+/* ── Sortable link card ──────────────────────────────────────────────────── */
+function SortableLinkCard({
+  link, onEdit, onDelete, onToggleFavorite,
+}: {
+  link: LinkItem;
+  onEdit: () => void;
+  onDelete: () => void;
+  onToggleFavorite: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: link.id });
+  const style: CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+  return (
+    <div ref={setNodeRef} style={style} className="touch-none" {...attributes} {...listeners}>
+      <LinkCard link={link} onEdit={onEdit} onDelete={onDelete} onToggleFavorite={onToggleFavorite} />
+    </div>
+  );
+}
+
 /* ── Sortable section wrapper ────────────────────────────────────────────── */
 function SortableSection({
   section,
-  onReorderLinks,
   onEdit,
   onDelete,
   onToggleFavorite,
 }: {
   section: ReturnType<typeof groupLinks>[number];
-  onReorderLinks: (
-    nextSectionLinks: LinkItem[],
-    sectionKind: 'favorites' | 'user' | 'other',
-    categoryId?: string,
-  ) => void;
   onEdit: (link: LinkItem) => void;
   onDelete: (id: string) => void;
   onToggleFavorite: (id: string) => void;
@@ -231,26 +290,19 @@ function SortableSection({
         gripListeners={listeners as React.HTMLAttributes<HTMLElement>}
         dragging={isDragging}
       />
-      <SortableList
-        items={section.links}
-        onReorder={(next) =>
-          onReorderLinks(
-            next,
-            section.kind,
-            section.kind === 'user' ? section.category.id : undefined,
-          )
-        }
-        layout="grid"
-        className="links-grid"
-        renderItem={(link) => (
-          <LinkCard
-            link={link}
-            onEdit={() => onEdit(link)}
-            onDelete={() => onDelete(link.id)}
-            onToggleFavorite={() => onToggleFavorite(link.id)}
-          />
-        )}
-      />
+      <SortableContext items={section.links.map((l) => l.id)} strategy={rectSortingStrategy}>
+        <div className="links-grid">
+          {section.links.map((link) => (
+            <SortableLinkCard
+              key={link.id}
+              link={link}
+              onEdit={() => onEdit(link)}
+              onDelete={() => onDelete(link.id)}
+              onToggleFavorite={() => onToggleFavorite(link.id)}
+            />
+          ))}
+        </div>
+      </SortableContext>
     </div>
   );
 }
