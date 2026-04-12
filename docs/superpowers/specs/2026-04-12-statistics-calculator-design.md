@@ -4,7 +4,7 @@
 
 Add a **Statistics mode** to the existing calculator tool, toggled via a pill switch. The scientific calculator remains the default. Both modes receive visual refinements (better spacing, larger targets, cleaner typography). The statistics mode provides 22 functions across 4 categories, each showing step-by-step formulas with the user's actual numbers substituted in.
 
-**Target user:** Intermediate/applied statistics student preparing for exams (ANOVA, multiple regression, confidence intervals, hypothesis testing).
+**Target user:** Intermediate/applied statistics student preparing for exams (ANOVA, regression, hypothesis testing, probability distributions).
 
 ## Architecture
 
@@ -34,7 +34,7 @@ User Input (dataset or form fields)
   → FormulaDisplay.tsx (renders formula + substituted numbers + result)
 ```
 
-Each stat function returns `{ result: number, steps: FormulaStep[] }`. The steps array drives the formula display, decoupling UI from math.
+Each stat function returns `{ result: number | Record<string, number>, steps: FormulaStep[] }`. Simple functions return a single number. Multi-output functions (e.g., ANOVA returns F, p, SSB, SSW, df_between, df_within) return a record. The steps array drives the formula display, decoupling UI from math.
 
 ## Visual Refinements (Both Modes)
 
@@ -77,9 +77,9 @@ All take a single comma-separated dataset input.
 Grid: Norm Z | t | χ² | F | Binom | Poisson
 
 - Normal Z: z-value + direction (left/right/two-tail), or inverse mode (probability → z)
-- t: test statistic + df + direction
-- χ²: test statistic + df + direction
-- F: test statistic + df1 + df2 + direction
+- t: test statistic + df + direction, or inverse (probability + df → critical t)
+- χ²: test statistic + df + direction, or inverse (probability + df → critical χ²)
+- F: test statistic + df1 + df2 + direction, or inverse (probability + df1 + df2 → critical F)
 - Binomial: n, p, k + mode (exact P(X=k) / cumulative P(X≤k))
 - Poisson: λ, k + mode (exact / cumulative)
 
@@ -88,9 +88,9 @@ Grid: z-test | 1-samp t | 2-samp t | Paired t | ANOVA | p-value
 
 - z-test: x̄, μ₀, σ, n, tail direction
 - One-sample t-test: x̄, μ₀, s, n, tail
-- Two-sample t-test: Summary mode (x̄₁, s₁, n₁, x̄₂, s₂, n₂) OR Raw Data mode (two datasets). Toggle between modes.
+- Two-sample t-test (Welch's, unequal variances assumed): Summary mode (x̄₁, s₁, n₁, x̄₂, s₂, n₂) OR Raw Data mode (two datasets). Toggle between modes.
 - Paired t-test: Two side-by-side dataset fields (Sample 1, Sample 2) + tail selector
-- ANOVA: Stacked group inputs with add/remove. Minimum 2 groups. Each group is a comma-separated dataset.
+- ANOVA: Stacked group inputs with add/remove. Minimum 2 groups. Each group is a comma-separated dataset. Result displays a full ANOVA table (SSB, SSW, df_between, df_within, MSB, MSW, F-statistic, p-value).
 - p-value calculator: test statistic + distribution type dropdown + df + tail
 
 **Regression (5 functions)**
