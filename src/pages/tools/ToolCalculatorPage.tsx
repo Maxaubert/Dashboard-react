@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ScientificCalculator } from '@/components/calculator/ScientificCalculator';
+import { StatsCalculator } from '@/components/calculator/StatsCalculator';
 
 type CalcMode = 'scientific' | 'statistics';
 
@@ -20,7 +21,7 @@ export function ToolCalculatorPage() {
         {mode === 'scientific' ? (
           <ScientificCalculator />
         ) : (
-          <div style={{ color: 'var(--color-text-muted)', padding: '20px 0' }}>Statistics mode — coming next</div>
+          <StatsCalculator />
         )}
       </div>
     </div>
