@@ -25,3 +25,7 @@ Real-time scores for followed teams/events on the Sport page. Auto-updating with
 ## 6. Home: Active Widgets Only
 **Type:** Enhance existing (`/`)
 Show habit tracker widget and pomodoro/timer widget on the home page ONLY when they are actively in use. Hidden otherwise — no permanent clutter.
+
+## 7. Visual Remodelling of Dashboard
+**Type:** Visual overhaul (all pages)
+Refresh the visual design across the entire dashboard — layout, spacing, typography, colors, component styling. Scope TBD per page during brainstorming.
