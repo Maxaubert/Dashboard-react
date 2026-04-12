@@ -1335,39 +1335,6 @@
   }
 
   /* ── Timer / Stoppeklokke / Pomodoro tool ─────────────────────────────── */
-  .tt-mode-tabs {
-    display: inline-flex;
-    gap: 4px;
-    padding: 4px;
-    background: linear-gradient(180deg, #0c0c0c 0%, #000 100%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 10px;
-    margin-bottom: 18px;
-    box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.04) inset,
-      0 1px 2px rgba(0, 0, 0, 0.4);
-  }
-  .tt-mode-tab {
-    background: none;
-    border: none;
-    color: var(--color-text-muted);
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s;
-  }
-  .tt-mode-tab:hover {
-    color: var(--color-text);
-  }
-  .tt-mode-tab.active {
-    background: rgba(255, 255, 255, 0.06);
-    color: var(--color-text);
-  }
   .tt-surface {
     padding: 48px 32px 40px;
   }
@@ -1469,180 +1436,6 @@
     pointer-events: auto;
   }
 
-  /* Adjust buttons (-5/-1/+1/+5 minutes) */
-  .tt-adjust-row {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  .tt-adjust-btn {
-    --adjust-color: rgba(255, 255, 255, 0.6);
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    background: #030304;
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    color: var(--color-text-muted);
-    padding: 10px 18px;
-    border-radius: 8px;
-    font-family: var(--font-mono);
-    font-size: 0.88rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    cursor: pointer;
-    transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.02),
-      0 1px 2px rgba(0, 0, 0, 0.55);
-  }
-  .tt-adjust-btn:hover {
-    background: #07070a;
-    border-color: color-mix(in srgb, var(--adjust-color) 16%, rgba(255, 255, 255, 0.075));
-    color: var(--adjust-color);
-  }
-  .tt-adjust-btn:active {
-    transform: translateY(1px);
-    box-shadow:
-      inset 0 1px 2px rgba(0, 0, 0, 0.4);
-  }
-
-  /* Control buttons */
-  .tt-controls {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  .tt-btn {
-    --btn-color: rgba(255, 255, 255, 0.6);
-    display: inline-flex;
-    align-items: center;
-    gap: 9px;
-    background: #040406;
-    border: 1px solid rgba(255, 255, 255, 0.045);
-    color: var(--color-text);
-    padding: 14px 26px;
-    border-radius: 10px;
-    font-family: inherit;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.15s, border-color 0.15s, transform 0.1s;
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.025),
-      0 1px 2px rgba(0, 0, 0, 0.55);
-  }
-  .tt-btn:hover:not(:disabled) {
-    background: #0a0a0d;
-    border-color: rgba(255, 255, 255, 0.09);
-  }
-  .tt-btn:active:not(:disabled) {
-    transform: translateY(1px);
-    box-shadow:
-      inset 0 1px 2px rgba(0, 0, 0, 0.4);
-  }
-  .tt-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-  .tt-btn.primary {
-    background: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--btn-color) 22%, #0a0a0c) 0%,
-      color-mix(in srgb, var(--btn-color) 12%, #050507) 100%
-    );
-    border-color: color-mix(in srgb, var(--btn-color) 38%, rgba(255, 255, 255, 0.10));
-    color: var(--btn-color);
-    padding: 15px 36px;
-    font-size: 1.05rem;
-    font-weight: 700;
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.10),
-      0 1px 2px rgba(0, 0, 0, 0.55);
-  }
-  .tt-btn.primary:hover:not(:disabled) {
-    background: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--btn-color) 30%, #0a0a0c) 0%,
-      color-mix(in srgb, var(--btn-color) 18%, #050507) 100%
-    );
-    border-color: color-mix(in srgb, var(--btn-color) 55%, rgba(255, 255, 255, 0.15));
-  }
-
-  /* Two always-visible Pomodoro setting boxes (pause + antall økter).
-   * Replaces the old collapsible <details> panel. Focus length is set
-   * by clicking the ring time itself, not via a box. */
-  .tt-pomo-boxes {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    width: 100%;
-    max-width: 400px;
-  }
-  /* Compact stepper card — label on top, [- value +] row below.
-   * Used as the Pomodoro setting boxes. */
-  .tt-numfield {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
-    padding: 11px 20px;
-    background: #040406;
-    border: 1px solid rgba(255, 255, 255, 0.045);
-    border-radius: 9px;
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.025),
-      0 1px 2px rgba(0, 0, 0, 0.55);
-  }
-  .tt-numfield-label {
-    font-family: var(--font-mono);
-    font-size: 0.62rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--color-text-muted);
-  }
-  .tt-numfield-stepper {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    width: 100%;
-  }
-  .tt-numfield-btn {
-    background: #08080a;
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    color: var(--color-text-muted);
-    width: 24px;
-    height: 24px;
-    border-radius: 5px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.12s, color 0.12s, border-color 0.12s;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
-  }
-  .tt-numfield-btn:hover:not(:disabled) {
-    background: #101013;
-    color: var(--color-text);
-    border-color: rgba(255, 255, 255, 0.14);
-  }
-  .tt-numfield-btn:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-  }
-  .tt-numfield-value {
-    font-family: var(--font-mono);
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--color-text);
-    min-width: 26px;
-    text-align: center;
-    font-variant-numeric: tabular-nums;
-  }
-
   /* Stopwatch laps */
   .tt-lap-list {
     width: 100%;
@@ -1690,10 +1483,35 @@
     .tt-ring-text { font-size: 3.2rem; }
     .tt-ring-input { font-size: 3.2rem; width: 220px; }
     .tt-ring-label { font-size: 0.72rem; }
-    .tt-btn { padding: 12px 20px; font-size: 0.92rem; }
-    .tt-btn.primary { padding: 13px 28px; font-size: 0.98rem; }
-    .tt-adjust-btn { padding: 8px 14px; font-size: 0.78rem; }
   }
+
+/* Pill toggle (replaces .tt-mode-tabs) */
+.tt-pill-container {
+  display: inline-flex;
+  background: #08080a;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 24px;
+  padding: 4px;
+  margin-bottom: 18px;
+}
+.tt-pill-option {
+  position: relative;
+  padding: 6px 18px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 20px;
+  transition: color 0.2s;
+}
+.tt-pill-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+}
 
   /* ── Reader mode tool ────────────────────────────────────────────────── */
   .reader-form {
@@ -6776,4 +6594,80 @@
 }
 .section-context-menu div { padding: 7px 14px; cursor: pointer; }
 .section-context-menu div:hover { background: #2a2e36; }
+
+/* Circular controls */
+.tt-circle-controls {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+.tt-circle-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.tt-circle-btn:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+}
+.tt-circle-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* Pomodoro inline settings */
+.tt-pomo-inline {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 18px;
+}
+.tt-inline-field {
+  text-align: center;
+}
+.tt-inline-label {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  margin-bottom: 4px;
+}
+.tt-inline-value {
+  background: #08080a;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 4px 10px;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.tt-inline-value:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+.tt-inline-suffix {
+  color: var(--color-text-muted);
+  font-size: 0.65rem;
+  margin-left: 2px;
+}
+.tt-inline-input {
+  background: #08080a;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 6px;
+  padding: 4px 6px;
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  text-align: center;
+  outline: none;
+}
 .section-context-menu .del { color: #f87171; }
