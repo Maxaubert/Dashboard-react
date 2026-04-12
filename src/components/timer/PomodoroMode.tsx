@@ -144,8 +144,8 @@ export function PomodoroMode() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, settings.focusMin, settings.pauseMin]);
 
-  // segmentProgress: 1 = full, 0 = empty. timer.progress = remaining/total (1 → 0)
-  const segmentProgress = timer.progress; // already 0-1 (remaining ratio)
+  // currentProgress for the ring: 1 = full (just started), 0 = depleted (time's up)
+  // timer.progress is already remaining/total (1 → 0), exactly what we need
 
   function handleToggle() {
     timer.setRunning(!timer.running);
@@ -177,7 +177,7 @@ export function PomodoroMode() {
         segments={{
           total: settings.targetCycles,
           completed: cycle,
-          currentProgress: 1 - segmentProgress,
+          currentProgress: timer.progress,
         }}
       >
         {/* Phase label with animation */}

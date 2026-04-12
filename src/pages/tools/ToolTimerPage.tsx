@@ -15,8 +15,6 @@ const MODES: PillOption<Mode>[] = [
   { id: 'pomodoro', label: 'Pomodoro', color: '#34d399' },
 ];
 
-const MODE_ORDER: Mode[] = ['timer', 'stopwatch', 'pomodoro'];
-
 const COMPONENTS: Record<Mode, React.FC> = {
   timer: CountdownMode,
   stopwatch: StopwatchMode,
@@ -25,14 +23,6 @@ const COMPONENTS: Record<Mode, React.FC> = {
 
 export function ToolTimerPage() {
   const [mode, setMode] = useState<Mode>('timer');
-  const [prevMode, setPrevMode] = useState<Mode>('timer');
-
-  function changeMode(next: Mode) {
-    setPrevMode(mode);
-    setMode(next);
-  }
-
-  const direction = MODE_ORDER.indexOf(mode) > MODE_ORDER.indexOf(prevMode) ? 1 : -1;
   const Component = COMPONENTS[mode];
 
   return (
@@ -43,15 +33,15 @@ export function ToolTimerPage() {
       <PageHeader title="Timer & Pomodoro" subtitle="Timer, stoppeklokke og Pomodoro i ett." />
 
       <div className="surface tt-surface">
-        <PillToggle options={MODES} value={mode} onChange={changeMode} />
+        <PillToggle options={MODES} value={mode} onChange={setMode} />
 
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={mode}
-            initial={{ opacity: 0, x: direction * 60 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: direction * -60 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.97 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
           >
             <Component />
           </motion.div>

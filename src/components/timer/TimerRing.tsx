@@ -69,18 +69,21 @@ function SegmentedRing({ total, completed, currentProgress, color }: { total: nu
         let arcLength: number;
 
         if (i < completed) {
-          opacity = 0.9; arcLength = segmentArc;
-        } else if (i === completed) {
-          opacity = 0.6; arcLength = segmentArc * currentProgress;
-        } else {
+          // Completed segments: empty (depleted)
           opacity = 0.08; arcLength = segmentArc;
+        } else if (i === completed) {
+          // Current segment: starts full, depletes as time runs out
+          opacity = 0.9; arcLength = segmentArc * currentProgress;
+        } else {
+          // Future segments: full (not yet started)
+          opacity = 0.9; arcLength = segmentArc;
         }
 
         return (
           <motion.circle
             key={i} cx={CX} cy={CY} r={R}
             fill="none"
-            stroke={i > completed ? 'rgba(255,255,255,1)' : color}
+            stroke={i < completed ? 'rgba(255,255,255,1)' : color}
             strokeWidth={STROKE_WIDTH} strokeLinecap="round"
             strokeDasharray={`${arcLength} ${CIRCUMFERENCE - arcLength}`}
             strokeDashoffset={-startOffset}
