@@ -6804,4 +6804,33 @@
 }
 .section-context-menu div { padding: 7px 14px; cursor: pointer; }
 .section-context-menu div:hover { background: #2a2e36; }
+
+/* Circular controls */
+.tt-circle-controls {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+.tt-circle-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.tt-circle-btn:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+}
+.tt-circle-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
 .section-context-menu .del { color: #f87171; }
