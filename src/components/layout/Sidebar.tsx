@@ -1,0 +1,126 @@
+import { useRef, useState } from 'react';
+import { Link, NavLink } from 'react-router-dom';
+import { Link2 } from 'lucide-react';
+import { NAV_ITEMS } from './navConfig';
+import { LinksLibraryPopup } from './LinksLibraryPopup';
+import { cn } from '@/lib/cn';
+
+interface SidebarProps {
+  collapsed: boolean;
+  width: number;
+  onResize: (newWidth: number) => void;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+}
+
+/**
+ * Desktop sidebar — uses the legacy `.sidebar` / `.sidebar-link` classes
+ * (defined in globals.css) so it matches the original pixel-for-pixel.
+ *
+ * The sidebar is **resizable**: a thin handle on the right edge accepts
+ * pointer drags and reports new widths back to AppShell. AppShell flips
+ * to collapsed (icons-only) view automatically when the width drops
+ * below its threshold.
+ *
+ * Active link state is a WHITE 3px inset bar — NOT page-accent colored.
+ * That's how nav.js worked, so we match it.
+ */
+export function Sidebar({
+  collapsed,
+  width,
+  onResize,
+  onDragStart,
+  onDragEnd,
+}: SidebarProps) {
+  const dragStartXRef = useRef(0);
+  const dragStartWidthRef = useRef(0);
+  const [linksOpen, setLinksOpen] = useState(false);
+
+  function handleResizeStart(e: React.PointerEvent) {
+    e.preventDefault();
+    dragStartXRef.current = e.clientX;
+    dragStartWidthRef.current = width;
+    onDragStart();
+
+    // Lock the cursor + prevent text selection while dragging.
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    function onMove(ev: PointerEvent) {
+      const dx = ev.clientX - dragStartXRef.current;
+      onResize(dragStartWidthRef.current + dx);
+    }
+    function onUp() {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+      onDragEnd();
+    }
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+  }
+
+  return (
+    <nav
+      className={cn('sidebar hidden md:flex', collapsed && 'collapsed')}
+      aria-label="Hovednavigasjon"
+    >
+      <Link
+        to="/"
+        className="sidebar-logo"
+        title={collapsed ? 'Dashboard' : undefined}
+      >
+        <div className="sidebar-logo-mark">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M3 3h7v7H3V3m0 11h7v7H3v-7m11-11h7v7h-7V3m0 11h7v7h-7v-7" />
+          </svg>
+        </div>
+        <span className="sidebar-logo-text">Dashboard</span>
+      </Link>
+      <span className="sidebar-section-label">Kategorier</span>
+      {NAV_ITEMS.map((item) => (
+        <NavLink
+          key={item.to}
+          to={item.to}
+          end={item.to === '/'}
+          className={({ isActive }) =>
+            isActive ? 'sidebar-link active' : 'sidebar-link'
+          }
+          title={collapsed ? item.label : undefined}
+        >
+          {item.icon}
+          <span>{item.label}</span>
+        </NavLink>
+      ))}
+
+      {/* Spacer pushes the Lenker quick-access icon to the bottom. */}
+      <div className="sidebar-spacer" aria-hidden="true" />
+
+      <button
+        type="button"
+        className="sidebar-links-icon"
+        onClick={() => setLinksOpen(true)}
+        title="Lenkebibliotek"
+        aria-label="Åpne lenkebibliotek"
+      >
+        <Link2 size={18} strokeWidth={1.75} />
+      </button>
+
+      <LinksLibraryPopup open={linksOpen} onOpenChange={setLinksOpen} />
+
+      {/* Drag handle on the right edge — invisible by default, fades
+       *  in on hover so it doesn't add visual noise. */}
+      <div
+        className="sidebar-resize-handle"
+        onPointerDown={handleResizeStart}
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Endre størrelse på sidebar"
+      />
+    </nav>
+  );
+}

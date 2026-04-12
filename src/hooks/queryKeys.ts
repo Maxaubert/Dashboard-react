@@ -1,0 +1,13 @@
+/**
+ * Centralized query key registry. Keep keys here so cache invalidation
+ * across files always uses the same shape.
+ */
+export const queryKeys = {
+  todos: ['todos'] as const,
+  plan: ['plan'] as const,
+  links: ['links'] as const,
+  notes: ['notes'] as const,
+  skole: ['skole'] as const,
+  wishlist: ['wishlist'] as const,
+  news: (source: string, count: number) => ['news', source, count] as const,
+};
