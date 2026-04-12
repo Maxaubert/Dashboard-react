@@ -12,23 +12,37 @@ const DEFAULT_PSEUDO_CATEGORIES: Category[] = [
  * Normalise whatever shape the backend returns into a v2 envelope.
  * - Legacy v1: bare LinkItem[] → wrap in { version: 2, links, categories: [...defaults] }
  * - v2: pass through, but backfill pseudo-categories if they're missing
+ * - null/undefined: return empty envelope with defaults
+ * - Dedupe categories by id (first occurrence wins)
  */
-function normaliseEnvelope(raw: LinkItem[] | LinksEnvelope): LinksEnvelope {
+function normaliseEnvelope(raw: LinkItem[] | LinksEnvelope | null | undefined): LinksEnvelope {
+  if (raw == null) {
+    return { version: 2, links: [], categories: [...DEFAULT_PSEUDO_CATEGORIES] };
+  }
   if (Array.isArray(raw)) {
     return { version: 2, links: raw, categories: [...DEFAULT_PSEUDO_CATEGORIES] };
   }
-  const cats = raw.categories ?? [];
-  const hasFavs = cats.some((c) => c.id === FAVORITES_CATEGORY_ID);
-  const hasOther = cats.some((c) => c.id === OTHER_CATEGORY_ID);
-  const backfilled: Category[] = [...cats];
-  if (!hasFavs) backfilled.push({ id: FAVORITES_CATEGORY_ID, name: 'Favorites', order: 0 });
-  if (!hasOther) backfilled.push({ id: OTHER_CATEGORY_ID, name: 'Other', order: 1_000_000 });
-  return { version: 2, links: raw.links ?? [], categories: backfilled };
+  // Dedupe by id (first occurrence wins), then backfill missing pseudo-categories.
+  const seen = new Set<string>();
+  const deduped: Category[] = [];
+  for (const c of raw.categories ?? []) {
+    if (!seen.has(c.id)) {
+      seen.add(c.id);
+      deduped.push(c);
+    }
+  }
+  if (!seen.has(FAVORITES_CATEGORY_ID)) {
+    deduped.push({ id: FAVORITES_CATEGORY_ID, name: 'Favorites', order: 0 });
+  }
+  if (!seen.has(OTHER_CATEGORY_ID)) {
+    deduped.push({ id: OTHER_CATEGORY_ID, name: 'Other', order: 1_000_000 });
+  }
+  return { version: 2, links: raw.links ?? [], categories: deduped };
 }
 
 export const linksApi = {
   list: async (): Promise<LinksEnvelope> => {
-    const raw = await api.get<LinkItem[] | LinksEnvelope>('/links');
+    const raw = await api.get<LinkItem[] | LinksEnvelope | null | undefined>('/links');
     return normaliseEnvelope(raw);
   },
   saveAll: (envelope: LinksEnvelope) =>
