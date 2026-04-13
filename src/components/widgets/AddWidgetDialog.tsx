@@ -58,8 +58,13 @@ export function AddWidgetDialog({ open, onOpenChange, onCreateHabit }: AddWidget
       if (type.id === 'habit') {
         setStage('configure-habit');
       }
-    }, 280);
+    }, 450);
   }
+
+  // Clear selection when returning to the pick stage so tiles are reselectable
+  useEffect(() => {
+    if (stage === 'pick') setSelectedId(null);
+  }, [stage]);
 
   function handleCreateHabit(e: React.FormEvent) {
     e.preventDefault();
