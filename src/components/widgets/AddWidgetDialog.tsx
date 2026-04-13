@@ -35,6 +35,7 @@ export function AddWidgetDialog({ open, onOpenChange, onCreateHabit }: AddWidget
   const [stage, setStage] = useState<Stage>('pick');
   const [name, setName] = useState('');
   const [color, setColor] = useState(PRESET_COLORS[0]);
+  const [selectedId, setSelectedId] = useState<WidgetType['id'] | null>(null);
 
   // Reset stage when dialog closes
   useEffect(() => {
@@ -43,16 +44,21 @@ export function AddWidgetDialog({ open, onOpenChange, onCreateHabit }: AddWidget
         setStage('pick');
         setName('');
         setColor(PRESET_COLORS[0]);
-      }, 200); // wait for close animation
+        setSelectedId(null);
+      }, 200);
       return () => clearTimeout(t);
     }
   }, [open]);
 
   function handlePick(type: WidgetType) {
-    if (!type.enabled) return;
-    if (type.id === 'habit') {
-      setStage('configure-habit');
-    }
+    if (!type.enabled || selectedId) return;
+    setSelectedId(type.id);
+    // Brief delay to show selection feedback, then advance
+    setTimeout(() => {
+      if (type.id === 'habit') {
+        setStage('configure-habit');
+      }
+    }, 280);
   }
 
   function handleCreateHabit(e: React.FormEvent) {
@@ -143,47 +149,59 @@ export function AddWidgetDialog({ open, onOpenChange, onCreateHabit }: AddWidget
                 transition={{ duration: 0.15 }}
               >
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-                  {WIDGET_TYPES.map((type) => (
-                    <button
-                      key={type.id}
-                      type="button"
-                      onClick={() => handlePick(type)}
-                      disabled={!type.enabled}
-                      style={{
-                        background: type.enabled
-                          ? hexWithAlpha(type.color, 0.06)
-                          : 'rgba(255, 255, 255, 0.02)',
-                        border: type.enabled
-                          ? `1px solid ${hexWithAlpha(type.color, 0.2)}`
-                          : '1px solid rgba(255, 255, 255, 0.05)',
-                        borderRadius: 10,
-                        padding: '14px 8px',
-                        textAlign: 'center',
-                        cursor: type.enabled ? 'pointer' : 'not-allowed',
-                        opacity: type.enabled ? 1 : 0.45,
-                        transition: 'background 0.15s, border-color 0.15s',
-                      }}
-                    >
-                      <div style={{ color: type.enabled ? type.color : 'rgba(255, 255, 255, 0.4)', marginBottom: 6, display: 'flex', justifyContent: 'center' }}>
-                        {type.icon}
-                      </div>
-                      <div style={{
-                        color: type.enabled ? type.color : 'rgba(255, 255, 255, 0.4)',
-                        fontSize: '0.65rem',
-                        fontWeight: 700,
-                        letterSpacing: '0.02em',
-                      }}>
-                        {type.label}
-                      </div>
-                      <div style={{
-                        color: type.enabled ? hexWithAlpha(type.color, 0.4) : 'rgba(255, 255, 255, 0.2)',
-                        fontSize: '0.55rem',
-                        marginTop: 2,
-                      }}>
-                        {type.subtitle}
-                      </div>
-                    </button>
-                  ))}
+                  {WIDGET_TYPES.map((type) => {
+                    const isSelected = selectedId === type.id;
+                    const isDisabled = !type.enabled;
+                    return (
+                      <button
+                        key={type.id}
+                        type="button"
+                        onClick={() => handlePick(type)}
+                        disabled={isDisabled || (!!selectedId && !isSelected)}
+                        style={{
+                          background: isSelected
+                            ? hexWithAlpha(type.color, 0.1)
+                            : 'rgba(255, 255, 255, 0.02)',
+                          border: isSelected
+                            ? `1px solid ${hexWithAlpha(type.color, 0.35)}`
+                            : '1px solid rgba(255, 255, 255, 0.05)',
+                          borderRadius: 10,
+                          padding: '14px 8px',
+                          textAlign: 'center',
+                          cursor: isDisabled ? 'not-allowed' : 'pointer',
+                          opacity: isDisabled ? 0.45 : 1,
+                          transition: 'background 0.18s, border-color 0.18s, color 0.18s',
+                        }}
+                      >
+                        <div style={{
+                          color: isSelected ? type.color : 'rgba(255, 255, 255, 0.45)',
+                          marginBottom: 6,
+                          display: 'flex',
+                          justifyContent: 'center',
+                          transition: 'color 0.18s',
+                        }}>
+                          {type.icon}
+                        </div>
+                        <div style={{
+                          color: isSelected ? type.color : 'rgba(255, 255, 255, 0.5)',
+                          fontSize: '0.65rem',
+                          fontWeight: 700,
+                          letterSpacing: '0.02em',
+                          transition: 'color 0.18s',
+                        }}>
+                          {type.label}
+                        </div>
+                        <div style={{
+                          color: isSelected ? hexWithAlpha(type.color, 0.45) : 'rgba(255, 255, 255, 0.25)',
+                          fontSize: '0.55rem',
+                          marginTop: 2,
+                          transition: 'color 0.18s',
+                        }}>
+                          {type.subtitle}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </motion.div>
             ) : (
