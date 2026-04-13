@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useLocalStorage } from './useLocalStorage';
+import { randomId } from '@/lib/randomId';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -73,7 +74,7 @@ export function useHabits() {
   const addHabit = useCallback(
     (name: string, color: string): Habit => {
       const habit: Habit = {
-        id: crypto.randomUUID(),
+        id: randomId(),
         name,
         color,
         completedDays: [],

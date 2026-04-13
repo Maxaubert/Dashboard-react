@@ -2,16 +2,10 @@ import { useCallback } from 'react';
 import { useLinks, useSaveLinks } from './useLinks';
 import type { Category, LinkItem, LinksEnvelope } from '@/api/types';
 import { FAVORITES_CATEGORY_ID, OTHER_CATEGORY_ID } from '@/api/types';
+import { randomId } from '@/lib/randomId';
 
-/**
- * Generate a stable id for a new user category. Uses crypto.randomUUID when
- * available (modern browsers + Node 19+) and falls back to a timestamp suffix.
- */
 function generateCategoryId(): string {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return `cat_${crypto.randomUUID()}`;
-  }
-  return `cat_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  return `cat_${randomId()}`;
 }
 
 /** Next available order value: 10 units higher than the current max (excluding __other). */

@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useLocalStorage } from './useLocalStorage';
+import { randomId } from '@/lib/randomId';
 
 export type WidgetType = 'habit' | 'countdown' | 'pomodoro' | 'stopwatch';
 
@@ -16,7 +17,7 @@ export function useWidgets() {
 
   const addWidget = useCallback(
     (type: WidgetType, refId: string): Widget => {
-      const widget: Widget = { id: crypto.randomUUID(), type, refId };
+      const widget: Widget = { id: randomId(), type, refId };
       setWidgets((prev) => [...prev, widget]);
       return widget;
     },
