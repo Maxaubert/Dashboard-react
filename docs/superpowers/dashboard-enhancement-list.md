@@ -2,13 +2,13 @@
 
 Prioritized list of upcoming enhancements for the dashboard-react project.
 
-## 1. Timer/Pomodoro Section Remodel
+## 1. Timer/Pomodoro Section Remodel ✅ DONE
 **Type:** Remodel existing (`/tools/timer`)
-Full redesign of the timer tool to include pomodoro (25/5/15 intervals), stopwatch, and countdown in a unified section. Session tracking, daily stats.
+Full redesign: split 749-line monolith into focused components, thick glowing ring with framer-motion, animated pill toggle between Countdown/Stopwatch/Pomodoro, segmented ring for pomodoro sessions, click-to-edit time (no more +/- buttons), inline settings.
 
-## 2. Habit Tracker
-**Type:** New page
-Dedicated habit tracker page with weekly grid, streaks, GitHub-style contribution heatmap for monthly view. Custom habits with color-coded categories.
+## 2. Habit Tracker ✅ DONE
+**Type:** Home widget (generalized widget system)
+Shipped as a home-page widget. Each habit is a card with a monthly top-left-aligned grid and streak counter. Widgets share a row, wrap, and are added via an icon-grid popup (unified framework for future widget types — timer, todo, weather, clock, stats).
 
 ## 3. Todo Remodel (Deadlines + Urgency)
 **Type:** Remodel existing (`/todo`)
@@ -23,8 +23,8 @@ Replace or enhance the current contenteditable editor with markdown editing and 
 Real-time scores for followed teams/events on the Sport page. Auto-updating without refresh.
 
 ## 6. Home: Active Widgets Only
-**Type:** Enhance existing (`/`)
-Show habit tracker widget and pomodoro/timer widget on the home page ONLY when they are actively in use. Hidden otherwise — no permanent clutter.
+**Type:** Enhance existing (`/`) — partially covered by #2
+The widget framework from #2 already supports this for habits. Remaining scope: build a **Timer widget** that appears in the Widgets section only when a pomodoro is actively running (and optionally other "status" widgets that auto-hide).
 
 ## 7. Visual Remodelling of Dashboard
 **Type:** Visual overhaul (all pages)
