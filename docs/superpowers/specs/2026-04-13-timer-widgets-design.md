@@ -69,30 +69,33 @@ interface PomodoroTimer extends BaseTimer {
 
 ```typescript
 interface TimerContextValue {
-  timers: TimerInstance[];
+  timers: TimerInstance[];              // always exactly three, one per kind
 
-  // Lifecycle
-  ensureTimer(kind, color?): TimerInstance;  // idempotent — returns existing of that kind or creates one
-  addPersistentTimer(kind, color): TimerInstance;  // always creates new; marks persistent=true
-  removeTimer(id): void;
-  updateColor(id, color): void;
+  // Getters (by kind since there's one of each)
+  getTimer<K extends TimerInstance['kind']>(kind: K): Extract<TimerInstance, { kind: K }>;
 
-  // Countdown/Pomodoro-specific
-  setCountdownTime(id, ms): void;
-  setCountdownRunning(id, running: boolean): void;
-  resetCountdown(id): void;
+  // Persistence toggle — user manually adds/removes a timer as a persistent widget
+  setPersistent(kind, persistent: boolean): void;
+  setColor(kind, color: string): void;
 
-  // Stopwatch-specific
-  setStopwatchRunning(id, running: boolean): void;
-  addStopwatchLap(id): void;
-  resetStopwatch(id): void;
+  // Countdown
+  setCountdownTime(ms: number): void;
+  setCountdownRunning(running: boolean): void;
+  resetCountdown(): void;
 
-  // Pomodoro-specific
-  setPomodoroRunning(id, running: boolean): void;
-  resetPomodoro(id): void;
-  updatePomodoroSettings(id, settings): void;
+  // Stopwatch
+  setStopwatchRunning(running: boolean): void;
+  addStopwatchLap(): void;
+  resetStopwatch(): void;
+
+  // Pomodoro
+  setPomodoroRunning(running: boolean): void;
+  resetPomodoro(): void;
+  updatePomodoroSettings(settings: { focusMin: number; pauseMin: number; targetCycles: number }): void;
 }
 ```
+
+All kind-specific methods take no `id` because there's exactly one timer per kind. The context bootstraps three default timers on mount if localStorage is empty.
 
 **Ticker:** One `useEffect` in the provider schedules a 100ms interval that updates `remainingMs`/`elapsedMs` for all running timers. Matches the existing delta-tracking pattern (`performance.now()`).
 
@@ -100,7 +103,9 @@ interface TimerContextValue {
 
 ### Rewrite Tool Pages
 
-`CountdownMode.tsx`, `StopwatchMode.tsx`, `PomodoroMode.tsx` become thin views that read/write via `useTimers()`. The `useCountdown`/`useStopwatch` hooks in `src/hooks/useTimer.ts` go away — their logic moves into `TimerContext`.
+`CountdownMode.tsx`, `StopwatchMode.tsx`, `PomodoroMode.tsx` become thin views that read/write via `useTimers()` from context. The `useCountdown`/`useStopwatch` hooks inside `src/hooks/useTimer.ts` go away — their state logic moves into `TimerContext`. The utility exports from that file (`formatHMS`, `formatStopwatch`, `parseTimeString`, `playAlarm`, `notify`) stay as-is and are used by both the context and the components.
+
+`ToolTimerPage.tsx` keeps the same pill toggle and `AnimatePresence` between modes. Each mode renders the full-size ring for its kind, reading state from context.
 
 The key insight: all views (`/tools/timer`, widget, popup overlay) render the same `TimerInstance` — they just differ in chrome.
 
@@ -224,10 +229,14 @@ Clicking a widget opens a Radix Dialog overlay. The user stays on `/`.
 - Centered, max-width ~320px, padding 24px
 - Border + subtle glow in the timer's accent color
 - Close button (X) top-right
-- Content: mirrors the tool page view for that kind
-  - Thick glowing ring (160px diameter — smaller than tool page 300px, but same style)
-  - Editable time (click to edit, for countdown + pomodoro)
-  - Circular play/pause + reset buttons (same style as tool page controls)
+- Content: mirrors the tool page view for that kind, but with a smaller ring
+
+The existing `TimerRing` component gains an optional `size` prop (default 300 for the tool page, 160 for the popup). Cell sizes, stroke width, glow intensity scale proportionally.
+
+Popup content:
+  - `TimerRing` at 160px
+  - Editable time (click to edit, for countdown + pomodoro) — reuses the existing inline editor
+  - Circular play/pause + reset buttons — reuses existing `TimerControls` variants
   - For pomodoro: segmented ring + phase label + 3 inline settings fields
   - For stopwatch: lap button + animated lap list below
 
@@ -241,14 +250,16 @@ Clicking a widget opens a Radix Dialog overlay. The user stays on `/`.
 Current flow:
 1. Click "+" → pick widget type → (for habit) configure name+color → create
 
-New flow includes timers:
-1. Click "+" → pick widget type
-2. Branch:
-   - **Habit** → configure name+color (existing)
-   - **Timer** → pick subtype (Countdown / Pomodoro / Stopwatch) → pick color → create
-3. All enabled widget tiles now: Habit, Countdown, Pomodoro, Stopwatch (no longer "soon" on timer-related tiles)
+New flow: four tiles at stage 1 — Habit, Countdown, Pomodoro, Stopwatch (flatten the subtypes as top-level tiles, no intermediate Timer category).
 
-The existing `AddWidgetDialog` gets a new `stage: 'configure-timer'` with a Timer subtype picker (three icon tiles matching the three designs) followed by the same 7-color palette.
+1. Click "+" → pick tile (4 enabled, rest "soon")
+2. Next stage:
+   - **Habit** → existing name+color form → create
+   - **Countdown / Pomodoro / Stopwatch** → color palette only (no name field) → create
+
+The existing `AddWidgetDialog` gets a new `stage: 'configure-timer'` with just the 7-color palette + a Create button. The user's color choice calls `setColor(kind, color)` then `setPersistent(kind, true)`.
+
+If a timer of that kind is already persistent, the tile shows as disabled ("already added") with a hint to use the existing one.
 
 ## Persistence
 
