@@ -1,18 +1,22 @@
 import { useState, useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Calendar, Clock, CheckSquare, Cloud, BarChart3, Timer, X, ChevronLeft } from 'lucide-react';
+import { Calendar, Clock, Watch, CheckSquare, Cloud, BarChart3, Timer, X, ChevronLeft } from 'lucide-react';
 
-type Stage = 'pick' | 'configure-habit';
+type Stage = 'pick' | 'configure-habit' | 'pick-timer-kind';
 
 interface AddWidgetDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreateHabit: (name: string, color: string) => void;
+  onCreateTimerWidget: (kind: 'countdown' | 'pomodoro' | 'stopwatch', color: string) => void;
 }
 
+type WidgetTypeId = 'habit' | 'timer' | 'weather' | 'todo' | 'stats';
+type TimerKindId = 'countdown' | 'pomodoro' | 'stopwatch';
+
 interface WidgetType {
-  id: 'habit' | 'timer' | 'todo' | 'weather' | 'clock' | 'stats';
+  id: WidgetTypeId;
   label: string;
   subtitle: string;
   icon: React.ReactNode;
@@ -22,49 +26,71 @@ interface WidgetType {
 
 const WIDGET_TYPES: WidgetType[] = [
   { id: 'habit', label: 'Habit', subtitle: 'tracker', icon: <Calendar size={20} />, color: '#34d399', enabled: true },
-  { id: 'timer', label: 'Timer', subtitle: 'soon', icon: <Timer size={20} />, color: '#ef4444', enabled: false },
-  { id: 'todo', label: 'Todo', subtitle: 'soon', icon: <CheckSquare size={20} />, color: '#ec4899', enabled: false },
+  { id: 'timer', label: 'Timer', subtitle: 'all 3 kinds', icon: <Timer size={20} />, color: '#ef4444', enabled: true },
   { id: 'weather', label: 'Weather', subtitle: 'soon', icon: <Cloud size={20} />, color: '#38bdf8', enabled: false },
-  { id: 'clock', label: 'Clock', subtitle: 'soon', icon: <Clock size={20} />, color: '#a855f7', enabled: false },
+  { id: 'todo', label: 'Todo', subtitle: 'soon', icon: <CheckSquare size={20} />, color: '#ec4899', enabled: false },
   { id: 'stats', label: 'Stats', subtitle: 'soon', icon: <BarChart3 size={20} />, color: '#f59e0b', enabled: false },
 ];
 
-const PRESET_COLORS = ['#34d399', '#a855f7', '#38bdf8', '#f97316', '#eab308', '#ef4444', '#ec4899'];
+interface TimerKind {
+  id: TimerKindId;
+  label: string;
+  icon: React.ReactNode;
+  color: string;
+}
 
-export function AddWidgetDialog({ open, onOpenChange, onCreateHabit }: AddWidgetDialogProps) {
+const TIMER_KINDS: TimerKind[] = [
+  { id: 'countdown', label: 'Countdown', icon: <Timer size={20} />, color: '#ef4444' },
+  { id: 'pomodoro', label: 'Pomodoro', icon: <Clock size={20} />, color: '#34d399' },
+  { id: 'stopwatch', label: 'Stopwatch', icon: <Watch size={20} />, color: '#22d3ee' },
+];
+
+const HABIT_PRESET_COLORS = ['#34d399', '#a855f7', '#38bdf8', '#f97316', '#eab308', '#ef4444', '#ec4899'];
+
+export function AddWidgetDialog({ open, onOpenChange, onCreateHabit, onCreateTimerWidget }: AddWidgetDialogProps) {
   const [stage, setStage] = useState<Stage>('pick');
   const [name, setName] = useState('');
-  const [color, setColor] = useState(PRESET_COLORS[0]);
-  const [selectedId, setSelectedId] = useState<WidgetType['id'] | null>(null);
+  const [color, setColor] = useState(HABIT_PRESET_COLORS[0]);
+  const [selectedId, setSelectedId] = useState<WidgetTypeId | null>(null);
+  const [selectedKindId, setSelectedKindId] = useState<TimerKindId | null>(null);
 
-  // Reset stage when dialog closes
+  // Reset on close
   useEffect(() => {
     if (!open) {
       const t = setTimeout(() => {
         setStage('pick');
         setName('');
-        setColor(PRESET_COLORS[0]);
+        setColor(HABIT_PRESET_COLORS[0]);
         setSelectedId(null);
+        setSelectedKindId(null);
       }, 200);
       return () => clearTimeout(t);
     }
   }, [open]);
 
-  function handlePick(type: WidgetType) {
+  // Clear selection when returning to a "pick" stage so tiles are reselectable
+  useEffect(() => {
+    if (stage === 'pick') setSelectedId(null);
+    if (stage === 'pick-timer-kind') setSelectedKindId(null);
+  }, [stage]);
+
+  function handlePickWidget(type: WidgetType) {
     if (!type.enabled || selectedId) return;
     setSelectedId(type.id);
-    // Brief delay to show selection feedback, then advance
     setTimeout(() => {
-      if (type.id === 'habit') {
-        setStage('configure-habit');
-      }
+      if (type.id === 'habit') setStage('configure-habit');
+      else if (type.id === 'timer') setStage('pick-timer-kind');
     }, 450);
   }
 
-  // Clear selection when returning to the pick stage so tiles are reselectable
-  useEffect(() => {
-    if (stage === 'pick') setSelectedId(null);
-  }, [stage]);
+  function handlePickTimerKind(kind: TimerKind) {
+    if (selectedKindId) return;
+    setSelectedKindId(kind.id);
+    setTimeout(() => {
+      onCreateTimerWidget(kind.id, kind.color);
+      onOpenChange(false);
+    }, 450);
+  }
 
   function handleCreateHabit(e: React.FormEvent) {
     e.preventDefault();
@@ -102,7 +128,7 @@ export function AddWidgetDialog({ open, onOpenChange, onCreateHabit }: AddWidget
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {stage === 'configure-habit' && (
+              {stage !== 'pick' && (
                 <button
                   type="button"
                   onClick={() => setStage('pick')}
@@ -121,7 +147,10 @@ export function AddWidgetDialog({ open, onOpenChange, onCreateHabit }: AddWidget
                 </button>
               )}
               <Dialog.Title style={{ color: '#fff', fontSize: '0.92rem', fontWeight: 700, margin: 0 }}>
-                {stage === 'pick' ? 'Add widget' : 'Habit tracker'}
+                {stage === 'pick' ? 'Add widget'
+                  : stage === 'configure-habit' ? 'Habit tracker'
+                  : stage === 'pick-timer-kind' ? 'Timer'
+                  : ''}
               </Dialog.Title>
             </div>
             <Dialog.Close asChild>
@@ -145,7 +174,7 @@ export function AddWidgetDialog({ open, onOpenChange, onCreateHabit }: AddWidget
 
           {/* Stage content */}
           <AnimatePresence mode="wait" initial={false}>
-            {stage === 'pick' ? (
+            {stage === 'pick' && (
               <motion.div
                 key="pick"
                 initial={{ opacity: 0, x: -10 }}
@@ -161,12 +190,10 @@ export function AddWidgetDialog({ open, onOpenChange, onCreateHabit }: AddWidget
                       <button
                         key={type.id}
                         type="button"
-                        onClick={() => handlePick(type)}
+                        onClick={() => handlePickWidget(type)}
                         disabled={isDisabled || (!!selectedId && !isSelected)}
                         style={{
-                          background: isSelected
-                            ? hexWithAlpha(type.color, 0.1)
-                            : 'rgba(255, 255, 255, 0.02)',
+                          background: isSelected ? hexWithAlpha(type.color, 0.1) : 'rgba(255, 255, 255, 0.02)',
                           border: isSelected
                             ? `1px solid ${hexWithAlpha(type.color, 0.35)}`
                             : '1px solid rgba(255, 255, 255, 0.05)',
@@ -209,9 +236,74 @@ export function AddWidgetDialog({ open, onOpenChange, onCreateHabit }: AddWidget
                   })}
                 </div>
               </motion.div>
-            ) : (
+            )}
+
+            {stage === 'pick-timer-kind' && (
+              <motion.div
+                key="pick-timer-kind"
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+                transition={{ duration: 0.15 }}
+              >
+                <div style={{
+                  color: 'rgba(255, 255, 255, 0.35)',
+                  fontSize: '0.6rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.10em',
+                  marginBottom: 10,
+                }}>
+                  Pick a kind
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                  {TIMER_KINDS.map((kind) => {
+                    const isSelected = selectedKindId === kind.id;
+                    return (
+                      <button
+                        key={kind.id}
+                        type="button"
+                        onClick={() => handlePickTimerKind(kind)}
+                        disabled={!!selectedKindId && !isSelected}
+                        style={{
+                          background: isSelected ? hexWithAlpha(kind.color, 0.1) : 'rgba(255, 255, 255, 0.02)',
+                          border: isSelected
+                            ? `1px solid ${hexWithAlpha(kind.color, 0.35)}`
+                            : '1px solid rgba(255, 255, 255, 0.05)',
+                          borderRadius: 10,
+                          padding: '14px 8px',
+                          textAlign: 'center',
+                          cursor: 'pointer',
+                          transition: 'background 0.18s, border-color 0.18s, color 0.18s',
+                        }}
+                      >
+                        <div style={{
+                          color: isSelected ? kind.color : 'rgba(255, 255, 255, 0.45)',
+                          marginBottom: 6,
+                          display: 'flex',
+                          justifyContent: 'center',
+                          transition: 'color 0.18s',
+                        }}>
+                          {kind.icon}
+                        </div>
+                        <div style={{
+                          color: isSelected ? kind.color : 'rgba(255, 255, 255, 0.5)',
+                          fontSize: '0.65rem',
+                          fontWeight: 700,
+                          letterSpacing: '0.02em',
+                          transition: 'color 0.18s',
+                        }}>
+                          {kind.label}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+
+            {stage === 'configure-habit' && (
               <motion.form
-                key="configure"
+                key="configure-habit"
                 initial={{ opacity: 0, x: 10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 10 }}
@@ -264,7 +356,7 @@ export function AddWidgetDialog({ open, onOpenChange, onCreateHabit }: AddWidget
                     Color
                   </label>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    {PRESET_COLORS.map((c) => (
+                    {HABIT_PRESET_COLORS.map((c) => (
                       <button
                         key={c}
                         type="button"

@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'node:path';
@@ -56,5 +56,10 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+  },
+  // Only pick up *.vitest.ts files. Several pre-existing *.test.ts files use
+  // a custom tsx-based runner (process.exit) and aren't vitest-compatible.
+  test: {
+    include: ['src/**/*.vitest.ts'],
   },
 });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import {
   DndContext,
@@ -21,6 +21,11 @@ import { useHabits } from '@/hooks/useHabits';
 import { useWidgets, type Widget } from '@/hooks/useWidgets';
 import { HabitWidget } from './HabitWidget';
 import { AddWidgetDialog } from './AddWidgetDialog';
+import { CountdownWidget } from './timers/CountdownWidget';
+import { PomodoroWidget } from './timers/PomodoroWidget';
+import { StopwatchWidget } from './timers/StopwatchWidget';
+import { TimerPopup } from './timers/TimerPopup';
+import { useTimers, type TimerInstance } from '@/context/TimerContext';
 
 type HandleProps = Record<string, unknown>;
 
@@ -43,6 +48,8 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
   const { habits, addHabit, updateHabit, removeHabit, toggleDay } = useHabits();
   const { widgets, addWidget, removeWidgetByRefId, reorderWidgets } = useWidgets();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const ctx = useTimers();
+  const [popupKind, setPopupKind] = useState<TimerInstance['kind'] | null>(null);
 
   const hasWidgets = widgets.length > 0;
   const habitMap = new Map(habits.map((h) => [h.id, h]));
@@ -59,6 +66,12 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
     addWidget('habit', habit.id);
   }
 
+  function handleAddTimerWidget(kind: 'countdown' | 'pomodoro' | 'stopwatch', color: string) {
+    ctx.setColor(kind, color);
+    ctx.setPersistent(kind, true);
+    // The auto-sync effect below will add the widget automatically.
+  }
+
   function handleRemoveHabit(habitId: string) {
     removeHabit(habitId);
     removeWidgetByRefId(habitId);
@@ -72,6 +85,46 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
     if (oldIdx < 0 || newIdx < 0) return;
     reorderWidgets(arrayMove(widgets, oldIdx, newIdx));
   }
+
+  // Auto-sync: for each timer, ensure there's a widget when it should be visible,
+  // and remove it when it shouldn't.
+  useEffect(() => {
+    const now = Date.now();
+    for (const t of ctx.timers) {
+      const existingWidget = widgets.find((w) => w.type === t.kind && w.refId === t.kind);
+      const hasState =
+        (t.kind === 'countdown' && (t.remainingMs < t.totalMs && t.remainingMs > 0)) ||
+        (t.kind === 'stopwatch' && t.elapsedMs > 0) ||
+        (t.kind === 'pomodoro' && t.cycle > 0);
+      const inZeroGrace = t.zeroedAt !== null && now - t.zeroedAt < 60_000;
+      const shouldShow = t.persistent || t.running || inZeroGrace || hasState;
+
+      if (shouldShow && !existingWidget) {
+        addWidget(t.kind, t.kind);
+      } else if (!shouldShow && existingWidget) {
+        removeWidgetByRefId(t.kind);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ctx.timers]);
+
+  // Schedule re-evaluation 60s after a timer zeroes so the widget auto-hides.
+  useEffect(() => {
+    const timeouts: number[] = [];
+    for (const t of ctx.timers) {
+      if (t.persistent) continue;
+      if (t.zeroedAt === null) continue;
+      const elapsed = Date.now() - t.zeroedAt;
+      const remaining = 60_000 - elapsed;
+      if (remaining <= 0) continue;
+      const id = window.setTimeout(() => {
+        removeWidgetByRefId(t.kind);
+      }, remaining);
+      timeouts.push(id);
+    }
+    return () => timeouts.forEach((id) => window.clearTimeout(id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ctx.timers]);
 
   return (
     <>
@@ -135,7 +188,12 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
         onCreateHabit={handleAddHabit}
+        onCreateTimerWidget={handleAddTimerWidget}
       />
+
+      {popupKind && (
+        <TimerPopup open={true} onOpenChange={(o) => !o && setPopupKind(null)} kind={popupKind} />
+      )}
     </>
   );
 
@@ -149,6 +207,39 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
           onToggleDay={(date) => toggleDay(habit.id, date)}
           onUpdate={(patch) => updateHabit(habit.id, patch)}
           onRemove={() => handleRemoveHabit(habit.id)}
+        />
+      );
+    }
+    if (w.type === 'countdown') {
+      const t = ctx.getTimer('countdown');
+      return (
+        <CountdownWidget
+          timer={t}
+          onClick={() => setPopupKind('countdown')}
+          onRemove={() => ctx.setPersistent('countdown', false)}
+          onColorChange={(c) => ctx.setColor('countdown', c)}
+        />
+      );
+    }
+    if (w.type === 'pomodoro') {
+      const t = ctx.getTimer('pomodoro');
+      return (
+        <PomodoroWidget
+          timer={t}
+          onClick={() => setPopupKind('pomodoro')}
+          onRemove={() => ctx.setPersistent('pomodoro', false)}
+          onColorChange={(c) => ctx.setColor('pomodoro', c)}
+        />
+      );
+    }
+    if (w.type === 'stopwatch') {
+      const t = ctx.getTimer('stopwatch');
+      return (
+        <StopwatchWidget
+          timer={t}
+          onClick={() => setPopupKind('stopwatch')}
+          onRemove={() => ctx.setPersistent('stopwatch', false)}
+          onColorChange={(c) => ctx.setColor('stopwatch', c)}
         />
       );
     }
@@ -179,3 +270,4 @@ function SortableWidget({ widget, children }: { widget: Widget; children: React.
     </div>
   );
 }
+

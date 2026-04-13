@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import * as ContextMenu from '@radix-ui/react-context-menu';
 import { calcStreak, type Habit } from '@/hooks/useHabits';
 import { HabitGrid } from './HabitGrid';
 import { AddHabitModal } from './AddHabitModal';
+import { WidgetShell } from './WidgetShell';
 
 interface HabitWidgetProps {
   habit: Habit;
@@ -19,67 +19,25 @@ export function HabitWidget({ habit, onToggleDay, onUpdate, onRemove }: HabitWid
 
   return (
     <>
-      <ContextMenu.Root>
-        <ContextMenu.Trigger asChild>
-          <motion.div
-            layout
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            style={{
-              background: hexWithAlpha(habit.color, 0.015),
-              border: `1px solid ${hexWithAlpha(habit.color, 0.1)}`,
-              borderRadius: 14,
-              padding: '12px 10px',
-              // Fixed width so sibling widgets and the "+" card all align.
-              width: 164,
-              boxSizing: 'border-box',
-              boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.018), 0 1px 2px rgba(0, 0, 0, 0.4)',
-              position: 'relative',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <span style={{ color: 'rgba(255, 255, 255, 0.85)', fontSize: '0.78rem', fontWeight: 700 }}>
-                {habit.name}
-              </span>
-              {streak > 0 && (
-                <span style={{ color: '#f59e0b', fontSize: '0.65rem', fontWeight: 700, marginLeft: 'auto' }}>
-                  🔥 {streak}
-                </span>
-              )}
-            </div>
-
-            <HabitGrid habit={habit} onToggle={onToggleDay} />
-          </motion.div>
-        </ContextMenu.Trigger>
-        <ContextMenu.Portal>
-          <ContextMenu.Content
-            style={{
-              background: '#0a0a0a',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: 8,
-              padding: 4,
-              minWidth: 140,
-              zIndex: 50,
-              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.5)',
-            }}
-          >
-            <ContextMenu.Item
-              onSelect={() => setEditOpen(true)}
-              style={{ padding: '6px 10px', color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.78rem', cursor: 'pointer', borderRadius: 4, outline: 'none' }}
-            >
-              Edit
-            </ContextMenu.Item>
-            <ContextMenu.Item
-              onSelect={() => setConfirmRemove(true)}
-              style={{ padding: '6px 10px', color: '#ef4444', fontSize: '0.78rem', cursor: 'pointer', borderRadius: 4, outline: 'none' }}
-            >
-              Remove
-            </ContextMenu.Item>
-          </ContextMenu.Content>
-        </ContextMenu.Portal>
-      </ContextMenu.Root>
+      <WidgetShell
+        menu={[
+          { label: 'Edit', onSelect: () => setEditOpen(true) },
+          { label: 'Remove', onSelect: () => setConfirmRemove(true), destructive: true },
+        ]}
+        style={{ position: 'relative', minHeight: undefined }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <span style={{ color: 'rgba(255, 255, 255, 0.85)', fontSize: '0.78rem', fontWeight: 700 }}>
+            {habit.name}
+          </span>
+          {streak > 0 && (
+            <span style={{ color: '#f59e0b', fontSize: '0.65rem', fontWeight: 700, marginLeft: 'auto' }}>
+              🔥 {streak}
+            </span>
+          )}
+        </div>
+        <HabitGrid habit={habit} onToggle={onToggleDay} />
+      </WidgetShell>
 
       <AddHabitModal
         open={editOpen}
@@ -151,12 +109,4 @@ export function HabitWidget({ habit, onToggleDay, onUpdate, onRemove }: HabitWid
       </AnimatePresence>
     </>
   );
-}
-
-function hexWithAlpha(hex: string, alpha: number): string {
-  const h = hex.replace('#', '');
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }

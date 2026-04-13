@@ -60,40 +60,56 @@ export function parseTimeString(s: string): number | null {
  * Play a short two-beep alarm via Web Audio. Avoids needing an audio
  * file in /public — synth-generated tones are good enough for an alarm.
  */
-export function playAlarm() {
+/**
+ * Play a short sequence of sine-wave beeps. Each beep is `[frequency_hz, dur_s]`.
+ * Beeps play sequentially, each starting 0.22s after the previous one.
+ */
+const ALARM_REPEATS = 3;
+const ALARM_REPEAT_GAP_S = 0.35;
+
+function playBeepSequence(beeps: Array<[number, number]>, repeats = ALARM_REPEATS) {
   try {
     const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     const ctx = new Ctx();
-    const beep = (freq: number, start: number, dur: number) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.value = freq;
-      osc.type = 'sine';
-      gain.gain.setValueAtTime(0, ctx.currentTime + start);
-      gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + start + 0.02);
-      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + start + dur);
-      osc.start(ctx.currentTime + start);
-      osc.stop(ctx.currentTime + start + dur + 0.05);
-    };
-    beep(880, 0, 0.15);
-    beep(1175, 0.22, 0.2);
+    // Duration of a single pass so we can space the repeats cleanly.
+    const passDuration = beeps.length * 0.22;
+    let offset = 0;
+    for (let r = 0; r < repeats; r++) {
+      for (const [freq, dur] of beeps) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = freq;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0, ctx.currentTime + offset);
+        gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + offset + 0.02);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + offset + dur);
+        osc.start(ctx.currentTime + offset);
+        osc.stop(ctx.currentTime + offset + dur + 0.05);
+        offset += 0.22;
+      }
+      // Gap between repeats, measured from the start of the current pass.
+      offset = (r + 1) * (passDuration + ALARM_REPEAT_GAP_S);
+    }
   } catch {
     /* audio context blocked — fail silently */
   }
 }
 
-/** Best-effort browser notification. Requests permission lazily. */
-export function notify(title: string, body: string) {
-  if (!('Notification' in window)) return;
-  if (Notification.permission === 'granted') {
-    new Notification(title, { body });
-  } else if (Notification.permission !== 'denied') {
-    Notification.requestPermission().then((perm) => {
-      if (perm === 'granted') new Notification(title, { body });
-    });
-  }
+/** Generic two-tone rising alarm for countdown/timer end. */
+export function playAlarm() {
+  playBeepSequence([[880, 0.15], [1175, 0.2]]);
+}
+
+/** Warm two-tone alarm for pomodoro focus-end (entering break). Lower, gentler. */
+export function playFocusEndAlarm() {
+  playBeepSequence([[660, 0.2], [523, 0.3]]);
+}
+
+/** Energetic three-tone alarm for pomodoro break-end (back to focus). */
+export function playBreakEndAlarm() {
+  playBeepSequence([[784, 0.12], [988, 0.12], [1318, 0.2]]);
 }
 
 /* ──────────────────────────────────────────────────────────────────────── */

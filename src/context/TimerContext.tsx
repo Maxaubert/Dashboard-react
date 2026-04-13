@@ -1,0 +1,404 @@
+import {
+  createContext,
+  useContext,
+  useReducer,
+  useEffect,
+  useRef,
+  type ReactNode,
+} from 'react';
+import { playAlarm, playFocusEndAlarm, playBreakEndAlarm } from '@/hooks/useTimer';
+
+/* ── Types ──────────────────────────────────────────────────────────── */
+
+export interface BaseTimer {
+  id: string;
+  kind: 'countdown' | 'stopwatch' | 'pomodoro';
+  color: string;
+  /** User manually added a widget for this timer — stays past zero. */
+  persistent: boolean;
+}
+
+export interface CountdownTimer extends BaseTimer {
+  kind: 'countdown';
+  totalMs: number;
+  remainingMs: number;
+  running: boolean;
+  /** performance.now() when the current run started; null if paused. */
+  startedAt: number | null;
+  /** Date.now() when remainingMs first hit 0. Used for the 60s-to-hide rule. */
+  zeroedAt: number | null;
+}
+
+export interface StopwatchTimer extends BaseTimer {
+  kind: 'stopwatch';
+  elapsedMs: number;
+  laps: number[];
+  running: boolean;
+  startedAt: number | null;
+  zeroedAt: number | null;
+}
+
+export interface PomodoroSettings {
+  focusMin: number;
+  pauseMin: number;
+  targetCycles: number;
+}
+
+export interface PomodoroTimer extends BaseTimer {
+  kind: 'pomodoro';
+  settings: PomodoroSettings;
+  phase: 'focus' | 'pause';
+  cycle: number;
+  totalMs: number;
+  remainingMs: number;
+  running: boolean;
+  startedAt: number | null;
+  zeroedAt: number | null;
+  /** Overrides for custom clock-input durations; persist across cycles.
+   *  Cleared when the corresponding setting is changed via the settings box,
+   *  or on reset. */
+  focusOverrideMs: number | null;
+  pauseOverrideMs: number | null;
+}
+
+export type TimerInstance = CountdownTimer | StopwatchTimer | PomodoroTimer;
+
+/* ── Defaults ───────────────────────────────────────────────────────── */
+
+export const POMODORO_MINUTE_MS = 60_000;
+
+const DEFAULT_POMODORO: PomodoroSettings = { focusMin: 25, pauseMin: 5, targetCycles: 4 };
+
+export function clamp(n: number, min: number, max: number): number {
+  if (!Number.isFinite(n)) return min;
+  return Math.min(max, Math.max(min, Math.round(n)));
+}
+
+export function makeDefaults(): TimerInstance[] {
+  return [
+    {
+      id: 'countdown', kind: 'countdown', color: '#ef4444', persistent: false,
+      totalMs: 5 * 60_000, remainingMs: 5 * 60_000, running: false, startedAt: null, zeroedAt: null,
+    },
+    {
+      id: 'stopwatch', kind: 'stopwatch', color: '#22d3ee', persistent: false,
+      elapsedMs: 0, laps: [], running: false, startedAt: null, zeroedAt: null,
+    },
+    {
+      id: 'pomodoro', kind: 'pomodoro', color: '#34d399', persistent: false,
+      settings: { ...DEFAULT_POMODORO },
+      phase: 'focus', cycle: 0,
+      totalMs: DEFAULT_POMODORO.focusMin * POMODORO_MINUTE_MS, remainingMs: DEFAULT_POMODORO.focusMin * POMODORO_MINUTE_MS,
+      running: false, startedAt: null, zeroedAt: null,
+      focusOverrideMs: null, pauseOverrideMs: null,
+    },
+  ];
+}
+
+/* ── Actions ────────────────────────────────────────────────────────── */
+
+export type Action =
+  | { type: 'load'; timers: TimerInstance[] }
+  | { type: 'setPersistent'; kind: TimerInstance['kind']; persistent: boolean }
+  | { type: 'setColor'; kind: TimerInstance['kind']; color: string }
+  | { type: 'countdown/setTime'; ms: number }
+  | { type: 'countdown/setRunning'; running: boolean; now: number }
+  | { type: 'countdown/tick'; delta: number; now: number }
+  | { type: 'countdown/reset'; now: number }
+  | { type: 'stopwatch/setRunning'; running: boolean; now: number }
+  | { type: 'stopwatch/tick'; delta: number }
+  | { type: 'stopwatch/addLap' }
+  | { type: 'stopwatch/reset'; now: number }
+  | { type: 'pomodoro/setRunning'; running: boolean; now: number }
+  | { type: 'pomodoro/tick'; delta: number; now: number }
+  | { type: 'pomodoro/reset'; now: number }
+  | { type: 'pomodoro/advancePhase'; now: number }
+  | { type: 'pomodoro/updateSettings'; settings: PomodoroSettings }
+  | { type: 'pomodoro/setTime'; ms: number };
+
+export function reducer(state: TimerInstance[], action: Action): TimerInstance[] {
+  return state.map((t) => applyAction(t, action));
+}
+
+function applyAction(t: TimerInstance, a: Action): TimerInstance {
+  if (a.type === 'load') return a.timers.find((nt) => nt.kind === t.kind) ?? t;
+  if (a.type === 'setPersistent' && a.kind === t.kind) return { ...t, persistent: a.persistent };
+  if (a.type === 'setColor' && a.kind === t.kind) return { ...t, color: a.color };
+
+  if (t.kind === 'countdown') return reduceCountdown(t, a);
+  if (t.kind === 'stopwatch') return reduceStopwatch(t, a);
+  if (t.kind === 'pomodoro') return reducePomodoro(t, a);
+  return t;
+}
+
+function reduceCountdown(t: CountdownTimer, a: Action): CountdownTimer {
+  switch (a.type) {
+    case 'countdown/setTime':
+      return { ...t, totalMs: a.ms, remainingMs: a.ms, zeroedAt: null };
+    case 'countdown/setRunning':
+      if (a.running && t.remainingMs === 0) return t;
+      return { ...t, running: a.running, startedAt: a.running ? a.now : null };
+    case 'countdown/tick': {
+      if (!t.running) return t;
+      const next = Math.max(0, t.remainingMs - a.delta);
+      const zeroedAt = next === 0 && t.zeroedAt === null ? Date.now() : t.zeroedAt;
+      const running = next === 0 ? false : t.running;
+      return { ...t, remainingMs: next, running, zeroedAt, startedAt: running ? t.startedAt : null };
+    }
+    case 'countdown/reset':
+      return { ...t, remainingMs: t.totalMs, running: false, startedAt: null, zeroedAt: Date.now() };
+    default:
+      return t;
+  }
+}
+
+function reduceStopwatch(t: StopwatchTimer, a: Action): StopwatchTimer {
+  switch (a.type) {
+    case 'stopwatch/setRunning':
+      return { ...t, running: a.running, startedAt: a.running ? a.now : null, zeroedAt: null };
+    case 'stopwatch/tick':
+      if (!t.running) return t;
+      return { ...t, elapsedMs: t.elapsedMs + a.delta };
+    case 'stopwatch/addLap':
+      return { ...t, laps: [t.elapsedMs, ...t.laps] };
+    case 'stopwatch/reset':
+      return { ...t, elapsedMs: 0, laps: [], running: false, startedAt: null, zeroedAt: Date.now() };
+    default:
+      return t;
+  }
+}
+
+function reducePomodoro(t: PomodoroTimer, a: Action): PomodoroTimer {
+  switch (a.type) {
+    case 'pomodoro/setRunning':
+      return { ...t, running: a.running, startedAt: a.running ? a.now : null };
+    case 'pomodoro/tick': {
+      if (!t.running) return t;
+      const next = Math.max(0, t.remainingMs - a.delta);
+      if (next > 0) return { ...t, remainingMs: next };
+      return { ...t, remainingMs: 0, running: false, startedAt: null, zeroedAt: t.zeroedAt ?? Date.now() };
+    }
+    case 'pomodoro/advancePhase': {
+      if (t.phase === 'focus') {
+        const nextCycle = t.cycle + 1;
+        const pauseMs = t.pauseOverrideMs ?? t.settings.pauseMin * POMODORO_MINUTE_MS;
+        const focusMs = t.focusOverrideMs ?? t.settings.focusMin * POMODORO_MINUTE_MS;
+        if (nextCycle >= t.settings.targetCycles) {
+          return {
+            ...t, phase: 'focus', cycle: 0,
+            totalMs: focusMs,
+            remainingMs: focusMs,
+            running: false, startedAt: null, zeroedAt: Date.now(),
+          };
+        }
+        return {
+          ...t, phase: 'pause', cycle: nextCycle,
+          totalMs: pauseMs,
+          remainingMs: pauseMs,
+          running: true, startedAt: a.now, zeroedAt: null,
+        };
+      } else {
+        const focusMs = t.focusOverrideMs ?? t.settings.focusMin * POMODORO_MINUTE_MS;
+        return {
+          ...t, phase: 'focus',
+          totalMs: focusMs,
+          remainingMs: focusMs,
+          running: true, startedAt: a.now, zeroedAt: null,
+        };
+      }
+    }
+    case 'pomodoro/reset': {
+      // Reset clears any click-set overrides — start fresh from settings.
+      const focusMs = t.settings.focusMin * POMODORO_MINUTE_MS;
+      return {
+        ...t, phase: 'focus', cycle: 0,
+        totalMs: focusMs,
+        remainingMs: focusMs,
+        running: false, startedAt: null, zeroedAt: Date.now(),
+        focusOverrideMs: null, pauseOverrideMs: null,
+      };
+    }
+    case 'pomodoro/updateSettings': {
+      // Clamp each setting to a sane range so we don't render 100k ring
+      // segments or start a 9999-minute focus by accident.
+      const clamped: PomodoroSettings = {
+        focusMin: clamp(a.settings.focusMin, 1, 180),
+        pauseMin: clamp(a.settings.pauseMin, 1, 60),
+        targetCycles: clamp(a.settings.targetCycles, 1, 12),
+      };
+      const focusChanged = clamped.focusMin !== t.settings.focusMin;
+      const pauseChanged = clamped.pauseMin !== t.settings.pauseMin;
+      const baseMs = (t.phase === 'focus' ? clamped.focusMin : clamped.pauseMin) * POMODORO_MINUTE_MS;
+      const shouldReset = !t.running;
+      return {
+        ...t, settings: clamped,
+        totalMs: shouldReset ? baseMs : t.totalMs,
+        remainingMs: shouldReset ? baseMs : t.remainingMs,
+        focusOverrideMs: focusChanged ? null : t.focusOverrideMs,
+        pauseOverrideMs: pauseChanged ? null : t.pauseOverrideMs,
+      };
+    }
+    case 'pomodoro/setTime': {
+      // Direct ms override from clicking the clock face. Persists across
+      // phase transitions via focusOverrideMs / pauseOverrideMs — so a
+      // custom "30s" focus keeps being 30s on the next session.
+      return {
+        ...t,
+        totalMs: a.ms,
+        remainingMs: a.ms,
+        zeroedAt: null,
+        focusOverrideMs: t.phase === 'focus' ? a.ms : t.focusOverrideMs,
+        pauseOverrideMs: t.phase === 'pause' ? a.ms : t.pauseOverrideMs,
+      };
+    }
+    default:
+      return t;
+  }
+}
+
+/* ── Context ────────────────────────────────────────────────────────── */
+
+export interface TimerContextValue {
+  timers: TimerInstance[];
+  getTimer<K extends TimerInstance['kind']>(kind: K): Extract<TimerInstance, { kind: K }>;
+
+  setPersistent(kind: TimerInstance['kind'], persistent: boolean): void;
+  setColor(kind: TimerInstance['kind'], color: string): void;
+
+  setCountdownTime(ms: number): void;
+  setCountdownRunning(running: boolean): void;
+  resetCountdown(): void;
+
+  setStopwatchRunning(running: boolean): void;
+  addStopwatchLap(): void;
+  resetStopwatch(): void;
+
+  setPomodoroRunning(running: boolean): void;
+  resetPomodoro(): void;
+  updatePomodoroSettings(settings: PomodoroSettings): void;
+  setPomodoroTime(ms: number): void;
+}
+
+const TimerContext = createContext<TimerContextValue | null>(null);
+
+const STORAGE_KEY = 'home-timers-v3';
+
+export function TimerProvider({ children }: { children: ReactNode }) {
+  const [timers, dispatch] = useReducer(reducer, undefined, () => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return makeDefaults();
+      const parsed = JSON.parse(raw) as TimerInstance[];
+      return parsed.map((t) => {
+        const base = { ...t, running: false, startedAt: null };
+        if (base.kind === 'pomodoro') {
+          // Defensive clamp on load — older versions allowed any integer.
+          return {
+            ...base,
+            settings: {
+              focusMin: clamp(base.settings?.focusMin ?? 25, 1, 180),
+              pauseMin: clamp(base.settings?.pauseMin ?? 5, 1, 60),
+              targetCycles: clamp(base.settings?.targetCycles ?? 4, 1, 12),
+            },
+          };
+        }
+        return base;
+      });
+    } catch {
+      return makeDefaults();
+    }
+  });
+
+  const saveTimeoutRef = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    window.clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = window.setTimeout(() => {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(timers)); } catch { /* ignore */ }
+    }, 200);
+    return () => window.clearTimeout(saveTimeoutRef.current);
+  }, [timers]);
+
+  function getTimer<K extends TimerInstance['kind']>(kind: K): Extract<TimerInstance, { kind: K }> {
+    return timers.find((t) => t.kind === kind) as Extract<TimerInstance, { kind: K }>;
+  }
+
+  // ── Ticker: 100ms interval — decrements running countdown/pomodoro, increments stopwatch ──
+  const lastTickRef = useRef(performance.now());
+  useEffect(() => {
+    const anyRunning = timers.some((t) => t.running);
+    if (!anyRunning) {
+      lastTickRef.current = performance.now();
+      return;
+    }
+    lastTickRef.current = performance.now();
+    const id = window.setInterval(() => {
+      const now = performance.now();
+      const delta = now - lastTickRef.current;
+      lastTickRef.current = now;
+      for (const t of timers) {
+        if (!t.running) continue;
+        if (t.kind === 'countdown') dispatch({ type: 'countdown/tick', delta, now });
+        else if (t.kind === 'stopwatch') dispatch({ type: 'stopwatch/tick', delta });
+        else if (t.kind === 'pomodoro') dispatch({ type: 'pomodoro/tick', delta, now });
+      }
+    }, 100);
+    return () => window.clearInterval(id);
+  }, [timers]);
+
+  // ── Alarms and pomodoro phase auto-advance on zero crossing ──
+  const prevRef = useRef<TimerInstance[]>(timers);
+  useEffect(() => {
+    const prev = prevRef.current;
+    prevRef.current = timers;
+
+    for (const t of timers) {
+      const p = prev.find((pp) => pp.id === t.id);
+      if (!p) continue;
+
+      // Countdown hit zero this tick
+      if (t.kind === 'countdown' && p.kind === 'countdown') {
+        if (p.remainingMs > 0 && t.remainingMs === 0) {
+          playAlarm();
+        }
+      }
+
+      // Pomodoro phase end — different alarm for focus→break vs break→focus
+      if (t.kind === 'pomodoro' && p.kind === 'pomodoro') {
+        if (p.remainingMs > 0 && t.remainingMs === 0) {
+          const nextIsPause = t.phase === 'focus';
+          if (nextIsPause) {
+            playFocusEndAlarm();
+          } else {
+            playBreakEndAlarm();
+          }
+          dispatch({ type: 'pomodoro/advancePhase', now: performance.now() });
+        }
+      }
+    }
+  }, [timers]);
+
+  const value: TimerContextValue = {
+    timers,
+    getTimer,
+    setPersistent: (kind, persistent) => dispatch({ type: 'setPersistent', kind, persistent }),
+    setColor: (kind, color) => dispatch({ type: 'setColor', kind, color }),
+    setCountdownTime: (ms) => dispatch({ type: 'countdown/setTime', ms }),
+    setCountdownRunning: (running) => dispatch({ type: 'countdown/setRunning', running, now: performance.now() }),
+    resetCountdown: () => dispatch({ type: 'countdown/reset', now: performance.now() }),
+    setStopwatchRunning: (running) => dispatch({ type: 'stopwatch/setRunning', running, now: performance.now() }),
+    addStopwatchLap: () => dispatch({ type: 'stopwatch/addLap' }),
+    resetStopwatch: () => dispatch({ type: 'stopwatch/reset', now: performance.now() }),
+    setPomodoroRunning: (running) => dispatch({ type: 'pomodoro/setRunning', running, now: performance.now() }),
+    resetPomodoro: () => dispatch({ type: 'pomodoro/reset', now: performance.now() }),
+    updatePomodoroSettings: (settings) => dispatch({ type: 'pomodoro/updateSettings', settings }),
+    setPomodoroTime: (ms) => dispatch({ type: 'pomodoro/setTime', ms }),
+  };
+
+  return <TimerContext.Provider value={value}>{children}</TimerContext.Provider>;
+}
+
+export function useTimers(): TimerContextValue {
+  const v = useContext(TimerContext);
+  if (!v) throw new Error('useTimers must be used within <TimerProvider>');
+  return v;
+}

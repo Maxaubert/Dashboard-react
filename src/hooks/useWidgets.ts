@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 
-export type WidgetType = 'habit';
+export type WidgetType = 'habit' | 'countdown' | 'pomodoro' | 'stopwatch';
 
 export interface Widget {
   id: string;

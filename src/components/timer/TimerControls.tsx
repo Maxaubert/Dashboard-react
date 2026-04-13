@@ -178,7 +178,8 @@ export function EditableTime({ ms, color, onChange, disabled }: EditableTimeProp
   function commit() {
     const parsed = parseTimeString(draft);
     if (parsed !== null) {
-      onChange(parsed * 1000);
+      // parseTimeString already returns ms — pass through as-is
+      onChange(parsed);
     }
     setEditing(false);
   }
