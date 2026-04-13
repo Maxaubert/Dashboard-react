@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { todayISO, type Habit } from '@/hooks/useHabits';
+import { type Habit } from '@/hooks/useHabits';
+import { useMidnightTick } from '@/hooks/useMidnightTick';
 
 interface HabitGridProps {
   habit: Habit;
@@ -10,7 +11,8 @@ const CELL = 18;
 const GAP = 3;
 
 export function HabitGrid({ habit, onToggle }: HabitGridProps) {
-  const today = todayISO();
+  // Re-render at midnight so the "today" cell and the month both stay current.
+  const today = useMidnightTick();
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth();

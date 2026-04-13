@@ -33,5 +33,10 @@ export function useWidgets() {
     [setWidgets],
   );
 
-  return { widgets, addWidget, removeWidget, removeWidgetByRefId };
+  const reorderWidgets = useCallback(
+    (nextOrder: Widget[]) => setWidgets(nextOrder),
+    [setWidgets],
+  );
+
+  return { widgets, addWidget, removeWidget, removeWidgetByRefId, reorderWidgets };
 }
