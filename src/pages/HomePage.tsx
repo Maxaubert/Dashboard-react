@@ -29,6 +29,7 @@ import type { NewsSource } from '@/api/news';
 import { LinkIconRender } from './LinksPage';
 import type { LinkItem, NewsItem, PlanItem } from '@/api/types';
 import { cn } from '@/lib/cn';
+import { WidgetsSection } from '@/components/widgets/WidgetsSection';
 
 /* ── Drag handle ────────────────────────────────────────────────────────── */
 type HandleProps = Record<string, unknown>;
@@ -51,6 +52,7 @@ function GripHandle({ handleProps }: { handleProps?: HandleProps }) {
 /* ── Section ordering ───────────────────────────────────────────────────── */
 const SECTION_IDS = [
   'kategorier',
+  'widgets',
   'ext-lenker',
   'dagens-plan',
   'vaer',
@@ -140,6 +142,7 @@ function SortableHomeSection({ id }: { id: SectionId }) {
   return (
     <div ref={setNodeRef} style={style} className={cn(isDragging && 'db-section-dragging')}>
       {id === 'kategorier' && <KategorierSection handleProps={handleProps} />}
+      {id === 'widgets' && <WidgetsSection handleProps={handleProps} />}
       {id === 'ext-lenker' && <EksterneLenkerSection handleProps={handleProps} />}
       {id === 'dagens-plan' && <DagensPlanSection handleProps={handleProps} />}
       {id === 'vaer' && <VaerSection handleProps={handleProps} />}
