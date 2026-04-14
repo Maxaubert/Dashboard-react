@@ -30,14 +30,7 @@ export function useHome() {
 export function useSaveHome() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (envelope: HomeEnvelope) => {
-      console.log('[useSaveHome] POST /api/home', {
-        sections: envelope.sections.length,
-        widgets: envelope.widgets.length,
-        habits: envelope.habits.length,
-      });
-      return homeApi.saveAll(envelope);
-    },
+    mutationFn: (envelope: HomeEnvelope) => homeApi.saveAll(envelope),
     onMutate: async (next) => {
       // IMPORTANT: set the cache SYNCHRONOUSLY before any await. Two rapid
       // `save.mutate(...)` calls (e.g. `addHabit` then `addWidget` inside
@@ -51,12 +44,8 @@ export function useSaveHome() {
       qc.cancelQueries({ queryKey: queryKeys.home }).catch(() => {});
       return { previous };
     },
-    onError: (err, _next, ctx) => {
-      console.error('[useSaveHome] save failed, rolling back', err);
+    onError: (_err, _next, ctx) => {
       if (ctx?.previous) qc.setQueryData(queryKeys.home, ctx.previous);
-    },
-    onSuccess: (result) => {
-      console.log('[useSaveHome] save ok', result);
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: queryKeys.home });
@@ -82,18 +71,7 @@ export function useMutateHome() {
       const prev = qc.getQueryData<HomeEnvelope>(queryKeys.home) ?? EMPTY_HOME;
       const next = patch(prev);
       // If the patch was a no-op (dedupe / empty delta), skip the network round-trip.
-      if (next === prev) {
-        console.log('[useMutateHome] patch was a no-op, skipping save');
-        return;
-      }
-      console.log('[useMutateHome] mutating', {
-        prevWidgets: prev.widgets.length,
-        nextWidgets: next.widgets.length,
-        prevHabits: prev.habits.length,
-        nextHabits: next.habits.length,
-        prevSections: prev.sections.length,
-        nextSections: next.sections.length,
-      });
+      if (next === prev) return;
       save.mutate(next);
     },
     [qc, save],

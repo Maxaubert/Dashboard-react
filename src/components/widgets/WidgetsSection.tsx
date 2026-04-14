@@ -63,24 +63,18 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
   );
 
   function handleAddHabit(name: string, color: string) {
-    console.log('[WidgetsSection] handleAddHabit', { name, color });
     const habit = addHabit(name, color);
-    console.log('[WidgetsSection] habit created', habit);
     addWidget('habit', habit.id);
-    console.log('[WidgetsSection] addWidget dispatched for habit', habit.id);
   }
 
   function handleAddTimerWidget(kind: 'alarm' | 'countdown' | 'pomodoro' | 'stopwatch', color: string) {
-    console.log('[WidgetsSection] handleAddTimerWidget', { kind, color });
     ctx.setColor(kind, color);
     ctx.setPersistent(kind, true);
-    // Widget is added directly rather than relying on the transition-based
-    // auto-sync — that was the previous contract but is now flaky after the
-    // mount-baseline change (auto-sync only fires on state transitions, and
-    // setPersistent doesn't always produce a transition the effect observes
-    // before React batches the change).
+    // Add the widget directly — the transition-based auto-sync can miss the
+    // batched setColor+setPersistent delta and it's cheaper to be explicit
+    // here than to rely on the effect's exact scheduling. The dedupe inside
+    // addWidget prevents duplicates if the effect also fires.
     addWidget(kind, kind);
-    console.log('[WidgetsSection] addWidget dispatched for timer', kind);
   }
 
   function handleRemoveHabit(habitId: string) {

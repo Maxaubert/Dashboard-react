@@ -7,6 +7,7 @@ import { IconPicker, type IconPickerHandle } from '@/components/patterns';
 import { faviconUrl } from '@/api/pdf';
 import { resolveSvgIcon } from '@/data/svgIcons';
 import { LINK_COLOR_PRESETS } from '@/data/linkColors';
+import * as ContextMenu from '@radix-ui/react-context-menu';
 import { cn } from '@/lib/cn';
 import { groupLinks } from '@/lib/groupLinks';
 import { SectionHeader } from '@/components/links/SectionHeader';
@@ -341,83 +342,82 @@ function LinkCard({ link, onEdit, onDelete, onToggleFavorite }: LinkCardProps) {
   const accent = link.color ?? '#a78bfa';
 
   return (
-    <div className="ext-link" style={{ ['--ext-color' as string]: accent }}>
-      {/* Stretched anchor — fills the whole card so the entire surface
-       * is clickable, not just the icon/text patches. The interactive
-       * inner elements (edit / delete / favorite buttons) sit above it
-       * via z-index in the CSS. */}
-      <a
-        href={link.url}
-        target="_blank"
-        rel="noreferrer noopener"
-        className="ext-link-stretched"
-        aria-label={link.name}
-      />
+    <ContextMenu.Root>
+      <ContextMenu.Trigger asChild>
+        <div className="ext-link" style={{ ['--ext-color' as string]: accent }}>
+          {/* Stretched anchor — fills the whole card so the entire surface
+           * is clickable, not just the icon/text patches. The favorite
+           * button sits above it via z-index in the CSS. Edit/Delete are
+           * now on the right-click context menu (Radix) — matches the
+           * widget pattern on the home page. */}
+          <a
+            href={link.url}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="ext-link-stretched"
+            aria-label={link.name}
+          />
 
-      {/* Hover-only edit/delete buttons */}
-      <div className="card-actions">
-        <button
-          type="button"
-          className="card-btn"
-          aria-label="Rediger"
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit();
-          }}
-        >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M12 20h9" />
-            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          className="card-btn del"
-          aria-label="Slett"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (confirm(`Slette «${link.name}»?`)) onDelete();
-          }}
-        >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="3 6 5 6 21 6" />
-            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-            <path d="M10 11v6M14 11v6" />
-            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-          </svg>
-        </button>
-      </div>
+          {/* Top: icon + arrow (visual only — clicks pass through to the
+           * stretched anchor above) */}
+          <div className="ext-link-top">
+            <div className="ext-link-icon-wrap">
+              <LinkIconRender link={link} />
+            </div>
+            <svg className="ext-link-arrow" width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M14 3l-1.41 1.41L18.17 10H4v2h14.17l-5.58 5.59L14 19l8-8z" />
+            </svg>
+          </div>
 
-      {/* Top: icon + arrow (visual only — clicks pass through to the
-       * stretched anchor above) */}
-      <div className="ext-link-top">
-        <div className="ext-link-icon-wrap">
-          <LinkIconRender link={link} />
+          {/* Bottom: text + favorite star */}
+          <div className="card-bottom">
+            <div className="card-bottom-text">
+              <div className="ext-link-name">{link.name}</div>
+              {link.sub && <div className="ext-link-sub">{link.sub}</div>}
+            </div>
+            <button
+              type="button"
+              className={cn('fav-btn', link.favorite && 'favorited')}
+              aria-label={link.favorite ? 'Fjern favoritt' : 'Marker som favoritt'}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleFavorite();
+              }}
+            >
+              ★
+            </button>
+          </div>
         </div>
-        <svg className="ext-link-arrow" width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M14 3l-1.41 1.41L18.17 10H4v2h14.17l-5.58 5.59L14 19l8-8z" />
-        </svg>
-      </div>
-
-      {/* Bottom: text + favorite star */}
-      <div className="card-bottom">
-        <div className="card-bottom-text">
-          <div className="ext-link-name">{link.name}</div>
-          {link.sub && <div className="ext-link-sub">{link.sub}</div>}
-        </div>
-        <button
-          type="button"
-          className={cn('fav-btn', link.favorite && 'favorited')}
-          aria-label={link.favorite ? 'Fjern favoritt' : 'Marker som favoritt'}
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleFavorite();
+      </ContextMenu.Trigger>
+      <ContextMenu.Portal>
+        <ContextMenu.Content
+          style={{
+            background: '#0a0a0a',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: 8,
+            padding: 4,
+            minWidth: 140,
+            zIndex: 50,
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.5)',
           }}
         >
-          ★
-        </button>
-      </div>
-    </div>
+          <ContextMenu.Item
+            onSelect={onEdit}
+            style={{ padding: '6px 10px', color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.78rem', cursor: 'pointer', borderRadius: 4, outline: 'none' }}
+          >
+            Edit
+          </ContextMenu.Item>
+          <ContextMenu.Item
+            onSelect={() => {
+              if (confirm(`Slette «${link.name}»?`)) onDelete();
+            }}
+            style={{ padding: '6px 10px', color: '#ef4444', fontSize: '0.78rem', cursor: 'pointer', borderRadius: 4, outline: 'none' }}
+          >
+            Remove
+          </ContextMenu.Item>
+        </ContextMenu.Content>
+      </ContextMenu.Portal>
+    </ContextMenu.Root>
   );
 }
 
