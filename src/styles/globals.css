@@ -6710,3 +6710,10 @@
   );
   animation: db-rainbow-spin 3.5s linear infinite;
 }
+
+/* Radix context-menu hover/highlight state for widget + link-card menus.
+ * Radix sets [data-highlighted] on the active item for both mouse and
+ * keyboard, so a single rule covers both. Lighter-dark background tint. */
+[role='menuitem'][data-highlighted] {
+  background: rgba(255, 255, 255, 0.06);
+}
