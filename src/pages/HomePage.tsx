@@ -24,6 +24,8 @@ import { useNews } from '@/hooks/useNews';
 import { useWeather } from '@/hooks/useWeather';
 import { useDragScroll } from '@/hooks/useDragScroll';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useHome, useSaveHome } from '@/hooks/useHome';
+import { useHomeMigration } from '@/hooks/useHomeMigration';
 import { searchLocation, describeWeather } from '@/api/weather';
 import type { NewsSource } from '@/api/news';
 import { LinkIconRender } from './LinksPage';
@@ -59,6 +61,7 @@ const SECTION_IDS = [
   'nyhetssaker',
 ] as const;
 type SectionId = (typeof SECTION_IDS)[number];
+const DEFAULT_SECTIONS: SectionId[] = [...SECTION_IDS];
 
 const DAY_NO = ['Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag', 'Søndag'];
 const MON_NO = ['jan', 'feb', 'mar', 'apr', 'mai', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'des'];
@@ -73,13 +76,18 @@ const MON_NO = ['jan', 'feb', 'mar', 'apr', 'mai', 'jun', 'jul', 'aug', 'sep', '
  *   4. Nyhetssaker — VG news cards from /api/news
  */
 export function HomePage() {
+  useHomeMigration();
+
   // Persist the section order so the user's preference survives reloads.
   // Validate against SECTION_IDS so a stale order from an older schema
   // doesn't drop or duplicate sections.
-  const [storedOrder, setStoredOrder] = useLocalStorage<SectionId[]>(
-    'home-section-order',
-    [...SECTION_IDS]
-  );
+  const { data: home } = useHome();
+  const saveHome = useSaveHome();
+  const storedOrder: SectionId[] = (home?.sections?.length ? home.sections : DEFAULT_SECTIONS) as SectionId[];
+  function setStoredOrder(next: SectionId[]) {
+    const base = home ?? { version: 1, sections: [], widgets: [], habits: [] };
+    saveHome.mutate({ ...base, sections: next });
+  }
   const order = useMemo<SectionId[]>(() => {
     const known = (storedOrder ?? []).filter((id): id is SectionId =>
       (SECTION_IDS as readonly string[]).includes(id)

@@ -216,3 +216,32 @@ export interface ApiError {
   ok: false;
   error: string;
 }
+
+// ─── Home page ───────────────────────────────────────────────────────────────
+
+/** Single envelope for all home-page server-persisted data. */
+export interface HomeEnvelope {
+  version: 1;
+  /** Section IDs in the order they render on the home page. */
+  sections: string[];
+  widgets: HomeWidget[];
+  habits: HomeHabit[];
+}
+
+/** Persisted widget tile (NOT the timer runtime state). */
+export interface HomeWidget {
+  id: string;
+  type: 'habit' | 'countdown' | 'pomodoro' | 'stopwatch' | 'alarm';
+  refId: string;
+}
+
+/** Persisted habit. Matches the existing `Habit` type in useHabits.ts. */
+export interface HomeHabit {
+  id: string;
+  name: string;
+  color: string;
+  /** ISO "YYYY-MM-DD" strings. */
+  completedDays: string[];
+  /** ISO timestamp. */
+  createdAt: string;
+}

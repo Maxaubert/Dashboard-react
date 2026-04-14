@@ -8,7 +8,7 @@ import paramiko
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-LOCAL_API = os.path.normpath(os.path.join(HERE, '..', 'api.py'))
+LOCAL_API = os.path.normpath(os.path.join(HERE, '..', 'Dashboard', 'api.py'))
 REMOTE_API = '/opt/dashboard/www/api.py'
 
 

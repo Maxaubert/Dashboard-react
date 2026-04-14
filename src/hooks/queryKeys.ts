@@ -10,4 +10,5 @@ export const queryKeys = {
   skole: ['skole'] as const,
   wishlist: ['wishlist'] as const,
   news: (source: string, count: number) => ['news', source, count] as const,
+  home: ['home'] as const,
 };

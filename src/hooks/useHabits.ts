@@ -1,16 +1,11 @@
 import { useCallback } from 'react';
-import { useLocalStorage } from './useLocalStorage';
 import { randomId } from '@/lib/randomId';
+import { useHome, useSaveHome } from './useHome';
+import type { HomeEnvelope, HomeHabit } from '@/api/types';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-export interface Habit {
-  id: string;
-  name: string;
-  color: string;
-  completedDays: string[]; // ISO "YYYY-MM-DD"
-  createdAt: string;
-}
+export type Habit = HomeHabit;
 
 // ── Pure utilities ────────────────────────────────────────────────────────────
 
@@ -69,7 +64,18 @@ export function calcStreak(completedDays: string[]): number {
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
 export function useHabits() {
-  const [habits, setHabits] = useLocalStorage<Habit[]>('home-habits-v1', []);
+  const { data } = useHome();
+  const save = useSaveHome();
+
+  const habits: Habit[] = data?.habits ?? [];
+
+  const commit = useCallback(
+    (nextHabits: Habit[]) => {
+      const base: HomeEnvelope = data ?? { version: 1, sections: [], widgets: [], habits: [] };
+      save.mutate({ ...base, habits: nextHabits });
+    },
+    [data, save],
+  );
 
   const addHabit = useCallback(
     (name: string, color: string): Habit => {
@@ -80,32 +86,30 @@ export function useHabits() {
         completedDays: [],
         createdAt: new Date().toISOString(),
       };
-      setHabits((prev) => [...prev, habit]);
+      commit([...habits, habit]);
       return habit;
     },
-    [setHabits],
+    [habits, commit],
   );
 
   const updateHabit = useCallback(
     (id: string, patch: Partial<Pick<Habit, 'name' | 'color'>>) => {
-      setHabits((prev) =>
-        prev.map((h) => (h.id === id ? { ...h, ...patch } : h)),
-      );
+      commit(habits.map((h) => (h.id === id ? { ...h, ...patch } : h)));
     },
-    [setHabits],
+    [habits, commit],
   );
 
   const removeHabit = useCallback(
     (id: string) => {
-      setHabits((prev) => prev.filter((h) => h.id !== id));
+      commit(habits.filter((h) => h.id !== id));
     },
-    [setHabits],
+    [habits, commit],
   );
 
   const toggleDay = useCallback(
     (id: string, date: string) => {
-      setHabits((prev) =>
-        prev.map((h) => {
+      commit(
+        habits.map((h) => {
           if (h.id !== id) return h;
           const has = h.completedDays.includes(date);
           return {
@@ -117,7 +121,7 @@ export function useHabits() {
         }),
       );
     },
-    [setHabits],
+    [habits, commit],
   );
 
   return { habits, addHabit, updateHabit, removeHabit, toggleDay };
