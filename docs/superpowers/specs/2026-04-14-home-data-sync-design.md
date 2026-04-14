@@ -71,12 +71,12 @@ All three existing types (`Widget`, `Habit`, `SectionId`) already exist in the c
 
 ## Backend
 
-`api.py` already handles `/api/links`, `/api/todos`, `/api/notes` in its single-file `do_GET` / `do_POST` switch. Add two routes:
+`api.py` already handles `/api/links`, `/api/todos`, `/api/notes` in its single-file `do_GET` / `do_POST` switch. Add two routes (using POST for writes to match the existing `/api/links` convention):
 
-- `GET /api/home` — returns the envelope. If `home.json` doesn't exist yet, returns `{ version: 1, sections: [], widgets: [], habits: [] }`.
-- `PUT /api/home` — atomically replaces `home.json` with the request body. Validates `version === 1`. Uses the same write-to-temp-then-rename atomicity pattern already in use for `links.json` / `todos.json` (if present — otherwise add it).
+- `GET /api/home` — returns the envelope. If `home.json` doesn't exist yet, returns `{ "version": 1, "sections": [], "widgets": [], "habits": [] }`.
+- `POST /api/home` — replaces `home.json` with the request body. Matches the existing `/api/links` write pattern (`json.dump` into a fresh file handle). Non-atomic like the existing endpoints — acceptable for a single-user dashboard. Returns `{"ok": true}` on success, `{"ok": false, "error": "..."}` on failure.
 
-Both go behind the existing basic-auth layer at the nginx level; no extra auth work in api.py.
+Both routes go behind the existing basic-auth layer at the nginx level; no extra auth work in api.py.
 
 ## Client
 
@@ -100,12 +100,13 @@ import { api } from './client';
 import type { HomeEnvelope } from './types';
 
 export const homeApi = {
-  list: (): Promise<HomeEnvelope> => api.get<HomeEnvelope>('/api/home'),
-  saveAll: (envelope: HomeEnvelope): Promise<void> => api.put('/api/home', envelope),
+  list: (): Promise<HomeEnvelope> => api.get<HomeEnvelope>('/home'),
+  saveAll: (envelope: HomeEnvelope): Promise<{ ok: boolean }> =>
+    api.post<{ ok: boolean }>('/home', envelope),
 };
 ```
 
-`api.put` already exists in `src/api/client.ts:116` — no client-side plumbing needed.
+The `api` helper already prepends `/api` to the path (see existing `src/api/links.ts` which calls `api.post('/links', …)`), so `'/home'` resolves to `/api/home` on the wire.
 
 ### Existing hooks — refactor
 
@@ -175,11 +176,11 @@ Last-write-wins. Two devices that both PUT at the same time: whichever arrives a
 ## Files
 
 **Modified:**
-- `api.py` — add `GET /api/home` + `PUT /api/home` routes.
+- `../Dashboard/api.py` — add `GET /api/home` + `POST /api/home` routes. (The file lives one level up from this repo and is uploaded via `_deploy_api.py`.)
 - `src/hooks/useWidgets.ts` — rewrite on top of `useHome` / `useSaveHome`.
 - `src/hooks/useHabits.ts` — rewrite on top of `useHome` / `useSaveHome`.
-- `src/pages/HomePage.tsx` — replace `useLocalStorage('home-section-order', …)` with `useHome` / `useSaveHome`.
-- `src/App.tsx` (or wherever the top-level provider tree lives) — mount the migration effect once.
+- `src/pages/HomePage.tsx` — replace `useLocalStorage('home-section-order', …)` with `useHome` / `useSaveHome`; mount `useHomeMigration()` once at the top of the component so it runs on first load of the home route.
+- `src/api/types.ts` — add `HomeEnvelope`, `HomeWidget`, `HomeHabit` type exports (keeping the existing `Widget` / `Habit` types in their current hook files; the envelope types are the persisted shape, UI types can diverge later).
 
 **New:**
 - `src/api/home.ts` — thin fetch wrapper.
