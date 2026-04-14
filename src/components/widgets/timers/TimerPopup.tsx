@@ -83,6 +83,10 @@ export function TimerPopup({ open, onOpenChange, kind }: TimerPopupProps) {
               width: 440,
               zIndex: 101,
               boxShadow: `0 24px 60px rgba(0, 0, 0, 0.8), 0 0 32px ${hexWithAlpha(timer.color, 0.1)}`,
+              // Kill the browser focus ring that appears when the dialog takes
+              // focus (e.g. after pressing Enter to commit an edit). Radix
+              // still manages the focus trap and programmatic focus moves.
+              outline: 'none',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
