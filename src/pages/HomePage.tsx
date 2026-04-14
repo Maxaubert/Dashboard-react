@@ -24,7 +24,7 @@ import { useNews } from '@/hooks/useNews';
 import { useWeather } from '@/hooks/useWeather';
 import { useDragScroll } from '@/hooks/useDragScroll';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { useHome, useSaveHome } from '@/hooks/useHome';
+import { useHome, useMutateHome } from '@/hooks/useHome';
 import { useHomeMigration } from '@/hooks/useHomeMigration';
 import { searchLocation, describeWeather } from '@/api/weather';
 import type { NewsSource } from '@/api/news';
@@ -82,11 +82,10 @@ export function HomePage() {
   // Validate against SECTION_IDS so a stale order from an older schema
   // doesn't drop or duplicate sections.
   const { data: home } = useHome();
-  const saveHome = useSaveHome();
+  const mutateHome = useMutateHome();
   const storedOrder: SectionId[] = (home?.sections?.length ? home.sections : DEFAULT_SECTIONS) as SectionId[];
   function setStoredOrder(next: SectionId[]) {
-    const base = home ?? { version: 1, sections: [], widgets: [], habits: [] };
-    saveHome.mutate({ ...base, sections: next });
+    mutateHome((prev) => ({ ...prev, sections: next }));
   }
   const order = useMemo<SectionId[]>(() => {
     const known = (storedOrder ?? []).filter((id): id is SectionId =>

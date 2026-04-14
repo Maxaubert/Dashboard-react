@@ -1,7 +1,10 @@
+import { useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { homeApi } from '@/api/home';
 import type { HomeEnvelope } from '@/api/types';
 import { queryKeys } from './queryKeys';
+
+const EMPTY_HOME: HomeEnvelope = { version: 1, sections: [], widgets: [], habits: [] };
 
 /**
  * Fetches the single home-page envelope: { version, sections, widgets, habits }.
@@ -41,6 +44,31 @@ export function useSaveHome() {
       qc.invalidateQueries({ queryKey: queryKeys.home });
     },
   });
+}
+
+/**
+ * Apply a patch function to the LATEST cached envelope. Avoids the stale-closure
+ * bug where two rapid `save.mutate(...)` calls — e.g. `addHabit` immediately
+ * followed by `addWidget` from `handleAddHabit` — each read a pre-mutation
+ * `data` reference and clobber the other's update.
+ *
+ * Usage:
+ *   const mutate = useMutateHome();
+ *   mutate((prev) => ({ ...prev, widgets: [...prev.widgets, newWidget] }));
+ */
+export function useMutateHome() {
+  const qc = useQueryClient();
+  const save = useSaveHome();
+  return useCallback(
+    (patch: (prev: HomeEnvelope) => HomeEnvelope) => {
+      const prev = qc.getQueryData<HomeEnvelope>(queryKeys.home) ?? EMPTY_HOME;
+      const next = patch(prev);
+      // If the patch was a no-op (dedupe / empty delta), skip the network round-trip.
+      if (next === prev) return;
+      save.mutate(next);
+    },
+    [qc, save],
+  );
 }
 
 export function normaliseHome(raw: Partial<HomeEnvelope> | null | undefined): HomeEnvelope {

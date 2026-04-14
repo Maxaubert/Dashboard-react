@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { randomId } from '@/lib/randomId';
-import { useHome, useSaveHome } from './useHome';
-import type { HomeEnvelope, HomeHabit } from '@/api/types';
+import { useHome, useMutateHome } from './useHome';
+import type { HomeHabit } from '@/api/types';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -18,31 +18,26 @@ export function todayISO(): string {
   return `${y}-${m}-${d}`;
 }
 
-/**
- * Add (or subtract) `delta` days to an ISO date string.
- * Uses Date.UTC so DST transitions don't shift the result.
- */
-export function addDays(iso: string, delta: number): string {
+/** Returns `iso` shifted by `days` (can be negative), as "YYYY-MM-DD". */
+export function addDays(iso: string, days: number): string {
   const [y, m, d] = iso.split('-').map(Number);
-  const ms = Date.UTC(y, m - 1, d + delta);
-  const result = new Date(ms);
-  const ry = result.getUTCFullYear();
-  const rm = String(result.getUTCMonth() + 1).padStart(2, '0');
-  const rd = String(result.getUTCDate()).padStart(2, '0');
-  return `${ry}-${rm}-${rd}`;
+  const date = new Date(y, m - 1, d);
+  date.setDate(date.getDate() + days);
+  const yy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
 }
 
 /**
- * Count the current streak of consecutive completed days.
- * Supports a grace period: streak may start from yesterday if today is not completed.
+ * Calculate the current streak from a completedDays list (sorted or not).
+ * Counts consecutive days ending at today OR yesterday (1-day grace period).
  */
 export function calcStreak(completedDays: string[]): number {
   if (completedDays.length === 0) return 0;
-
   const set = new Set(completedDays);
   const today = todayISO();
   const yesterday = addDays(today, -1);
-
   let cursor: string;
   if (set.has(today)) {
     cursor = today;
@@ -51,13 +46,11 @@ export function calcStreak(completedDays: string[]): number {
   } else {
     return 0;
   }
-
   let streak = 0;
   while (set.has(cursor)) {
-    streak++;
+    streak += 1;
     cursor = addDays(cursor, -1);
   }
-
   return streak;
 }
 
@@ -65,17 +58,9 @@ export function calcStreak(completedDays: string[]): number {
 
 export function useHabits() {
   const { data } = useHome();
-  const save = useSaveHome();
+  const mutate = useMutateHome();
 
   const habits: Habit[] = data?.habits ?? [];
-
-  const commit = useCallback(
-    (nextHabits: Habit[]) => {
-      const base: HomeEnvelope = data ?? { version: 1, sections: [], widgets: [], habits: [] };
-      save.mutate({ ...base, habits: nextHabits });
-    },
-    [data, save],
-  );
 
   const addHabit = useCallback(
     (name: string, color: string): Habit => {
@@ -86,30 +71,37 @@ export function useHabits() {
         completedDays: [],
         createdAt: new Date().toISOString(),
       };
-      commit([...habits, habit]);
+      mutate((prev) => ({ ...prev, habits: [...prev.habits, habit] }));
       return habit;
     },
-    [habits, commit],
+    [mutate],
   );
 
   const updateHabit = useCallback(
     (id: string, patch: Partial<Pick<Habit, 'name' | 'color'>>) => {
-      commit(habits.map((h) => (h.id === id ? { ...h, ...patch } : h)));
+      mutate((prev) => ({
+        ...prev,
+        habits: prev.habits.map((h) => (h.id === id ? { ...h, ...patch } : h)),
+      }));
     },
-    [habits, commit],
+    [mutate],
   );
 
   const removeHabit = useCallback(
     (id: string) => {
-      commit(habits.filter((h) => h.id !== id));
+      mutate((prev) => ({
+        ...prev,
+        habits: prev.habits.filter((h) => h.id !== id),
+      }));
     },
-    [habits, commit],
+    [mutate],
   );
 
   const toggleDay = useCallback(
     (id: string, date: string) => {
-      commit(
-        habits.map((h) => {
+      mutate((prev) => ({
+        ...prev,
+        habits: prev.habits.map((h) => {
           if (h.id !== id) return h;
           const has = h.completedDays.includes(date);
           return {
@@ -119,9 +111,9 @@ export function useHabits() {
               : [...h.completedDays, date],
           };
         }),
-      );
+      }));
     },
-    [habits, commit],
+    [mutate],
   );
 
   return { habits, addHabit, updateHabit, removeHabit, toggleDay };

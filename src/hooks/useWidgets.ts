@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { randomId } from '@/lib/randomId';
-import { useHome, useSaveHome } from './useHome';
-import type { HomeEnvelope, HomeWidget } from '@/api/types';
+import { useHome, useMutateHome } from './useHome';
+import type { HomeWidget } from '@/api/types';
 
 // Keep the existing public types so consumers don't change.
 export type WidgetType = HomeWidget['type'];
@@ -9,42 +9,51 @@ export type Widget = HomeWidget;
 
 export function useWidgets() {
   const { data } = useHome();
-  const save = useSaveHome();
+  const mutate = useMutateHome();
 
   const widgets: Widget[] = data?.widgets ?? [];
 
-  const commit = useCallback(
-    (nextWidgets: Widget[]) => {
-      const base: HomeEnvelope = data ?? { version: 1, sections: [], widgets: [], habits: [] };
-      save.mutate({ ...base, widgets: nextWidgets });
-    },
-    [data, save],
-  );
-
   const addWidget = useCallback(
     (type: WidgetType, refId: string): Widget => {
-      const existing = widgets.find((w) => w.type === type && w.refId === refId);
-      if (existing) return existing;
       const widget: Widget = { id: randomId(), type, refId };
-      commit([...widgets, widget]);
+      mutate((prev) => {
+        // Dedupe by (type, refId): see StrictMode note in the historical
+        // useWidgets — multiple callers can race on the same add.
+        if (prev.widgets.some((w) => w.type === type && w.refId === refId)) return prev;
+        return { ...prev, widgets: [...prev.widgets, widget] };
+      });
       return widget;
     },
-    [widgets, commit],
+    [mutate],
   );
 
   const removeWidget = useCallback(
-    (id: string) => commit(widgets.filter((w) => w.id !== id)),
-    [widgets, commit],
+    (id: string) => {
+      mutate((prev) => {
+        const next = prev.widgets.filter((w) => w.id !== id);
+        if (next.length === prev.widgets.length) return prev;
+        return { ...prev, widgets: next };
+      });
+    },
+    [mutate],
   );
 
   const removeWidgetByRefId = useCallback(
-    (refId: string) => commit(widgets.filter((w) => w.refId !== refId)),
-    [widgets, commit],
+    (refId: string) => {
+      mutate((prev) => {
+        const next = prev.widgets.filter((w) => w.refId !== refId);
+        if (next.length === prev.widgets.length) return prev;
+        return { ...prev, widgets: next };
+      });
+    },
+    [mutate],
   );
 
   const reorderWidgets = useCallback(
-    (nextOrder: Widget[]) => commit(nextOrder),
-    [commit],
+    (nextOrder: Widget[]) => {
+      mutate((prev) => ({ ...prev, widgets: nextOrder }));
+    },
+    [mutate],
   );
 
   return { widgets, addWidget, removeWidget, removeWidgetByRefId, reorderWidgets };
