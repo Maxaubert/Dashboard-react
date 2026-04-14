@@ -30,15 +30,33 @@ export function useHome() {
 export function useSaveHome() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (envelope: HomeEnvelope) => homeApi.saveAll(envelope),
+    mutationFn: (envelope: HomeEnvelope) => {
+      console.log('[useSaveHome] POST /api/home', {
+        sections: envelope.sections.length,
+        widgets: envelope.widgets.length,
+        habits: envelope.habits.length,
+      });
+      return homeApi.saveAll(envelope);
+    },
     onMutate: async (next) => {
-      await qc.cancelQueries({ queryKey: queryKeys.home });
+      // IMPORTANT: set the cache SYNCHRONOUSLY before any await. Two rapid
+      // `save.mutate(...)` calls (e.g. `addHabit` then `addWidget` inside
+      // `handleAddHabit`) read the cache between calls; if we awaited the
+      // cancellation first, the second call would see the pre-mutation cache
+      // and its patch would clobber the first mutation's changes.
       const previous = qc.getQueryData<HomeEnvelope>(queryKeys.home);
       qc.setQueryData(queryKeys.home, next);
+      // Cancel in-flight refetches *after* the optimistic write so nothing
+      // overwrites us asynchronously.
+      qc.cancelQueries({ queryKey: queryKeys.home }).catch(() => {});
       return { previous };
     },
-    onError: (_err, _next, ctx) => {
+    onError: (err, _next, ctx) => {
+      console.error('[useSaveHome] save failed, rolling back', err);
       if (ctx?.previous) qc.setQueryData(queryKeys.home, ctx.previous);
+    },
+    onSuccess: (result) => {
+      console.log('[useSaveHome] save ok', result);
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: queryKeys.home });
@@ -64,7 +82,18 @@ export function useMutateHome() {
       const prev = qc.getQueryData<HomeEnvelope>(queryKeys.home) ?? EMPTY_HOME;
       const next = patch(prev);
       // If the patch was a no-op (dedupe / empty delta), skip the network round-trip.
-      if (next === prev) return;
+      if (next === prev) {
+        console.log('[useMutateHome] patch was a no-op, skipping save');
+        return;
+      }
+      console.log('[useMutateHome] mutating', {
+        prevWidgets: prev.widgets.length,
+        nextWidgets: next.widgets.length,
+        prevHabits: prev.habits.length,
+        nextHabits: next.habits.length,
+        prevSections: prev.sections.length,
+        nextSections: next.sections.length,
+      });
       save.mutate(next);
     },
     [qc, save],
