@@ -1406,10 +1406,14 @@
   button.tt-ring-text-editable:hover {
     background: rgba(255, 255, 255, 0.05);
   }
-  /* Inline edit input — matches the text styling so the swap is seamless. */
+  /* Inline edit input — looks identical to the displayed text. No background,
+   * no border, no padding — only the cursor and text selection are visible
+   * when the input is active. Width in `ch` accommodates the longest content
+   * (H:MM:SS = 7 chars); since the input is invisible the unused space on
+   * shorter values doesn't matter. */
   .tt-ring-input {
-    background: rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: transparent;
+    border: none;
     color: var(--color-text);
     font-family: var(--font-mono);
     font-size: 4.8rem;
@@ -1417,15 +1421,11 @@
     letter-spacing: -0.02em;
     line-height: 1;
     text-align: center;
-    width: 300px;
-    padding: 6px 4px;
-    border-radius: 8px;
+    width: 7.2ch;
+    padding: 0;
     outline: none;
     pointer-events: auto;
     font-variant-numeric: tabular-nums;
-  }
-  .tt-ring-input:focus {
-    border-color: rgba(255, 255, 255, 0.35);
   }
   /* Re-enable pointer events on the center area so the editable button
    * can actually receive clicks (the wrapper has pointer-events: none). */
@@ -1481,7 +1481,7 @@
     .tt-mode-body { gap: 22px; }
     .tt-ring-wrap { width: 280px; height: 280px; }
     .tt-ring-text { font-size: 3.2rem; }
-    .tt-ring-input { font-size: 3.2rem; width: 220px; }
+    .tt-ring-input { font-size: 3.2rem; width: 7.2ch; }
     .tt-ring-label { font-size: 0.72rem; }
   }
 
@@ -6671,3 +6671,42 @@
   outline: none;
 }
 .section-context-menu .del { color: #f87171; }
+
+/* Rotating rainbow border for the armed alarm widget.
+ *
+ * Variant A from the brainstorm: the widget shell is wrapped in a 2px-padded
+ * box whose background is a conic-gradient. The gradient's `from` angle is
+ * driven by a CSS @property so the rotation interpolates smoothly (browsers
+ * tween numeric custom-properties; without @property they crossfade or no-op).
+ *
+ * The shell inside MUST have an opaque background — the AlarmWidget overrides
+ * its `style.background` to '#0a0a0a' when armed for exactly this reason. */
+@property --db-rainbow-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes db-rainbow-spin {
+  to { --db-rainbow-angle: 360deg; }
+}
+.db-armed-alarm-wrap {
+  display: inline-block;
+  padding: 2px;
+  border-radius: 16px;
+  /* Snake variant B: medium 90° rainbow streak with fade tails on both ends.
+   * The remaining 270° is transparent so the wrapper's edge is invisible. */
+  background: conic-gradient(
+    from var(--db-rainbow-angle),
+    transparent 0deg,
+    rgba(239, 68, 68, 0.2) 8deg,
+    #ef4444 18deg,
+    #f97316 32deg,
+    #eab308 46deg,
+    #22c55e 60deg,
+    #06b6d4 74deg,
+    rgba(99, 102, 241, 0.2) 84deg,
+    transparent 90deg,
+    transparent 360deg
+  );
+  animation: db-rainbow-spin 3.5s linear infinite;
+}

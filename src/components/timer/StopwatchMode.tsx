@@ -12,7 +12,10 @@ export function StopwatchMode() {
     <div className="tt-mode-body">
       <TimerRing progress={1} color={sw.color} running={sw.running}>
         <div className="tt-ring-label" style={{ color: sw.color }}>STOPWATCH</div>
-        <div className="tt-ring-text">{formatStopwatch(sw.elapsedMs)}</div>
+        {/* Stopwatch text is longer than countdown/pomodoro (has centiseconds),
+            so the default 4.8rem ring text overflows. Use the same 3.2rem
+            override the popup uses. */}
+        <div className="tt-ring-text" style={{ fontSize: '3.2rem' }}>{formatStopwatch(sw.elapsedMs)}</div>
       </TimerRing>
       <StopwatchControls
         running={sw.running}

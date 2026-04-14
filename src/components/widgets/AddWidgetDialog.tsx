@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Calendar, Clock, Watch, CheckSquare, Cloud, BarChart3, Timer, X, ChevronLeft } from 'lucide-react';
+import { BellRing, Calendar, Clock, Watch, CheckSquare, Cloud, BarChart3, Timer, X, ChevronLeft } from 'lucide-react';
 
 type Stage = 'pick' | 'configure-habit' | 'pick-timer-kind';
 
@@ -9,11 +9,11 @@ interface AddWidgetDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreateHabit: (name: string, color: string) => void;
-  onCreateTimerWidget: (kind: 'countdown' | 'pomodoro' | 'stopwatch', color: string) => void;
+  onCreateTimerWidget: (kind: 'alarm' | 'countdown' | 'pomodoro' | 'stopwatch', color: string) => void;
 }
 
 type WidgetTypeId = 'habit' | 'timer' | 'weather' | 'todo' | 'stats';
-type TimerKindId = 'countdown' | 'pomodoro' | 'stopwatch';
+type TimerKindId = 'alarm' | 'countdown' | 'pomodoro' | 'stopwatch';
 
 interface WidgetType {
   id: WidgetTypeId;
@@ -40,6 +40,7 @@ interface TimerKind {
 }
 
 const TIMER_KINDS: TimerKind[] = [
+  { id: 'alarm', label: 'Alarm', icon: <BellRing size={20} />, color: '#f97316' },
   { id: 'countdown', label: 'Countdown', icon: <Timer size={20} />, color: '#ef4444' },
   { id: 'pomodoro', label: 'Pomodoro', icon: <Clock size={20} />, color: '#34d399' },
   { id: 'stopwatch', label: 'Stopwatch', icon: <Watch size={20} />, color: '#22d3ee' },
@@ -255,7 +256,7 @@ export function AddWidgetDialog({ open, onOpenChange, onCreateHabit, onCreateTim
                 }}>
                   Pick a kind
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   {TIMER_KINDS.map((kind) => {
                     const isSelected = selectedKindId === kind.id;
                     return (

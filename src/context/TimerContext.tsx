@@ -6,13 +6,18 @@ import {
   useRef,
   type ReactNode,
 } from 'react';
-import { playAlarm, playFocusEndAlarm, playBreakEndAlarm } from '@/hooks/useTimer';
+import {
+  playFocusEndAlarm,
+  playBreakEndAlarm,
+  startLoopingAlarm,
+  stopLoopingAlarm,
+} from '@/hooks/useTimer';
 
 /* ── Types ──────────────────────────────────────────────────────────── */
 
 export interface BaseTimer {
   id: string;
-  kind: 'countdown' | 'stopwatch' | 'pomodoro';
+  kind: 'countdown' | 'stopwatch' | 'pomodoro' | 'alarm';
   color: string;
   /** User manually added a widget for this timer — stays past zero. */
   persistent: boolean;
@@ -54,14 +59,33 @@ export interface PomodoroTimer extends BaseTimer {
   running: boolean;
   startedAt: number | null;
   zeroedAt: number | null;
-  /** Overrides for custom clock-input durations; persist across cycles.
-   *  Cleared when the corresponding setting is changed via the settings box,
-   *  or on reset. */
+  /** Overrides for custom clock-input durations; persist across cycles and reset.
+   *  Cleared only when the corresponding setting is changed via the settings box
+   *  (handled in pomodoro/updateSettings). */
   focusOverrideMs: number | null;
   pauseOverrideMs: number | null;
+  /** True from the moment the final focus session ends until the user dismisses
+   *  the completion popup. Drives the looping chime and auto-open behavior. */
+  completed: boolean;
 }
 
-export type TimerInstance = CountdownTimer | StopwatchTimer | PomodoroTimer;
+export interface AlarmTimer extends BaseTimer {
+  kind: 'alarm';
+  /** HH:MM (24h) currently shown. Always present — defaults to lastSetTime. */
+  targetTime: string;
+  /** HH:MM the user most recently armed. Survives cancel/disarm. */
+  lastSetTime: string;
+  /** Absolute epoch ms when this alarm should fire. Null when unarmed. */
+  fireAt: number | null;
+  /** True between fireAt being reached and STOP being clicked. */
+  ringing: boolean;
+  /** Reused as "armed and counting down" so the ticker knows to dispatch alarm/tick. */
+  running: boolean;
+  startedAt: number | null;
+  zeroedAt: number | null;
+}
+
+export type TimerInstance = CountdownTimer | StopwatchTimer | PomodoroTimer | AlarmTimer;
 
 /* ── Defaults ───────────────────────────────────────────────────────── */
 
@@ -72,6 +96,34 @@ const DEFAULT_POMODORO: PomodoroSettings = { focusMin: 25, pauseMin: 5, targetCy
 export function clamp(n: number, min: number, max: number): number {
   if (!Number.isFinite(n)) return min;
   return Math.min(max, Math.max(min, Math.round(n)));
+}
+
+export const ALARM_DEFAULT_TIME = '12:30';
+
+/**
+ * Given an HH:MM (24h) target and a current epoch ms `now`, return the absolute
+ * epoch ms when the alarm should fire. If the wall-clock time is in the past
+ * (or equal to the current minute), schedule for tomorrow.
+ *
+ * Throws if `targetTime` isn't a valid HH:MM in 00:00–23:59.
+ *
+ * DST note: the returned timestamp is the next occurrence of `HH:MM` in local
+ * wall-clock time. Crossing a DST boundary therefore preserves wall-clock
+ * meaning (the alarm rings at "07:00" the next morning even if a spring-forward
+ * happened overnight) at the cost of the actual elapsed-ms gap shifting by ±1h.
+ */
+export function computeFireAt(targetTime: string, now: number): number {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(targetTime.trim());
+  if (!m) throw new Error(`computeFireAt: invalid HH:MM ${JSON.stringify(targetTime)}`);
+  const h = parseInt(m[1], 10);
+  const min = parseInt(m[2], 10);
+  if (h < 0 || h > 23 || min < 0 || min > 59) {
+    throw new Error(`computeFireAt: out-of-range HH:MM ${JSON.stringify(targetTime)}`);
+  }
+  const target = new Date(now);
+  target.setHours(h, min, 0, 0);
+  if (target.getTime() <= now) target.setDate(target.getDate() + 1);
+  return target.getTime();
 }
 
 export function makeDefaults(): TimerInstance[] {
@@ -91,6 +143,15 @@ export function makeDefaults(): TimerInstance[] {
       totalMs: DEFAULT_POMODORO.focusMin * POMODORO_MINUTE_MS, remainingMs: DEFAULT_POMODORO.focusMin * POMODORO_MINUTE_MS,
       running: false, startedAt: null, zeroedAt: null,
       focusOverrideMs: null, pauseOverrideMs: null,
+      completed: false,
+    },
+    {
+      id: 'alarm', kind: 'alarm', color: '#f97316', persistent: false,
+      targetTime: ALARM_DEFAULT_TIME,
+      lastSetTime: ALARM_DEFAULT_TIME,
+      fireAt: null,
+      ringing: false,
+      running: false, startedAt: null, zeroedAt: null,
     },
   ];
 }
@@ -114,7 +175,12 @@ export type Action =
   | { type: 'pomodoro/reset'; now: number }
   | { type: 'pomodoro/advancePhase'; now: number }
   | { type: 'pomodoro/updateSettings'; settings: PomodoroSettings }
-  | { type: 'pomodoro/setTime'; ms: number };
+  | { type: 'pomodoro/setTime'; ms: number }
+  | { type: 'alarm/setTime'; time: string }
+  | { type: 'alarm/arm'; now: number }
+  | { type: 'alarm/cancel' }
+  | { type: 'alarm/tick'; now: number }
+  | { type: 'alarm/stop' };
 
 export function reducer(state: TimerInstance[], action: Action): TimerInstance[] {
   return state.map((t) => applyAction(t, action));
@@ -128,6 +194,7 @@ function applyAction(t: TimerInstance, a: Action): TimerInstance {
   if (t.kind === 'countdown') return reduceCountdown(t, a);
   if (t.kind === 'stopwatch') return reduceStopwatch(t, a);
   if (t.kind === 'pomodoro') return reducePomodoro(t, a);
+  if (t.kind === 'alarm') return reduceAlarm(t, a);
   return t;
 }
 
@@ -171,7 +238,12 @@ function reduceStopwatch(t: StopwatchTimer, a: Action): StopwatchTimer {
 function reducePomodoro(t: PomodoroTimer, a: Action): PomodoroTimer {
   switch (a.type) {
     case 'pomodoro/setRunning':
-      return { ...t, running: a.running, startedAt: a.running ? a.now : null };
+      return {
+        ...t,
+        running: a.running,
+        startedAt: a.running ? a.now : null,
+        completed: a.running ? false : t.completed,
+      };
     case 'pomodoro/tick': {
       if (!t.running) return t;
       const next = Math.max(0, t.remainingMs - a.delta);
@@ -189,6 +261,7 @@ function reducePomodoro(t: PomodoroTimer, a: Action): PomodoroTimer {
             totalMs: focusMs,
             remainingMs: focusMs,
             running: false, startedAt: null, zeroedAt: Date.now(),
+            completed: true,
           };
         }
         return {
@@ -208,14 +281,17 @@ function reducePomodoro(t: PomodoroTimer, a: Action): PomodoroTimer {
       }
     }
     case 'pomodoro/reset': {
-      // Reset clears any click-set overrides — start fresh from settings.
-      const focusMs = t.settings.focusMin * POMODORO_MINUTE_MS;
+      // Reset returns to the start of the cycle but PRESERVES the user's
+      // clock-input override (focusOverrideMs / pauseOverrideMs). The override is
+      // only cleared when the corresponding setting is changed via the inline
+      // settings box (handled in pomodoro/updateSettings).
+      const focusMs = t.focusOverrideMs ?? t.settings.focusMin * POMODORO_MINUTE_MS;
       return {
         ...t, phase: 'focus', cycle: 0,
         totalMs: focusMs,
         remainingMs: focusMs,
         running: false, startedAt: null, zeroedAt: Date.now(),
-        focusOverrideMs: null, pauseOverrideMs: null,
+        completed: false,
       };
     }
     case 'pomodoro/updateSettings': {
@@ -256,6 +332,43 @@ function reducePomodoro(t: PomodoroTimer, a: Action): PomodoroTimer {
   }
 }
 
+function reduceAlarm(t: AlarmTimer, a: Action): AlarmTimer {
+  switch (a.type) {
+    case 'alarm/setTime':
+      return { ...t, targetTime: a.time };
+    case 'alarm/arm': {
+      const fireAt = computeFireAt(t.targetTime, a.now);
+      return {
+        ...t,
+        fireAt,
+        running: true,
+        startedAt: a.now,
+        zeroedAt: null,
+        ringing: false,
+        lastSetTime: t.targetTime,
+      };
+    }
+    case 'alarm/cancel':
+      return { ...t, fireAt: null, running: false, startedAt: null, ringing: false };
+    case 'alarm/tick': {
+      if (!t.running || t.fireAt === null) return t;
+      if (a.now < t.fireAt) return t;
+      return {
+        ...t,
+        ringing: true,
+        running: false,
+        startedAt: null,
+        fireAt: null,
+        zeroedAt: a.now,
+      };
+    }
+    case 'alarm/stop':
+      return { ...t, ringing: false, running: false, startedAt: null, fireAt: null };
+    default:
+      return t;
+  }
+}
+
 /* ── Context ────────────────────────────────────────────────────────── */
 
 export interface TimerContextValue {
@@ -277,11 +390,16 @@ export interface TimerContextValue {
   resetPomodoro(): void;
   updatePomodoroSettings(settings: PomodoroSettings): void;
   setPomodoroTime(ms: number): void;
+
+  setAlarmTime(time: string): void;
+  armAlarm(): void;
+  cancelAlarm(): void;
+  stopAlarm(): void;
 }
 
 const TimerContext = createContext<TimerContextValue | null>(null);
 
-const STORAGE_KEY = 'home-timers-v3';
+const STORAGE_KEY = 'home-timers-v4';
 
 export function TimerProvider({ children }: { children: ReactNode }) {
   const [timers, dispatch] = useReducer(reducer, undefined, () => {
@@ -289,8 +407,12 @@ export function TimerProvider({ children }: { children: ReactNode }) {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return makeDefaults();
       const parsed = JSON.parse(raw) as TimerInstance[];
-      return parsed.map((t) => {
-        const base = { ...t, running: false, startedAt: null };
+      const defaults = makeDefaults();
+      // Merge: for each kind in defaults, prefer parsed if present.
+      return defaults.map((d) => {
+        const found = parsed.find((p) => p.kind === d.kind);
+        if (!found) return d;
+        const base = { ...found, running: false, startedAt: null };
         if (base.kind === 'pomodoro') {
           // Defensive clamp on load — older versions allowed any integer.
           return {
@@ -300,7 +422,12 @@ export function TimerProvider({ children }: { children: ReactNode }) {
               pauseMin: clamp(base.settings?.pauseMin ?? 5, 1, 60),
               targetCycles: clamp(base.settings?.targetCycles ?? 4, 1, 12),
             },
+            completed: false,
           };
+        }
+        if (base.kind === 'alarm') {
+          // Don't restore mid-ring or armed state across reloads — start unarmed.
+          return { ...base, fireAt: null, ringing: false };
         }
         return base;
       });
@@ -340,6 +467,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
         if (t.kind === 'countdown') dispatch({ type: 'countdown/tick', delta, now });
         else if (t.kind === 'stopwatch') dispatch({ type: 'stopwatch/tick', delta });
         else if (t.kind === 'pomodoro') dispatch({ type: 'pomodoro/tick', delta, now });
+        else if (t.kind === 'alarm') dispatch({ type: 'alarm/tick', now: Date.now() });
       }
     }, 100);
     return () => window.clearInterval(id);
@@ -357,25 +485,56 @@ export function TimerProvider({ children }: { children: ReactNode }) {
 
       // Countdown hit zero this tick
       if (t.kind === 'countdown' && p.kind === 'countdown') {
+        // Start looping chime when remainingMs hits 0; stop when reset away from 0.
         if (p.remainingMs > 0 && t.remainingMs === 0) {
-          playAlarm();
+          startLoopingAlarm();
+        }
+        if (p.remainingMs === 0 && t.remainingMs > 0) {
+          stopLoopingAlarm();
         }
       }
 
       // Pomodoro phase end — different alarm for focus→break vs break→focus
       if (t.kind === 'pomodoro' && p.kind === 'pomodoro') {
         if (p.remainingMs > 0 && t.remainingMs === 0) {
-          const nextIsPause = t.phase === 'focus';
-          if (nextIsPause) {
+          // At this point t.phase still holds the OLD phase (advancePhase hasn't dispatched yet).
+          const isFinalFocusEnd = t.phase === 'focus' && (t.cycle + 1 >= t.settings.targetCycles);
+          if (isFinalFocusEnd) {
+            // The advancePhase dispatch below will set completed=true and reset to a fresh state.
+            // Start the looping chime now; it stops when the user dismisses (resetPomodoro
+            // → completed flips false → the branch below catches the falling edge).
+            startLoopingAlarm();
+          } else if (t.phase === 'focus') {
             playFocusEndAlarm();
           } else {
             playBreakEndAlarm();
           }
           dispatch({ type: 'pomodoro/advancePhase', now: performance.now() });
         }
+        // Stop the looping chime when pomodoro leaves completed state
+        // (via resetPomodoro from the popup-close handler, or via setRunning(true)).
+        if (p.completed && !t.completed) {
+          stopLoopingAlarm();
+        }
+      }
+
+      // Alarm started ringing this tick → start the looping chime; cleared → stop it
+      if (t.kind === 'alarm' && p.kind === 'alarm') {
+        if (!p.ringing && t.ringing) {
+          startLoopingAlarm();
+        }
+        if (p.ringing && !t.ringing) {
+          stopLoopingAlarm();
+        }
       }
     }
   }, [timers]);
+
+  // Unmount safety: if the provider unmounts while an alarm is ringing, the
+  // looping chime would otherwise keep playing with no React handle to stop it.
+  useEffect(() => {
+    return () => stopLoopingAlarm();
+  }, []);
 
   const value: TimerContextValue = {
     timers,
@@ -392,6 +551,10 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     resetPomodoro: () => dispatch({ type: 'pomodoro/reset', now: performance.now() }),
     updatePomodoroSettings: (settings) => dispatch({ type: 'pomodoro/updateSettings', settings }),
     setPomodoroTime: (ms) => dispatch({ type: 'pomodoro/setTime', ms }),
+    setAlarmTime: (time) => dispatch({ type: 'alarm/setTime', time }),
+    armAlarm: () => dispatch({ type: 'alarm/arm', now: Date.now() }),
+    cancelAlarm: () => dispatch({ type: 'alarm/cancel' }),
+    stopAlarm: () => dispatch({ type: 'alarm/stop' }),
   };
 
   return <TimerContext.Provider value={value}>{children}</TimerContext.Provider>;

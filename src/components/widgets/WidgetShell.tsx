@@ -20,6 +20,8 @@ interface WidgetShellProps {
   style?: React.CSSProperties;
   /** Aria label for screen readers when the shell is a button. */
   ariaLabel?: string;
+  /** Extra CSS class name(s) forwarded to the rendered motion element. */
+  className?: string;
 }
 
 /**
@@ -32,7 +34,7 @@ interface WidgetShellProps {
  *
  * Widget-specific content (header, grid, controls) goes in `children`.
  */
-export function WidgetShell({ children, onClick, menu, style, ariaLabel }: WidgetShellProps) {
+export function WidgetShell({ children, onClick, menu, style, ariaLabel, className }: WidgetShellProps) {
   const isButton = Boolean(onClick);
   const hasMenu = menu && menu.length > 0;
 
@@ -68,12 +70,13 @@ export function WidgetShell({ children, onClick, menu, style, ariaLabel }: Widge
       onClick={onClick}
       aria-label={ariaLabel}
       style={sharedStyle}
+      className={className}
       {...motionProps}
     >
       {children}
     </motion.button>
   ) : (
-    <motion.div style={sharedStyle} {...motionProps}>
+    <motion.div style={sharedStyle} className={className} {...motionProps}>
       {children}
     </motion.div>
   );

@@ -37,7 +37,7 @@ export function formatStopwatch(ms: number): string {
  * Returns null if the input can't be parsed.
  */
 export function parseTimeString(s: string): number | null {
-  s = s.trim();
+  s = s.trim().replace(/:+$/, ''); // tolerate trailing colons from live-formatting
   if (!s) return null;
   const parts = s.split(':').map((p) => p.trim());
   if (parts.some((p) => p === '' || !/^\d+$/.test(p))) return null;
@@ -110,6 +110,37 @@ export function playFocusEndAlarm() {
 /** Energetic three-tone alarm for pomodoro break-end (back to focus). */
 export function playBreakEndAlarm() {
   playBeepSequence([[784, 0.12], [988, 0.12], [1318, 0.2]]);
+}
+
+/* ── Looping alarm chime ───────────────────────────────────────────────── */
+
+let alarmLoopId: ReturnType<typeof setInterval> | null = null;
+
+/** A single two-tone alarm beep — same tones as `playAlarm` but no internal repeats. */
+function playSingleAlarmBeep(): void {
+  playBeepSequence([[880, 0.15], [1175, 0.2]], 1);
+}
+
+/**
+ * Start a continuous alarm chime. Plays one two-tone beep immediately, then
+ * one every 900ms. Idempotent — calling twice doesn't stack intervals.
+ * Used by the alarm feature, which loops until the user clicks STOP.
+ *
+ * The interval (900ms) is tuned to be longer than one two-tone cycle
+ * (≈0.44s) so beeps don't overlap, but short enough to feel insistent.
+ */
+export function startLoopingAlarm(): void {
+  stopLoopingAlarm();
+  playSingleAlarmBeep();
+  alarmLoopId = setInterval(playSingleAlarmBeep, 900);
+}
+
+/** Stop the looping chime. Safe to call when not running. */
+export function stopLoopingAlarm(): void {
+  if (alarmLoopId !== null) {
+    clearInterval(alarmLoopId);
+    alarmLoopId = null;
+  }
 }
 
 /* ──────────────────────────────────────────────────────────────────────── */

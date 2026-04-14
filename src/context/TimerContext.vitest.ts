@@ -3,7 +3,7 @@ import {
   reducer,
   makeDefaults,
   clamp,
-  POMODORO_MINUTE_MS,
+  computeFireAt,
   type PomodoroTimer,
   type CountdownTimer,
   type StopwatchTimer,
@@ -176,13 +176,14 @@ describe('pomodoro reducer', () => {
     expect(p.running).toBe(false);
   });
 
-  it('reset clears overrides and restores settings-derived time', () => {
+  it('reset preserves overrides and uses them for the restored time', () => {
     let s = reducer(makeDefaults(), { type: 'pomodoro/setTime', ms: 30_000 });
     s = reducer(s, { type: 'pomodoro/reset', now: 0 });
     const p = get(s, 'pomodoro');
-    expect(p.focusOverrideMs).toBeNull();
+    expect(p.focusOverrideMs).toBe(30_000);
     expect(p.pauseOverrideMs).toBeNull();
-    expect(p.totalMs).toBe(25 * POMODORO_MINUTE_MS);
+    expect(p.totalMs).toBe(30_000);
+    expect(p.remainingMs).toBe(30_000);
     expect(p.cycle).toBe(0);
     expect(p.phase).toBe('focus');
   });
@@ -196,6 +197,49 @@ describe('pomodoro reducer', () => {
     expect(p.running).toBe(false);
     // advancePhase happens in the provider's effect, not in the reducer.
     expect(p.phase).toBe('focus');
+  });
+
+  it('advancePhase wrap sets completed=true on the final focus end', () => {
+    let s = reducer(makeDefaults(), {
+      type: 'pomodoro/updateSettings',
+      settings: { focusMin: 1, pauseMin: 1, targetCycles: 2 },
+    });
+    // Cycle 1: focus → pause
+    s = reducer(s, { type: 'pomodoro/advancePhase', now: 0 });
+    // Cycle 1: pause → focus (cycle 2's focus session)
+    s = reducer(s, { type: 'pomodoro/advancePhase', now: 1 });
+    // Cycle 2 focus ends → wrap → completed=true
+    s = reducer(s, { type: 'pomodoro/advancePhase', now: 2 });
+    const p = get(s, 'pomodoro');
+    expect(p.completed).toBe(true);
+    expect(p.running).toBe(false);
+    expect(p.cycle).toBe(0);
+  });
+
+  it('reset clears completed', () => {
+    let s = reducer(makeDefaults(), {
+      type: 'pomodoro/updateSettings',
+      settings: { focusMin: 1, pauseMin: 1, targetCycles: 2 },
+    });
+    s = reducer(s, { type: 'pomodoro/advancePhase', now: 0 });
+    s = reducer(s, { type: 'pomodoro/advancePhase', now: 1 });
+    s = reducer(s, { type: 'pomodoro/advancePhase', now: 2 });
+    expect(get(s, 'pomodoro').completed).toBe(true);
+    s = reducer(s, { type: 'pomodoro/reset', now: 3 });
+    expect(get(s, 'pomodoro').completed).toBe(false);
+  });
+
+  it('setRunning(true) clears completed', () => {
+    let s = reducer(makeDefaults(), {
+      type: 'pomodoro/updateSettings',
+      settings: { focusMin: 1, pauseMin: 1, targetCycles: 2 },
+    });
+    s = reducer(s, { type: 'pomodoro/advancePhase', now: 0 });
+    s = reducer(s, { type: 'pomodoro/advancePhase', now: 1 });
+    s = reducer(s, { type: 'pomodoro/advancePhase', now: 2 });
+    expect(get(s, 'pomodoro').completed).toBe(true);
+    s = reducer(s, { type: 'pomodoro/setRunning', running: true, now: 3 });
+    expect(get(s, 'pomodoro').completed).toBe(false);
   });
 });
 
@@ -221,6 +265,127 @@ describe('shared reducer actions', () => {
     expect(get(s, 'countdown').color).toBe('#fff');
     // Kinds not in the payload keep their defaults.
     expect(get(s, 'stopwatch').color).toBe('#22d3ee');
+  });
+});
+
+describe('computeFireAt', () => {
+  it('returns today at the requested time when in the future', () => {
+    // 2026-04-14 10:00:00 local
+    const now = new Date(2026, 3, 14, 10, 0, 0).getTime();
+    const fire = computeFireAt('15:30', now);
+    expect(new Date(fire).getHours()).toBe(15);
+    expect(new Date(fire).getMinutes()).toBe(30);
+    expect(new Date(fire).getDate()).toBe(14);
+  });
+
+  it('returns tomorrow when the requested time is earlier today', () => {
+    const now = new Date(2026, 3, 14, 16, 0, 0).getTime();
+    const fire = computeFireAt('15:30', now);
+    expect(new Date(fire).getDate()).toBe(15);
+    expect(new Date(fire).getHours()).toBe(15);
+    expect(new Date(fire).getMinutes()).toBe(30);
+  });
+
+  it('returns tomorrow when target equals current minute exactly', () => {
+    // Edge: same HH:MM as now → "in the past or equal" → tomorrow
+    const now = new Date(2026, 3, 14, 15, 30, 30).getTime();
+    const fire = computeFireAt('15:30', now);
+    expect(new Date(fire).getDate()).toBe(15);
+  });
+
+  it('throws on malformed HH:MM string', () => {
+    expect(() => computeFireAt('bad', 0)).toThrow();
+    expect(() => computeFireAt('1230', 0)).toThrow();
+    expect(() => computeFireAt('', 0)).toThrow();
+  });
+
+  it('throws on out-of-range hours or minutes', () => {
+    expect(() => computeFireAt('25:00', 0)).toThrow();
+    expect(() => computeFireAt('12:60', 0)).toThrow();
+    expect(() => computeFireAt('-1:00', 0)).toThrow();
+  });
+});
+
+describe('alarm reducer', () => {
+  it('alarm/setTime updates the displayed targetTime only', () => {
+    const s = reducer(makeDefaults(), { type: 'alarm/setTime', time: '07:30' });
+    const a = get(s, 'alarm');
+    expect(a.targetTime).toBe('07:30');
+    expect(a.fireAt).toBeNull();
+    expect(a.running).toBe(false);
+    // lastSetTime is only updated on arm, not on raw edits.
+    expect(a.lastSetTime).toBe('12:30');
+  });
+
+  it('alarm/arm computes fireAt, sets running, persists lastSetTime', () => {
+    const now = new Date(2026, 3, 14, 10, 0, 0).getTime();
+    let s = reducer(makeDefaults(), { type: 'alarm/setTime', time: '15:30' });
+    s = reducer(s, { type: 'alarm/arm', now });
+    const a = get(s, 'alarm');
+    expect(a.fireAt).not.toBeNull();
+    expect(new Date(a.fireAt!).getHours()).toBe(15);
+    expect(a.running).toBe(true);
+    expect(a.lastSetTime).toBe('15:30');
+  });
+
+  it('alarm/cancel disarms but preserves targetTime and lastSetTime', () => {
+    const now = new Date(2026, 3, 14, 10, 0, 0).getTime();
+    let s = reducer(makeDefaults(), { type: 'alarm/setTime', time: '15:30' });
+    s = reducer(s, { type: 'alarm/arm', now });
+    s = reducer(s, { type: 'alarm/cancel' });
+    const a = get(s, 'alarm');
+    expect(a.fireAt).toBeNull();
+    expect(a.running).toBe(false);
+    expect(a.ringing).toBe(false);
+    expect(a.targetTime).toBe('15:30');
+    expect(a.lastSetTime).toBe('15:30');
+  });
+
+  it('alarm/tick sets ringing when now >= fireAt', () => {
+    const now = new Date(2026, 3, 14, 10, 0, 0).getTime();
+    let s = reducer(makeDefaults(), { type: 'alarm/setTime', time: '15:30' });
+    s = reducer(s, { type: 'alarm/arm', now });
+    // Tick at the exact fire time
+    const tickNow = new Date(2026, 3, 14, 15, 30, 0).getTime();
+    s = reducer(s, { type: 'alarm/tick', now: tickNow });
+    const a = get(s, 'alarm');
+    expect(a.ringing).toBe(true);
+    expect(a.running).toBe(false);
+    expect(a.fireAt).toBeNull();
+  });
+
+  it('alarm/tick before fire time is a no-op', () => {
+    const now = new Date(2026, 3, 14, 10, 0, 0).getTime();
+    let s = reducer(makeDefaults(), { type: 'alarm/setTime', time: '15:30' });
+    s = reducer(s, { type: 'alarm/arm', now });
+    const tickNow = new Date(2026, 3, 14, 14, 0, 0).getTime();
+    s = reducer(s, { type: 'alarm/tick', now: tickNow });
+    const a = get(s, 'alarm');
+    expect(a.ringing).toBe(false);
+    expect(a.running).toBe(true);
+  });
+
+  it('alarm/stop clears ringing', () => {
+    const now = new Date(2026, 3, 14, 10, 0, 0).getTime();
+    let s = reducer(makeDefaults(), { type: 'alarm/setTime', time: '15:30' });
+    s = reducer(s, { type: 'alarm/arm', now });
+    s = reducer(s, { type: 'alarm/tick', now: new Date(2026, 3, 14, 15, 30, 0).getTime() });
+    s = reducer(s, { type: 'alarm/stop' });
+    const a = get(s, 'alarm');
+    expect(a.ringing).toBe(false);
+    expect(a.running).toBe(false);
+    expect(a.fireAt).toBeNull();
+    // targetTime stays at the last-armed time so re-arming uses it.
+    expect(a.targetTime).toBe('15:30');
+  });
+
+  it('arming with a past wall-clock time schedules tomorrow', () => {
+    const now = new Date(2026, 3, 14, 16, 0, 0).getTime();
+    let s = reducer(makeDefaults(), { type: 'alarm/setTime', time: '08:00' });
+    s = reducer(s, { type: 'alarm/arm', now });
+    const a = get(s, 'alarm');
+    expect(new Date(a.fireAt!).getDate()).toBe(15);
+    expect(new Date(a.fireAt!).getHours()).toBe(8);
   });
 });
 

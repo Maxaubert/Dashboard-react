@@ -3,6 +3,20 @@ import { motion } from 'framer-motion';
 import { Play, Pause, RotateCcw, Flag } from 'lucide-react';
 import { formatHMS, parseTimeString } from '@/hooks/useTimer';
 
+/**
+ * Live-format a duration input as the user types. Strips non-digits and
+ * inserts colons at the correct places so "1530" reads as "15:30" and
+ * "13030" as "1:30:30". Preserves single/double-digit "minutes-only" entry.
+ */
+function formatDurationDraft(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 6);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) {
+    return `${digits.slice(0, digits.length - 2)}:${digits.slice(-2)}`;
+  }
+  return `${digits.slice(0, digits.length - 4)}:${digits.slice(-4, -2)}:${digits.slice(-2)}`;
+}
+
 /* ─────────────────────────────────────────────────────────────────────────────
  * Private: CircleBtn
  * ──────────────────────────────────────────────────────────────────────────── */
@@ -215,9 +229,9 @@ export function EditableTime({ ms, color, onChange, disabled }: EditableTimeProp
           key="input"
           ref={inputRef}
           className="tt-ring-input"
-          style={{ borderColor: `${color}4d` }}
+          style={{ caretColor: color }}
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => setDraft(formatDurationDraft(e.target.value))}
           onKeyDown={handleKeyDown}
           onBlur={commit}
           initial={{ opacity: 0, scale: 0.95 }}

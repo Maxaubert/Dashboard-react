@@ -3,26 +3,29 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PillToggle, type PillOption } from '@/components/timer/PillToggle';
+import { AlarmMode } from '@/components/timer/AlarmMode';
 import { CountdownMode } from '@/components/timer/CountdownMode';
 import { StopwatchMode } from '@/components/timer/StopwatchMode';
 import { PomodoroMode } from '@/components/timer/PomodoroMode';
 
-type Mode = 'timer' | 'stopwatch' | 'pomodoro';
+type Mode = 'alarm' | 'timer' | 'stopwatch' | 'pomodoro';
 
 const MODES: PillOption<Mode>[] = [
+  { id: 'alarm', label: 'Alarm', color: '#f97316' },
   { id: 'timer', label: 'Timer', color: '#ef4444' },
   { id: 'stopwatch', label: 'Stopwatch', color: '#22d3ee' },
   { id: 'pomodoro', label: 'Pomodoro', color: '#34d399' },
 ];
 
 const COMPONENTS: Record<Mode, React.FC> = {
+  alarm: AlarmMode,
   timer: CountdownMode,
   stopwatch: StopwatchMode,
   pomodoro: PomodoroMode,
 };
 
 export function ToolTimerPage() {
-  const [mode, setMode] = useState<Mode>('timer');
+  const [mode, setMode] = useState<Mode>('alarm');
   const Component = COMPONENTS[mode];
 
   return (
@@ -30,7 +33,7 @@ export function ToolTimerPage() {
       <Link to="/tools" className="tools-back-link tools-back-link-eyebrow">
         ← Verktøy
       </Link>
-      <PageHeader title="Timer & Pomodoro" subtitle="Timer, stoppeklokke og Pomodoro i ett." />
+      <PageHeader title="Timer & Pomodoro" subtitle="Alarm, timer, stoppeklokke og Pomodoro i ett." />
 
       <div className="surface tt-surface">
         <PillToggle options={MODES} value={mode} onChange={setMode} />

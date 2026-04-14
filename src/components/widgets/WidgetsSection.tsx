@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import {
   DndContext,
@@ -24,6 +24,7 @@ import { AddWidgetDialog } from './AddWidgetDialog';
 import { CountdownWidget } from './timers/CountdownWidget';
 import { PomodoroWidget } from './timers/PomodoroWidget';
 import { StopwatchWidget } from './timers/StopwatchWidget';
+import { AlarmWidget } from './timers/AlarmWidget';
 import { TimerPopup } from './timers/TimerPopup';
 import { useTimers, type TimerInstance } from '@/context/TimerContext';
 
@@ -66,7 +67,7 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
     addWidget('habit', habit.id);
   }
 
-  function handleAddTimerWidget(kind: 'countdown' | 'pomodoro' | 'stopwatch', color: string) {
+  function handleAddTimerWidget(kind: 'alarm' | 'countdown' | 'pomodoro' | 'stopwatch', color: string) {
     ctx.setColor(kind, color);
     ctx.setPersistent(kind, true);
     // The auto-sync effect below will add the widget automatically.
@@ -89,15 +90,25 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
   // Auto-sync: for each timer, ensure there's a widget when it should be visible,
   // and remove it when it shouldn't.
   useEffect(() => {
-    const now = Date.now();
     for (const t of ctx.timers) {
       const existingWidget = widgets.find((w) => w.type === t.kind && w.refId === t.kind);
-      const hasState =
-        (t.kind === 'countdown' && (t.remainingMs < t.totalMs && t.remainingMs > 0)) ||
-        (t.kind === 'stopwatch' && t.elapsedMs > 0) ||
-        (t.kind === 'pomodoro' && t.cycle > 0);
-      const inZeroGrace = t.zeroedAt !== null && now - t.zeroedAt < 60_000;
-      const shouldShow = t.persistent || t.running || inZeroGrace || hasState;
+      let shouldShow: boolean;
+      if (t.kind === 'alarm') {
+        // Alarm: sticky if persistent, otherwise only while armed or ringing.
+        shouldShow = t.persistent || t.running || t.ringing;
+      } else if (t.persistent) {
+        // Manually-added: always visible regardless of state.
+        shouldShow = true;
+      } else {
+        // Auto-summoned: visible only while actively used.
+        // The widget disappears when the timer is reset (which the popup-close
+        // handlers do for completion states) — no 60s grace.
+        const hasState =
+          (t.kind === 'countdown' && t.remainingMs < t.totalMs) ||
+          (t.kind === 'stopwatch' && t.elapsedMs > 0) ||
+          (t.kind === 'pomodoro' && (t.cycle > 0 || t.completed));
+        shouldShow = t.running || hasState;
+      }
 
       if (shouldShow && !existingWidget) {
         addWidget(t.kind, t.kind);
@@ -108,23 +119,36 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ctx.timers]);
 
-  // Schedule re-evaluation 60s after a timer zeroes so the widget auto-hides.
+  // Auto-open the relevant popup when an alarm starts ringing, when a countdown
+  // hits 0, or when a pomodoro completes its final session. Only fires on the
+  // rising edge, and only if no popup is already open (don't fight the user
+  // mid-edit). If something else is open at the firing-edge, we don't queue an
+  // auto-open for later.
+  const prevAlarmRingingRef = useRef(false);
+  const prevCountdownFinishedRef = useRef(false);
+  const prevPomodoroCompletedRef = useRef(false);
   useEffect(() => {
-    const timeouts: number[] = [];
-    for (const t of ctx.timers) {
-      if (t.persistent) continue;
-      if (t.zeroedAt === null) continue;
-      const elapsed = Date.now() - t.zeroedAt;
-      const remaining = 60_000 - elapsed;
-      if (remaining <= 0) continue;
-      const id = window.setTimeout(() => {
-        removeWidgetByRefId(t.kind);
-      }, remaining);
-      timeouts.push(id);
+    const alarm = ctx.getTimer('alarm');
+    const countdown = ctx.getTimer('countdown');
+    const pomodoro = ctx.getTimer('pomodoro');
+    const countdownFinished = countdown.remainingMs === 0 && countdown.totalMs > 0;
+
+    const wasRinging = prevAlarmRingingRef.current;
+    const wasFinished = prevCountdownFinishedRef.current;
+    const wasPomodoroCompleted = prevPomodoroCompletedRef.current;
+    prevAlarmRingingRef.current = alarm.ringing;
+    prevCountdownFinishedRef.current = countdownFinished;
+    prevPomodoroCompletedRef.current = pomodoro.completed;
+
+    if (popupKind !== null) return;
+    if (!wasRinging && alarm.ringing) {
+      setPopupKind('alarm');
+    } else if (!wasFinished && countdownFinished) {
+      setPopupKind('countdown');
+    } else if (!wasPomodoroCompleted && pomodoro.completed) {
+      setPopupKind('pomodoro');
     }
-    return () => timeouts.forEach((id) => window.clearTimeout(id));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ctx.timers]);
+  }, [ctx.timers, popupKind]);
 
   return (
     <>
@@ -240,6 +264,17 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
           onClick={() => setPopupKind('stopwatch')}
           onRemove={() => ctx.setPersistent('stopwatch', false)}
           onColorChange={(c) => ctx.setColor('stopwatch', c)}
+        />
+      );
+    }
+    if (w.type === 'alarm') {
+      const t = ctx.getTimer('alarm');
+      return (
+        <AlarmWidget
+          timer={t}
+          onClick={() => setPopupKind('alarm')}
+          onRemove={() => ctx.setPersistent('alarm', false)}
+          onColorChange={(c) => ctx.setColor('alarm', c)}
         />
       );
     }
