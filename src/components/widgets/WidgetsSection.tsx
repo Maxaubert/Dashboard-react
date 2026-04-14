@@ -87,32 +87,38 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
     reorderWidgets(arrayMove(widgets, oldIdx, newIdx));
   }
 
-  // Auto-sync: for each timer, ensure there's a widget when it should be visible,
-  // and remove it when it shouldn't.
+  // Auto-sync: add a widget when a timer becomes active, remove it when a
+  // timer transitions back to inert. Only acts on *transitions* — never on
+  // steady-state — so the widget list fetched from the backend is treated as
+  // authoritative on mount. Without this guard, a fresh page load (or a
+  // remount after navigating between routes) would see every timer in inert
+  // state and incorrectly remove every timer widget from the backend list.
+  const prevTimersRef = useRef<typeof ctx.timers | null>(null);
   useEffect(() => {
-    for (const t of ctx.timers) {
-      const existingWidget = widgets.find((w) => w.type === t.kind && w.refId === t.kind);
-      let shouldShow: boolean;
-      if (t.kind === 'alarm') {
-        // Alarm: sticky if persistent, otherwise only while armed or ringing.
-        shouldShow = t.persistent || t.running || t.ringing;
-      } else if (t.persistent) {
-        // Manually-added: always visible regardless of state.
-        shouldShow = true;
-      } else {
-        // Auto-summoned: visible only while actively used.
-        // The widget disappears when the timer is reset (which the popup-close
-        // handlers do for completion states) — no 60s grace.
-        const hasState =
-          (t.kind === 'countdown' && t.remainingMs < t.totalMs) ||
-          (t.kind === 'stopwatch' && t.elapsedMs > 0) ||
-          (t.kind === 'pomodoro' && (t.cycle > 0 || t.completed));
-        shouldShow = t.running || hasState;
-      }
+    const prev = prevTimersRef.current;
+    prevTimersRef.current = ctx.timers;
+    if (prev === null) return; // first mount — treat backend list as baseline
 
-      if (shouldShow && !existingWidget) {
+    function computeShouldShow(t: (typeof ctx.timers)[number]): boolean {
+      if (t.kind === 'alarm') return t.persistent || t.running || t.ringing;
+      if (t.persistent) return true;
+      const hasState =
+        (t.kind === 'countdown' && t.remainingMs < t.totalMs) ||
+        (t.kind === 'stopwatch' && t.elapsedMs > 0) ||
+        (t.kind === 'pomodoro' && (t.cycle > 0 || t.completed));
+      return t.running || hasState;
+    }
+
+    for (const t of ctx.timers) {
+      const p = prev.find((pp) => pp.id === t.id);
+      if (!p) continue;
+      const wasShow = computeShouldShow(p);
+      const isShow = computeShouldShow(t);
+      const existingWidget = widgets.find((w) => w.type === t.kind && w.refId === t.kind);
+
+      if (!wasShow && isShow && !existingWidget) {
         addWidget(t.kind, t.kind);
-      } else if (!shouldShow && existingWidget) {
+      } else if (wasShow && !isShow && existingWidget) {
         removeWidgetByRefId(t.kind);
       }
     }
