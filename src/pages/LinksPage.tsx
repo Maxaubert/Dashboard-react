@@ -264,25 +264,31 @@ function SortableLinkCard({
     opacity: isDragging ? 0.4 : 1,
   };
 
-  // When a drag finishes, the browser still delivers the pointer-up as a
-  // `click` on the stretched anchor, which opens the link in a new tab.
-  // Track the drag transition and swallow the very next click.
+  // When a drag finishes, the browser fires a synthetic click on the
+  // stretched anchor which opens the link. Catch that by watching
+  // pointerup: if the drag was still active at that instant, mark the
+  // very next click as to-be-suppressed. We mirror `isDragging` into a
+  // ref each render so the pointerup handler sees the current value
+  // (useEffect fires too late — after the click has already opened
+  // the link).
+  const isDraggingRef = useRef(isDragging);
+  isDraggingRef.current = isDragging;
   const suppressClickRef = useRef(false);
-  const prevIsDragging = useRef(isDragging);
-  useEffect(() => {
-    if (prevIsDragging.current && !isDragging) {
+
+  function handlePointerUpCapture() {
+    if (isDraggingRef.current) {
       suppressClickRef.current = true;
-      // Clear on the next macrotask — `click` fires synchronously after
-      // pointerup, so by setTimeout 0 the offending click has already been
-      // swallowed and future clicks go through.
-      const id = window.setTimeout(() => { suppressClickRef.current = false; }, 0);
-      return () => window.clearTimeout(id);
+      // Clear on the next macrotask — the click fires in the same task as
+      // pointerup, so setTimeout 0 clears it after the offending click is
+      // swallowed without blocking any later legitimate click.
+      window.setTimeout(() => {
+        suppressClickRef.current = false;
+      }, 0);
     }
-    prevIsDragging.current = isDragging;
-  }, [isDragging]);
+  }
 
   function handleClickCapture(e: React.MouseEvent) {
-    if (suppressClickRef.current || isDragging) {
+    if (suppressClickRef.current || isDraggingRef.current) {
       e.preventDefault();
       e.stopPropagation();
     }
@@ -293,6 +299,7 @@ function SortableLinkCard({
       ref={setNodeRef}
       style={style}
       className="touch-none"
+      onPointerUpCapture={handlePointerUpCapture}
       onClickCapture={handleClickCapture}
       {...attributes}
       {...listeners}
