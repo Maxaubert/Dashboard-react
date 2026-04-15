@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { PinOff } from 'lucide-react';
+import { Pin, PinOff } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Modal } from '@/components/ui';
 import { useSaveTodos, useTodos } from '@/hooks/useTodos';
@@ -36,6 +36,11 @@ export function TodoWidget({ refId }: TodoWidgetProps) {
   const { removeWidgetByRefId } = useWidgets();
   const [editing, setEditing] = useState(false);
   const [viewing, setViewing] = useState(false);
+  // In-popup pin-intent state. Starts tracking the todo's actual pinned
+  // value when the popup opens; toggling the corner pin icon flips this
+  // locally (so the user can change their mind) and only commits on
+  // popup close — avoids accidentally losing the widget on a misclick.
+  const [viewPinnedIntent, setViewPinnedIntent] = useState(true);
   const autoUnpinRef = useRef<number | null>(null);
 
   const all: Todo[] = todos ?? [];
@@ -94,6 +99,23 @@ export function TodoWidget({ refId }: TodoWidgetProps) {
     removeWidgetByRefId(refId);
   }
 
+  /**
+   * Close the view popup. Commits the user's pin-intent only at this
+   * moment — so an accidental click on the corner icon can be undone
+   * by clicking it again before dismissing the popup.
+   */
+  function closeView() {
+    if (!viewPinnedIntent && todo?.pinned) {
+      handleUnpin();
+    }
+    setViewing(false);
+  }
+
+  function openView() {
+    setViewPinnedIntent(true);
+    setViewing(true);
+  }
+
   function handleDelete() {
     if (!todo) return;
     persist(all.filter((t) => t.id !== todo.id));
@@ -119,7 +141,7 @@ export function TodoWidget({ refId }: TodoWidgetProps) {
     <>
       <WidgetShell
         className={cn('todo-widget', todo.done && 'done')}
-        onClick={() => setViewing(true)}
+        onClick={openView}
         ariaLabel={`Åpne ${todo.text}`}
         menu={[
           { label: 'Edit', onSelect: () => setEditing(true) },
@@ -163,7 +185,7 @@ export function TodoWidget({ refId }: TodoWidgetProps) {
       {viewing && (
         <Modal
           open
-          onOpenChange={(o) => !o && setViewing(false)}
+          onOpenChange={(o) => !o && closeView()}
           title="📌 Festet oppgave"
           size="md"
           variant="standard"
@@ -173,7 +195,7 @@ export function TodoWidget({ refId }: TodoWidgetProps) {
                 className={cn('todo-view-btn', todo.done ? 'undo' : 'primary')}
                 onClick={(e) => {
                   handleToggleDone(e);
-                  setViewing(false);
+                  closeView();
                 }}
               >
                 {todo.done ? '↺ Angre ferdig' : '✓ Merk ferdig'}
@@ -181,7 +203,7 @@ export function TodoWidget({ refId }: TodoWidgetProps) {
               <button
                 className="todo-view-btn ghost"
                 onClick={() => {
-                  setViewing(false);
+                  closeView();
                   setEditing(true);
                 }}
               >
@@ -196,15 +218,16 @@ export function TodoWidget({ refId }: TodoWidgetProps) {
           <div className="todo-view">
             <button
               type="button"
-              className="todo-view-pin"
-              onClick={() => {
-                handleUnpin();
-                setViewing(false);
-              }}
-              aria-label="Løsne fra dashboard"
-              title="Løsne fra dashboard"
+              className={cn('todo-view-pin', !viewPinnedIntent && 'unpinned')}
+              onClick={() => setViewPinnedIntent((v) => !v)}
+              aria-label={viewPinnedIntent ? 'Løsne fra dashboard' : 'Fest til dashboard'}
+              title={
+                viewPinnedIntent
+                  ? 'Løsne fra dashboard (tar effekt når du lukker)'
+                  : 'Fest til dashboard'
+              }
             >
-              <PinOff size={16} />
+              {viewPinnedIntent ? <PinOff size={16} /> : <Pin size={16} />}
             </button>
             <div className="todo-view-text">{todo.text}</div>
             <div className="todo-view-meta">

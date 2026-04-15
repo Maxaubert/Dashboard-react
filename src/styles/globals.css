@@ -6789,6 +6789,17 @@
     background: rgba(96, 165, 250, 0.1);
     border-color: rgba(96, 165, 250, 0.4);
   }
+  /* Pending-unpin state: icon flips to Pin and the button takes an
+   * amber tint to warn "this will drop from dashboard on close". */
+  .todo-view-pin.unpinned {
+    color: var(--color-warning);
+    border-color: rgba(245, 158, 11, 0.4);
+    background: rgba(245, 158, 11, 0.06);
+  }
+  .todo-view-pin.unpinned:hover {
+    background: rgba(245, 158, 11, 0.12);
+    border-color: rgba(245, 158, 11, 0.55);
+  }
 
   /* Brief "completed" flash when the check is ticked (before the 1s auto-unpin) */
   .todo-widget.done {
