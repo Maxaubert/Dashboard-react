@@ -399,51 +399,141 @@ export interface TimerContextValue {
 
 const TimerContext = createContext<TimerContextValue | null>(null);
 
-const STORAGE_KEY = 'home-timers-v4';
+const STORAGE_KEY = 'home-timers-v5';
+const LEGACY_STORAGE_KEY = 'home-timers-v4';
+
+interface PersistedTimers {
+  /** Date.now() at the moment the snapshot was written. Used on restore
+   *  to replay the wall-clock elapsed time across the reload so running
+   *  timers don't freeze while the tab is closed. */
+  savedAt: number;
+  timers: TimerInstance[];
+}
+
+/**
+ * Take a timers array and a wall-clock delta (ms since it was saved) and
+ * advance running timers by that delta so refresh is transparent.
+ */
+function advanceAcrossReload(timers: TimerInstance[], elapsed: number): TimerInstance[] {
+  if (elapsed <= 0) return timers;
+  return timers.map((t) => {
+    if (t.kind === 'countdown') {
+      if (!t.running) return t;
+      const nextRem = Math.max(0, t.remainingMs - elapsed);
+      return {
+        ...t,
+        remainingMs: nextRem,
+        running: nextRem > 0,
+        startedAt: null, // ticker resets this on mount
+        zeroedAt: nextRem === 0 && t.zeroedAt === null ? Date.now() : t.zeroedAt,
+      };
+    }
+    if (t.kind === 'stopwatch') {
+      if (!t.running) return t;
+      return {
+        ...t,
+        elapsedMs: t.elapsedMs + elapsed,
+        running: true,
+        startedAt: null,
+      };
+    }
+    if (t.kind === 'pomodoro') {
+      if (!t.running) return t;
+      // Pomodoro phase flips happen in a React effect (not in the reducer),
+      // so rather than replay multiple phase crossings here we just cap
+      // remainingMs at 0 on overshoot — the effect will advance the phase
+      // on the next tick. Good enough; worst case the user loses ~a second
+      // on the boundary.
+      const nextRem = Math.max(0, t.remainingMs - elapsed);
+      return {
+        ...t,
+        remainingMs: nextRem,
+        running: nextRem > 0,
+        startedAt: null,
+        zeroedAt: nextRem === 0 && t.zeroedAt === null ? Date.now() : t.zeroedAt,
+      };
+    }
+    if (t.kind === 'alarm') {
+      // fireAt is absolute epoch-ms so it survives reload as-is. The
+      // ticker will re-check it against Date.now() on the next tick.
+      return t;
+    }
+    return t;
+  });
+}
 
 export function TimerProvider({ children }: { children: ReactNode }) {
   const [timers, dispatch] = useReducer(reducer, undefined, () => {
     try {
+      let snapshot: PersistedTimers | null = null;
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return makeDefaults();
-      const parsed = JSON.parse(raw) as TimerInstance[];
+      if (raw) {
+        snapshot = JSON.parse(raw) as PersistedTimers;
+      } else {
+        // One-time migration from the old flat-array format (v4).
+        const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+        if (legacy) {
+          snapshot = { savedAt: Date.now(), timers: JSON.parse(legacy) };
+        }
+      }
+      if (!snapshot) return makeDefaults();
+      const elapsed = Math.max(0, Date.now() - snapshot.savedAt);
       const defaults = makeDefaults();
       // Merge: for each kind in defaults, prefer parsed if present.
-      return defaults.map((d) => {
-        const found = parsed.find((p) => p.kind === d.kind);
+      const merged = defaults.map((d) => {
+        const found = snapshot!.timers.find((p) => p.kind === d.kind);
         if (!found) return d;
-        const base = { ...found, running: false, startedAt: null };
-        if (base.kind === 'pomodoro') {
+        if (found.kind === 'pomodoro') {
           // Defensive clamp on load — older versions allowed any integer.
           return {
-            ...base,
+            ...found,
             settings: {
-              focusMin: clamp(base.settings?.focusMin ?? 25, 1, 180),
-              pauseMin: clamp(base.settings?.pauseMin ?? 5, 1, 60),
-              targetCycles: clamp(base.settings?.targetCycles ?? 4, 1, 12),
+              focusMin: clamp(found.settings?.focusMin ?? 25, 1, 180),
+              pauseMin: clamp(found.settings?.pauseMin ?? 5, 1, 60),
+              targetCycles: clamp(found.settings?.targetCycles ?? 4, 1, 12),
             },
-            completed: false,
-          };
+          } as TimerInstance;
         }
-        if (base.kind === 'alarm') {
-          // Don't restore mid-ring or armed state across reloads — start unarmed.
-          return { ...base, fireAt: null, ringing: false };
-        }
-        return base;
+        return found;
       });
+      return advanceAcrossReload(merged, elapsed);
     } catch {
       return makeDefaults();
     }
   });
 
   const saveTimeoutRef = useRef<number | undefined>(undefined);
+  const timersRef = useRef(timers);
+  timersRef.current = timers;
+
+  function flushSave() {
+    try {
+      const snapshot: PersistedTimers = { savedAt: Date.now(), timers: timersRef.current };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+    } catch { /* ignore */ }
+  }
+
   useEffect(() => {
     window.clearTimeout(saveTimeoutRef.current);
-    saveTimeoutRef.current = window.setTimeout(() => {
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(timers)); } catch { /* ignore */ }
-    }, 200);
+    saveTimeoutRef.current = window.setTimeout(flushSave, 200);
     return () => window.clearTimeout(saveTimeoutRef.current);
+    // flushSave is stable (uses refs) so deps can stay on `timers`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timers]);
+
+  // Flush on tab-close so the debounced save doesn't get dropped when the
+  // user hits refresh within 200ms of the last tick. pagehide is the
+  // cross-browser-safe hook (beforeunload fires inconsistently on mobile).
+  useEffect(() => {
+    const handler = () => flushSave();
+    window.addEventListener('pagehide', handler);
+    window.addEventListener('visibilitychange', handler);
+    return () => {
+      window.removeEventListener('pagehide', handler);
+      window.removeEventListener('visibilitychange', handler);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function getTimer<K extends TimerInstance['kind']>(kind: K): Extract<TimerInstance, { kind: K }> {
     return timers.find((t) => t.kind === kind) as Extract<TimerInstance, { kind: K }>;

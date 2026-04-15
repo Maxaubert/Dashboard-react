@@ -18,6 +18,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useHabits } from '@/hooks/useHabits';
+import { useHome } from '@/hooks/useHome';
 import { useWidgets, type Widget } from '@/hooks/useWidgets';
 import { HabitWidget } from './HabitWidget';
 import { AddWidgetDialog } from './AddWidgetDialog';
@@ -48,6 +49,7 @@ function GripHandle({ handleProps }: { handleProps?: HandleProps }) {
 
 export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
   const { habits, addHabit, updateHabit, removeHabit, toggleDay } = useHabits();
+  const { data: homeData } = useHome();
   const { widgets, addWidget, removeWidgetByRefId, reorderWidgets } = useWidgets();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const ctx = useTimers();
@@ -83,6 +85,33 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
     removeWidgetByRefId(habitId);
   }
 
+  /**
+   * Full removal of a timer widget triggered by its right-click Remove.
+   * Calling `setPersistent(..., false)` alone isn't enough when the timer
+   * is running or has mid-state, because the auto-sync effect's
+   * `computeShouldShow` still returns true (timer.running || hasState),
+   * which re-adds the widget on the next tick. So we also reset/stop
+   * the underlying timer so `computeShouldShow` goes false, then drop
+   * the widget row explicitly.
+   */
+  function handleRemoveTimerWidget(kind: TimerInstance['kind']) {
+    ctx.setPersistent(kind, false);
+    if (kind === 'countdown') {
+      ctx.setCountdownRunning(false);
+      ctx.resetCountdown();
+    } else if (kind === 'stopwatch') {
+      ctx.setStopwatchRunning(false);
+      ctx.resetStopwatch();
+    } else if (kind === 'pomodoro') {
+      ctx.setPomodoroRunning(false);
+      ctx.resetPomodoro();
+    } else if (kind === 'alarm') {
+      ctx.stopAlarm(); // clears ringing
+      ctx.cancelAlarm(); // unarms (fireAt = null)
+    }
+    removeWidgetByRefId(kind);
+  }
+
   function handleDragEnd(e: DragEndEvent) {
     const { active, over } = e;
     if (!over || active.id === over.id) return;
@@ -93,16 +122,21 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
   }
 
   // Auto-sync: add a widget when a timer becomes active, remove it when a
-  // timer transitions back to inert. Only acts on *transitions* — never on
-  // steady-state — so the widget list fetched from the backend is treated as
-  // authoritative on mount. Without this guard, a fresh page load (or a
-  // remount after navigating between routes) would see every timer in inert
-  // state and incorrectly remove every timer widget from the backend list.
+  // timer transitions back to inert. The *removal* side is gated so we only
+  // act on transitions seen by this mount — otherwise a fresh page load
+  // (or a remount after navigating between routes) would see every timer
+  // in inert state and incorrectly wipe persistent widgets from the
+  // backend list. The *add* side must also run on first mount, however,
+  // so that starting a timer on another route (e.g. /tools/timer) results
+  // in its widget appearing the moment the user returns to /.
   const prevTimersRef = useRef<typeof ctx.timers | null>(null);
   useEffect(() => {
+    // Wait until the home envelope has actually loaded — otherwise `widgets`
+    // is an empty array from `data?.widgets ?? []` and we can't reliably tell
+    // whether a widget already exists for this timer.
+    if (!homeData) return;
     const prev = prevTimersRef.current;
     prevTimersRef.current = ctx.timers;
-    if (prev === null) return; // first mount — treat backend list as baseline
 
     function computeShouldShow(t: (typeof ctx.timers)[number]): boolean {
       if (t.kind === 'alarm') return t.persistent || t.running || t.ringing;
@@ -115,11 +149,18 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
     }
 
     for (const t of ctx.timers) {
+      const existingWidget = widgets.find((w) => w.type === t.kind && w.refId === t.kind);
+      const isShow = computeShouldShow(t);
+
+      if (prev === null) {
+        // First mount — only adds are safe (see block comment above).
+        if (isShow && !existingWidget) addWidget(t.kind, t.kind);
+        continue;
+      }
+
       const p = prev.find((pp) => pp.id === t.id);
       if (!p) continue;
       const wasShow = computeShouldShow(p);
-      const isShow = computeShouldShow(t);
-      const existingWidget = widgets.find((w) => w.type === t.kind && w.refId === t.kind);
 
       if (!wasShow && isShow && !existingWidget) {
         addWidget(t.kind, t.kind);
@@ -128,7 +169,7 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ctx.timers]);
+  }, [ctx.timers, homeData]);
 
   // Auto-open the relevant popup when an alarm starts ringing, when a countdown
   // hits 0, or when a pomodoro completes its final session. Only fires on the
@@ -251,7 +292,7 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
         <CountdownWidget
           timer={t}
           onClick={() => setPopupKind('countdown')}
-          onRemove={() => ctx.setPersistent('countdown', false)}
+          onRemove={() => handleRemoveTimerWidget('countdown')}
           onColorChange={(c) => ctx.setColor('countdown', c)}
         />
       );
@@ -262,7 +303,7 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
         <PomodoroWidget
           timer={t}
           onClick={() => setPopupKind('pomodoro')}
-          onRemove={() => ctx.setPersistent('pomodoro', false)}
+          onRemove={() => handleRemoveTimerWidget('pomodoro')}
           onColorChange={(c) => ctx.setColor('pomodoro', c)}
         />
       );
@@ -273,7 +314,7 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
         <StopwatchWidget
           timer={t}
           onClick={() => setPopupKind('stopwatch')}
-          onRemove={() => ctx.setPersistent('stopwatch', false)}
+          onRemove={() => handleRemoveTimerWidget('stopwatch')}
           onColorChange={(c) => ctx.setColor('stopwatch', c)}
         />
       );
@@ -287,7 +328,7 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
         <AlarmWidget
           timer={t}
           onClick={() => setPopupKind('alarm')}
-          onRemove={() => ctx.setPersistent('alarm', false)}
+          onRemove={() => handleRemoveTimerWidget('alarm')}
           onColorChange={(c) => ctx.setColor('alarm', c)}
         />
       );
