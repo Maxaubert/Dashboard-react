@@ -186,6 +186,16 @@ export function TodoWidget({ refId }: TodoWidgetProps) {
               >
                 ✎ Rediger
               </button>
+              <button
+                className="todo-view-btn ghost"
+                onClick={() => {
+                  handleUnpin();
+                  setViewing(false);
+                }}
+                title="Fjern festet fra dashboard"
+              >
+                📌 Løsne
+              </button>
               <button className="todo-view-btn delete" onClick={handleDelete}>
                 🗑 Slett
               </button>
