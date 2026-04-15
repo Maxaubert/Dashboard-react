@@ -6763,6 +6763,30 @@
     text-transform: uppercase;
     font-size: 0.72rem;
   }
+  /* The corner pin-off icon replaces the built-in X close. */
+  .lm-content:has(.todo-view) .lm-close { display: none; }
+
+  .todo-view { position: relative; }
+  .todo-view-pin {
+    position: absolute;
+    top: -4px;
+    right: -2px;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    color: var(--color-page-todo);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .todo-view-pin:hover {
+    background: rgba(96, 165, 250, 0.1);
+    border-color: rgba(96, 165, 250, 0.4);
+  }
 
   /* Brief "completed" flash when the check is ticked (before the 1s auto-unpin) */
   .todo-widget.done {

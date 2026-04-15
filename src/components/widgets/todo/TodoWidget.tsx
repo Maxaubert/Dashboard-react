@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { PinOff } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Modal } from '@/components/ui';
 import { useSaveTodos, useTodos } from '@/hooks/useTodos';
@@ -186,16 +187,6 @@ export function TodoWidget({ refId }: TodoWidgetProps) {
               >
                 ✎ Rediger
               </button>
-              <button
-                className="todo-view-btn ghost"
-                onClick={() => {
-                  handleUnpin();
-                  setViewing(false);
-                }}
-                title="Fjern festet fra dashboard"
-              >
-                📌 Løsne
-              </button>
               <button className="todo-view-btn delete" onClick={handleDelete}>
                 🗑 Slett
               </button>
@@ -203,6 +194,18 @@ export function TodoWidget({ refId }: TodoWidgetProps) {
           }
         >
           <div className="todo-view">
+            <button
+              type="button"
+              className="todo-view-pin"
+              onClick={() => {
+                handleUnpin();
+                setViewing(false);
+              }}
+              aria-label="Løsne fra dashboard"
+              title="Løsne fra dashboard"
+            >
+              <PinOff size={16} />
+            </button>
             <div className="todo-view-text">{todo.text}</div>
             <div className="todo-view-meta">
               <span className={cn('todo-view-badge', `pri-${todo.priority}`)}>
