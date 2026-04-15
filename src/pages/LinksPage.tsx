@@ -15,6 +15,7 @@ import { CategoryPickerRow } from '@/components/links/CategoryPickerRow';
 import { useCategories } from '@/hooks/useCategories';
 import {
   DndContext,
+  useDndMonitor,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
@@ -258,55 +259,68 @@ function SortableLinkCard({
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: link.id });
+
+  // After a drag, the browser still fires the synthetic `click` on the
+  // stretched anchor, which opens the link. React-level handlers aren't
+  // reliable here (timing races with dnd-kit's state updates), so on
+  // drag end we install a one-shot native capture listener on the
+  // document that eats the very next click at the lowest level.
+  useDndMonitor({
+    onDragEnd(e) {
+      if (e.active.id !== link.id) return;
+      installOneShotClickSuppress();
+    },
+    onDragCancel(e) {
+      if (e.active.id !== link.id) return;
+      installOneShotClickSuppress();
+    },
+  });
+
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    // Transition is only useful for OTHER items shifting into place as the
+    // dragged card moves around. For the dragged card itself on release,
+    // dnd-kit applies a lingering transition that animates it back to the
+    // new slot from the drop position — reads as a small "slide" glitch.
+    // Skip the transition on the dragged card so it snaps cleanly.
+    transition: isDragging ? transition : undefined,
     opacity: isDragging ? 0.4 : 1,
   };
-
-  // When a drag finishes, the browser fires a synthetic click on the
-  // stretched anchor which opens the link. Catch that by watching
-  // pointerup: if the drag was still active at that instant, mark the
-  // very next click as to-be-suppressed. We mirror `isDragging` into a
-  // ref each render so the pointerup handler sees the current value
-  // (useEffect fires too late — after the click has already opened
-  // the link).
-  const isDraggingRef = useRef(isDragging);
-  isDraggingRef.current = isDragging;
-  const suppressClickRef = useRef(false);
-
-  function handlePointerUpCapture() {
-    if (isDraggingRef.current) {
-      suppressClickRef.current = true;
-      // Clear on the next macrotask — the click fires in the same task as
-      // pointerup, so setTimeout 0 clears it after the offending click is
-      // swallowed without blocking any later legitimate click.
-      window.setTimeout(() => {
-        suppressClickRef.current = false;
-      }, 0);
-    }
-  }
-
-  function handleClickCapture(e: React.MouseEvent) {
-    if (suppressClickRef.current || isDraggingRef.current) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  }
 
   return (
     <div
       ref={setNodeRef}
       style={style}
       className="touch-none"
-      onPointerUpCapture={handlePointerUpCapture}
-      onClickCapture={handleClickCapture}
       {...attributes}
       {...listeners}
     >
       <LinkCard link={link} onEdit={onEdit} onDelete={onDelete} onToggleFavorite={onToggleFavorite} />
     </div>
   );
+}
+
+/**
+ * Install a one-shot `click` listener on document in capture phase that
+ * swallows the next click event and auto-unregisters. A safety timeout
+ * removes it after 120ms in case no click comes (e.g. drop missed any
+ * droppable), so later clicks aren't affected.
+ */
+function installOneShotClickSuppress() {
+  let done = false;
+  function onClick(e: Event) {
+    if (done) return;
+    done = true;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    document.removeEventListener('click', onClick, true);
+  }
+  document.addEventListener('click', onClick, true);
+  window.setTimeout(() => {
+    if (done) return;
+    done = true;
+    document.removeEventListener('click', onClick, true);
+  }, 120);
 }
 
 /* ── Sortable section wrapper ────────────────────────────────────────────── */
