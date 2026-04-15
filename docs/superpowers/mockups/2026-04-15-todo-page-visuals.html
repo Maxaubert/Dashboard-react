@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<title>Todo page — visual variants</title>
+<style>
+  :root {
+    --color-bg: #050505;
+    --color-surface: #0e0e0e;
+    --color-surface-2: #141414;
+    --color-border: rgba(255, 255, 255, 0.07);
+    --color-text: #e8e8e2;
+    --color-text-muted: #505050;
+    --color-text-dim: #888888;
+    --accent: #f472b6;
+    --accent-high: #f87171;
+    --accent-med: #f59e0b;
+    --accent-low: #60a5fa;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --sidebar-w: 220px;
+    font-family: Inter, system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; color: var(--color-text); }
+  body {
+    padding: 32px 24px 120px;
+    background: #030304;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.014) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.014) 1px, transparent 1px);
+    background-size: 34px 34px;
+    position: relative;
+  }
+  body::after {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 34px 34px;
+    -webkit-mask-image: radial-gradient(circle at center, rgba(0,0,0,1) 0%, rgba(0,0,0,0.5) 6%, rgba(0,0,0,0.15) 14%, transparent 22%);
+            mask-image: radial-gradient(circle at center, rgba(0,0,0,1) 0%, rgba(0,0,0,0.5) 6%, rgba(0,0,0,0.15) 14%, transparent 22%);
+    -webkit-mask-size: 320% 320%; mask-size: 320% 320%;
+    -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+    animation: dot-sunbeam 90s ease-in-out infinite;
+  }
+  @keyframes dot-sunbeam {
+    0%   { -webkit-mask-position: 10% 5%;  mask-position: 10% 5%; }
+    25%  { -webkit-mask-position: 80% 20%; mask-position: 80% 20%; }
+    50%  { -webkit-mask-position: 90% 85%; mask-position: 90% 85%; }
+    75%  { -webkit-mask-position: 15% 75%; mask-position: 15% 75%; }
+    100% { -webkit-mask-position: 10% 5%;  mask-position: 10% 5%; }
+  }
+  h1.doc-title, p.doc-sub, .variant-wrap { position: relative; z-index: 1; }
+  h1.doc-title { font-size: 1.1rem; letter-spacing: .12em; text-transform: uppercase; color: var(--color-text-dim); margin: 0 0 6px; font-weight: 700; }
+  p.doc-sub { color: var(--color-text-muted); margin: 0 0 32px; font-size: .85rem; }
+
+  .variant-wrap {
+    margin-bottom: 60px;
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    overflow: hidden;
+    background: transparent;
+  }
+  .variant-label {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--color-border);
+    display: flex; justify-content: space-between; align-items: baseline;
+    background: #0a0a0a;
+  }
+  .variant-label h2 { margin: 0; font-size: 1rem; letter-spacing: .08em; text-transform: uppercase; }
+  .variant-label .variant-desc { color: var(--color-text-dim); font-size: .78rem; }
+
+  /* App shell */
+  .shell { display: flex; min-height: 720px; }
+  .sidebar {
+    width: var(--sidebar-w); flex-shrink: 0;
+    background: rgba(5,5,6,.88);
+    border-right: 1px solid var(--color-border);
+    padding: 20px 0;
+    display: flex; flex-direction: column;
+  }
+  .sb-logo { display: flex; align-items: center; gap: 10px; padding: 0 18px 20px; border-bottom: 1px solid var(--color-border); }
+  .sb-logo-mark {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .75rem;
+  }
+  .sb-logo-text { font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+  .sb-section-label {
+    font-size: .6rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--color-text-muted); padding: 16px 18px 4px;
+  }
+  .sb-link {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 20px; font-size: .82rem; color: var(--color-text-dim);
+  }
+  .sb-link .dot { width: 14px; height: 14px; border-radius: 3px; background: rgba(255,255,255,.08); }
+  .sb-link.active {
+    color: var(--color-text); background: rgba(255,255,255,.05);
+    box-shadow: inset 3px 0 0 rgba(255,255,255,.4);
+  }
+  .sb-link.active .dot { background: var(--accent); }
+
+  .main { flex: 1; padding: 32px 36px 40px; overflow: hidden; }
+  .page-header-block { margin-bottom: 24px; }
+  .eyebrow { font-size: .68rem; letter-spacing: .14em; text-transform: uppercase; color: var(--color-text-muted); font-weight: 700; }
+  .page-title { font-size: 1.8rem; font-weight: 700; margin: 4px 0; }
+  .page-sub { font-size: .82rem; color: var(--color-text-dim); }
+
+  /* Common todo bits reused across variants */
+  .todo-row-actions { display: flex; gap: 6px; align-items: center; }
+  .iconbtn {
+    width: 28px; height: 28px; border-radius: 6px;
+    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--color-text-dim); font-size: .8rem;
+  }
+  .iconbtn.pinned { color: var(--accent); border-color: rgba(244,114,182,.4); background: rgba(244,114,182,.08); }
+  .pri-high { color: var(--accent-high); }
+  .pri-med  { color: var(--accent-med); }
+  .pri-low  { color: var(--accent-low); }
+
+  /* ─── V1: Refined classic list ─── */
+  .v1 .todo-hdr { display: flex; justify-content: space-between; align-items: center; margin: 8px 0 16px; }
+  .v1 .v-switch { display: inline-flex; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 8px; padding: 3px; }
+  .v1 .v-switch button { background: transparent; border: 0; padding: 6px 12px; color: var(--color-text-dim); border-radius: 6px; font-size: .78rem; }
+  .v1 .v-switch button.on { background: rgba(244,114,182,.12); color: var(--accent); }
+  .v1 .new-btn { background: var(--accent); color: #0a0a0a; border: 0; border-radius: 8px; padding: 8px 14px; font-weight: 600; font-size: .8rem; display: inline-flex; gap: 6px; align-items: center; }
+  .v1 .sect { font-size: .66rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--color-text-muted); margin: 24px 0 10px; }
+  .v1 .todo-list { display: flex; flex-direction: column; gap: 8px; }
+  .v1 .todo {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--color-surface); border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm); padding: 12px 14px;
+    position: relative;
+  }
+  .v1 .todo::before { content: ""; position: absolute; left: 0; top: 10%; bottom: 10%; width: 3px; border-radius: 2px; background: var(--accent-med); }
+  .v1 .todo.high::before { background: var(--accent-high); }
+  .v1 .todo.low::before  { background: var(--accent-low);  }
+  .v1 .check { width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid rgba(255,255,255,.2); flex-shrink: 0; }
+  .v1 .check.done { background: var(--accent); border-color: var(--accent); }
+  .v1 .body { flex: 1; min-width: 0; }
+  .v1 .ttl { font-size: .92rem; font-weight: 500; }
+  .v1 .meta { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+  .v1 .badge { font-size: .65rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 2px 8px; border-radius: 10px; }
+  .v1 .badge.high { background: rgba(248,113,113,.12); color: var(--accent-high); }
+  .v1 .badge.med  { background: rgba(245,158,11,.12); color: var(--accent-med); }
+  .v1 .badge.low  { background: rgba(96,165,250,.12); color: var(--accent-low); }
+  .v1 .deadl { font-size: .72rem; color: var(--color-text-dim); }
+  .v1 .deadl.overdue { color: var(--accent-high); }
+  .v1 .done-row { opacity: .45; }
+  .v1 .done-row .ttl { text-decoration: line-through; }
+
+  /* ─── V2: Glass-tile kanban-default ─── */
+  .v2 .hdr { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; }
+  .v2 .hdr .right { display: flex; gap: 10px; align-items: center; }
+  .v2 .ghost-btn { background: transparent; border: 1px solid var(--color-border); padding: 7px 12px; color: var(--color-text-dim); border-radius: 8px; font-size: .78rem; }
+  .v2 .primary-btn { background: linear-gradient(180deg, #f472b6 0%, #db5fa0 100%); color: #0a0a0a; border: 0; padding: 8px 16px; font-weight: 700; font-size: .8rem; border-radius: 8px; }
+  .v2 .cols { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .v2 .col { background: rgba(255,255,255,.02); border: 1px solid var(--color-border); border-radius: 12px; padding: 14px; min-height: 280px; }
+  .v2 .col-hd { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .v2 .col-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .v2 .col.high .col-dot { background: var(--accent-high); }
+  .v2 .col.med  .col-dot { background: var(--accent-med); }
+  .v2 .col.low  .col-dot { background: var(--accent-low); }
+  .v2 .col-name { font-size: .74rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+  .v2 .col-count { font-size: .72rem; color: var(--color-text-muted); margin-left: auto; }
+  .v2 .card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+  .v2 .card .t { font-size: .86rem; font-weight: 500; }
+  .v2 .card .m { margin-top: 6px; display: flex; gap: 6px; align-items: center; font-size: .7rem; color: var(--color-text-dim); }
+  .v2 .card.high { border-top: 2px solid var(--accent-high); }
+  .v2 .card.med  { border-top: 2px solid var(--accent-med); }
+  .v2 .card.low  { border-top: 2px solid var(--accent-low); }
+
+  /* ─── V3: Minimal editorial list ─── */
+  .v3 .hero {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    padding-bottom: 18px; border-bottom: 1px solid var(--color-border); margin-bottom: 20px;
+  }
+  .v3 .hero h1 { font-size: 2.4rem; font-weight: 800; letter-spacing: -.02em; margin: 0; }
+  .v3 .count { font-size: .78rem; color: var(--color-text-dim); }
+  .v3 .count strong { color: var(--accent); font-weight: 700; }
+  .v3 .controls { display: flex; gap: 8px; }
+  .v3 .chip { padding: 6px 12px; border-radius: 999px; font-size: .76rem; border: 1px solid var(--color-border); background: transparent; color: var(--color-text-dim); }
+  .v3 .chip.active { background: #fff; color: #000; border-color: #fff; }
+  .v3 .row {
+    display: grid; grid-template-columns: 22px 10px 1fr auto auto;
+    align-items: center; gap: 14px;
+    padding: 14px 4px; border-bottom: 1px solid rgba(255,255,255,.05);
+  }
+  .v3 .row .pri { width: 6px; height: 6px; border-radius: 50%; }
+  .v3 .row.high .pri { background: var(--accent-high); }
+  .v3 .row.med  .pri { background: var(--accent-med); }
+  .v3 .row.low  .pri { background: var(--accent-low); }
+  .v3 .row .ck { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.2); }
+  .v3 .row.done .ck { background: var(--accent); border-color: var(--accent); }
+  .v3 .row.done .t { text-decoration: line-through; color: var(--color-text-dim); }
+  .v3 .t { font-size: .94rem; }
+  .v3 .d { font-size: .74rem; color: var(--color-text-dim); }
+  .v3 .d.over { color: var(--accent-high); }
+  .v3 .sect2 { font-size: .64rem; letter-spacing: .18em; text-transform: uppercase; color: var(--color-text-muted); margin: 28px 0 6px; font-weight: 700; }
+
+  /* ─── V4: Gradient card grid ─── */
+  .v4 .grad {
+    background: radial-gradient(ellipse at top right, rgba(244,114,182,.18) 0%, transparent 60%);
+    border-radius: 14px; padding: 22px 24px 18px; margin-bottom: 20px;
+    border: 1px solid var(--color-border);
+  }
+  .v4 .grad h1 { font-size: 1.6rem; margin: 0; font-weight: 700; }
+  .v4 .grad .stats { display: flex; gap: 24px; margin-top: 12px; }
+  .v4 .stat .k { font-size: 1.4rem; font-weight: 700; }
+  .v4 .stat .l { font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--color-text-muted); }
+  .v4 .stat .k.pink { color: var(--accent); }
+  .v4 .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .v4 .sect3 { font-size: .68rem; letter-spacing: .14em; text-transform: uppercase; color: var(--color-text-muted); font-weight: 700; margin: 16px 0 10px; }
+  .v4 .tile {
+    background: var(--color-surface); border: 1px solid var(--color-border);
+    border-radius: 12px; padding: 14px; position: relative; min-height: 92px;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .v4 .tile.high { background: linear-gradient(135deg, rgba(248,113,113,.08) 0%, var(--color-surface) 60%); border-color: rgba(248,113,113,.22); }
+  .v4 .tile.med  { background: linear-gradient(135deg, rgba(245,158,11,.06) 0%, var(--color-surface) 60%); border-color: rgba(245,158,11,.18); }
+  .v4 .tile.low  { background: linear-gradient(135deg, rgba(96,165,250,.05) 0%, var(--color-surface) 60%); border-color: rgba(96,165,250,.16); }
+  .v4 .tile .h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .v4 .tile .t { font-size: .92rem; font-weight: 500; line-height: 1.3; }
+  .v4 .tile .ft { display: flex; gap: 8px; align-items: center; margin-top: 10px; font-size: .72rem; color: var(--color-text-dim); }
+  .v4 .chp { font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,.06); }
+</style>
+</head>
+<body>
+
+<h1 class="doc-title">Todo page — visual variants</h1>
+<p class="doc-sub">Four full-site mockups showing how the redesigned /todo page sits within the dashboard shell. Sidebar, header, and page max-width match current app. Color palette uses existing tokens (pink #f472b6 is the page accent). Pick one — that choice drives Task 4 of the plan.</p>
+
+<!-- ──────────────────────────────── V1 ──────────────────────────────── -->
+<div class="variant-wrap">
+  <div class="variant-label">
+    <h2>V1 · Refined classic list</h2>
+    <span class="variant-desc">Closest to today's design. Polished spacing, pink accent on primary button, priority stripe on the left edge. Lowest implementation risk.</span>
+  </div>
+  <div class="shell v1">
+    <aside class="sidebar">
+      <div class="sb-logo"><div class="sb-logo-mark">D</div><div class="sb-logo-text">Dashboard</div></div>
+      <div class="sb-section-label">Nav</div>
+      <div class="sb-link"><span class="dot"></span>Plan</div>
+      <div class="sb-link active"><span class="dot"></span>Todo</div>
+      <div class="sb-link"><span class="dot"></span>Skole</div>
+      <div class="sb-link"><span class="dot"></span>Notater</div>
+      <div class="sb-link"><span class="dot"></span>Sport</div>
+      <div class="sb-link"><span class="dot"></span>Gaming</div>
+      <div class="sb-link"><span class="dot"></span>Verktøy</div>
+    </aside>
+    <main class="main">
+      <div class="page-header-block">
+        <div class="eyebrow">Oppgaver</div>
+        <div class="page-title">Todo</div>
+        <div class="page-sub">Hva står for tur</div>
+      </div>
+
+      <div class="todo-hdr">
+        <div class="v-switch">
+          <button class="on">☰ Liste</button>
+          <button>▦ Kolonner</button>
+        </div>
+        <button class="new-btn">＋ Legg til oppgave</button>
+      </div>
+
+      <div class="sect">Aktive · 4</div>
+      <div class="todo-list">
+        <div class="todo high">
+          <div class="check"></div>
+          <div class="body">
+            <div class="ttl">Lever mattebesvarelse</div>
+            <div class="meta"><span class="badge high">Høy</span><span class="deadl overdue">I går</span></div>
+          </div>
+          <div class="todo-row-actions">
+            <button class="iconbtn pinned" title="Festet">📌</button>
+            <button class="iconbtn">✎</button>
+            <button class="iconbtn">🗑</button>
+          </div>
+        </div>
+        <div class="todo">
+          <div class="check"></div>
+          <div class="body">
+            <div class="ttl">Ring tannlegen</div>
+            <div class="meta"><span class="badge med">Medium</span><span class="deadl">I dag</span></div>
+          </div>
+          <div class="todo-row-actions">
+            <button class="iconbtn">📌</button>
+            <button class="iconbtn">✎</button>
+            <button class="iconbtn">🗑</button>
+          </div>
+        </div>
+        <div class="todo low">
+          <div class="check"></div>
+          <div class="body">
+            <div class="ttl">Les kapittel 4 i historie</div>
+            <div class="meta"><span class="badge low">Lav</span><span class="deadl">Om 3 dager</span></div>
+          </div>
+          <div class="todo-row-actions">
+            <button class="iconbtn">📌</button>
+            <button class="iconbtn">✎</button>
+            <button class="iconbtn">🗑</button>
+          </div>
+        </div>
+        <div class="todo">
+          <div class="check"></div>
+          <div class="body">
+            <div class="ttl">Plan helgeturen med Alma</div>
+            <div class="meta"><span class="badge med">Medium</span></div>
+          </div>
+          <div class="todo-row-actions">
+            <button class="iconbtn">📌</button>
+            <button class="iconbtn">✎</button>
+            <button class="iconbtn">🗑</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sect">Fullført · 2</div>
+      <div class="todo-list">
+        <div class="todo done-row">
+          <div class="check done"></div>
+          <div class="body"><div class="ttl">Kjøp brød</div></div>
+          <div class="todo-row-actions"><button class="iconbtn">↺</button></div>
+        </div>
+        <div class="todo done-row">
+          <div class="check done"></div>
+          <div class="body"><div class="ttl">Svar på e-post fra lærer</div></div>
+          <div class="todo-row-actions"><button class="iconbtn">↺</button></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ──────────────────────────────── V2 ──────────────────────────────── -->
+<div class="variant-wrap">
+  <div class="variant-label">
+    <h2>V2 · Glass-tile kanban default</h2>
+    <span class="variant-desc">3 columns up top, cards with colored top-edges, pink gradient primary button. More visual weight, kanban-first. Bigger CSS rewrite.</span>
+  </div>
+  <div class="shell v2">
+    <aside class="sidebar">
+      <div class="sb-logo"><div class="sb-logo-mark">D</div><div class="sb-logo-text">Dashboard</div></div>
+      <div class="sb-section-label">Nav</div>
+      <div class="sb-link"><span class="dot"></span>Plan</div>
+      <div class="sb-link active"><span class="dot"></span>Todo</div>
+      <div class="sb-link"><span class="dot"></span>Skole</div>
+      <div class="sb-link"><span class="dot"></span>Notater</div>
+      <div class="sb-link"><span class="dot"></span>Sport</div>
+      <div class="sb-link"><span class="dot"></span>Gaming</div>
+      <div class="sb-link"><span class="dot"></span>Verktøy</div>
+    </aside>
+    <main class="main">
+      <div class="hdr">
+        <div>
+          <div class="eyebrow">Oppgaver</div>
+          <div class="page-title" style="margin-top:2px">Todo</div>
+        </div>
+        <div class="right">
+          <button class="ghost-btn">☰ Liste</button>
+          <button class="primary-btn">＋ Ny oppgave</button>
+        </div>
+      </div>
+
+      <div class="cols">
+        <div class="col high">
+          <div class="col-hd"><span class="col-dot"></span><span class="col-name">Høy</span><span class="col-count">1</span></div>
+          <div class="card high"><div class="t">Lever mattebesvarelse</div><div class="m">📌 · I går</div></div>
+        </div>
+        <div class="col med">
+          <div class="col-hd"><span class="col-dot"></span><span class="col-name">Medium</span><span class="col-count">2</span></div>
+          <div class="card med"><div class="t">Ring tannlegen</div><div class="m">I dag</div></div>
+          <div class="card med"><div class="t">Plan helgeturen med Alma</div><div class="m">—</div></div>
+        </div>
+        <div class="col low">
+          <div class="col-hd"><span class="col-dot"></span><span class="col-name">Lav</span><span class="col-count">1</span></div>
+          <div class="card low"><div class="t">Les kapittel 4 i historie</div><div class="m">Om 3 dager</div></div>
+        </div>
+      </div>
+
+      <div style="margin-top:24px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--color-text-muted);font-weight:700;">Fullført · 2</div>
+        <div style="font-size:.72rem;color:var(--color-text-dim);">Skjul ▾</div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:10px;">
+        <div class="card" style="flex:1;opacity:.5;"><div class="t" style="text-decoration:line-through;">Kjøp brød</div></div>
+        <div class="card" style="flex:1;opacity:.5;"><div class="t" style="text-decoration:line-through;">Svar på e-post fra lærer</div></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ──────────────────────────────── V3 ──────────────────────────────── -->
+<div class="variant-wrap">
+  <div class="variant-label">
+    <h2>V3 · Minimal editorial</h2>
+    <span class="variant-desc">Big type hero, divider-only rows, filter chips, no cards. Airy & calm. Priority shown by a tiny color dot.</span>
+  </div>
+  <div class="shell v3">
+    <aside class="sidebar">
+      <div class="sb-logo"><div class="sb-logo-mark">D</div><div class="sb-logo-text">Dashboard</div></div>
+      <div class="sb-section-label">Nav</div>
+      <div class="sb-link"><span class="dot"></span>Plan</div>
+      <div class="sb-link active"><span class="dot"></span>Todo</div>
+      <div class="sb-link"><span class="dot"></span>Skole</div>
+      <div class="sb-link"><span class="dot"></span>Notater</div>
+      <div class="sb-link"><span class="dot"></span>Sport</div>
+      <div class="sb-link"><span class="dot"></span>Gaming</div>
+      <div class="sb-link"><span class="dot"></span>Verktøy</div>
+    </aside>
+    <main class="main">
+      <div class="hero">
+        <div>
+          <div class="eyebrow">Oppgaver</div>
+          <h1>Todo.</h1>
+          <div class="count"><strong>4</strong> aktive · 2 fullført</div>
+        </div>
+        <div class="controls">
+          <button class="chip active">Liste</button>
+          <button class="chip">Kolonner</button>
+          <button class="chip" style="background:var(--accent);border-color:var(--accent);color:#0a0a0a;">＋ Ny</button>
+        </div>
+      </div>
+
+      <div class="sect2">Aktive</div>
+      <div class="row high">
+        <div class="ck"></div><span class="pri"></span>
+        <div class="t">Lever mattebesvarelse</div>
+        <div class="d over">I går</div>
+        <div class="todo-row-actions"><button class="iconbtn pinned">📌</button></div>
+      </div>
+      <div class="row med">
+        <div class="ck"></div><span class="pri"></span>
+        <div class="t">Ring tannlegen</div>
+        <div class="d">I dag</div>
+        <div class="todo-row-actions"><button class="iconbtn">📌</button></div>
+      </div>
+      <div class="row low">
+        <div class="ck"></div><span class="pri"></span>
+        <div class="t">Les kapittel 4 i historie</div>
+        <div class="d">Om 3 dager</div>
+        <div class="todo-row-actions"><button class="iconbtn">📌</button></div>
+      </div>
+      <div class="row med">
+        <div class="ck"></div><span class="pri"></span>
+        <div class="t">Plan helgeturen med Alma</div>
+        <div class="d">—</div>
+        <div class="todo-row-actions"><button class="iconbtn">📌</button></div>
+      </div>
+
+      <div class="sect2">Fullført</div>
+      <div class="row done">
+        <div class="ck"></div><span class="pri"></span>
+        <div class="t">Kjøp brød</div>
+        <div class="d">—</div>
+        <div></div>
+      </div>
+      <div class="row done">
+        <div class="ck"></div><span class="pri"></span>
+        <div class="t">Svar på e-post fra lærer</div>
+        <div class="d">—</div>
+        <div></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ──────────────────────────────── V4 ──────────────────────────────── -->
+<div class="variant-wrap">
+  <div class="variant-label">
+    <h2>V4 · Gradient hero + 2-col card grid</h2>
+    <span class="variant-desc">Soft pink gradient hero with stats. Todos as two-column tiles tinted by priority. More visual density, closer feel to widget tiles on home.</span>
+  </div>
+  <div class="shell v4">
+    <aside class="sidebar">
+      <div class="sb-logo"><div class="sb-logo-mark">D</div><div class="sb-logo-text">Dashboard</div></div>
+      <div class="sb-section-label">Nav</div>
+      <div class="sb-link"><span class="dot"></span>Plan</div>
+      <div class="sb-link active"><span class="dot"></span>Todo</div>
+      <div class="sb-link"><span class="dot"></span>Skole</div>
+      <div class="sb-link"><span class="dot"></span>Notater</div>
+      <div class="sb-link"><span class="dot"></span>Sport</div>
+      <div class="sb-link"><span class="dot"></span>Gaming</div>
+      <div class="sb-link"><span class="dot"></span>Verktøy</div>
+    </aside>
+    <main class="main">
+      <div class="grad">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <div class="eyebrow">Oppgaver</div>
+            <h1>Todo</h1>
+            <div class="stats">
+              <div class="stat"><div class="k pink">4</div><div class="l">Aktive</div></div>
+              <div class="stat"><div class="k">1</div><div class="l">Forsinket</div></div>
+              <div class="stat"><div class="k">1</div><div class="l">Festet</div></div>
+              <div class="stat"><div class="k">2</div><div class="l">Fullført</div></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="iconbtn" style="width:auto;padding:0 10px;">Kolonner</button>
+            <button style="background:var(--accent);border:0;color:#0a0a0a;padding:8px 14px;border-radius:8px;font-weight:700;font-size:.8rem;">＋ Ny oppgave</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sect3">Aktive</div>
+      <div class="grid">
+        <div class="tile high">
+          <div class="h"><span class="chp" style="color:var(--accent-high);">Høy</span>
+            <div class="todo-row-actions"><button class="iconbtn pinned">📌</button></div>
+          </div>
+          <div class="t">Lever mattebesvarelse</div>
+          <div class="ft"><span style="color:var(--accent-high);">⚠ Forsinket (1 dag)</span></div>
+        </div>
+        <div class="tile med">
+          <div class="h"><span class="chp" style="color:var(--accent-med);">Medium</span>
+            <div class="todo-row-actions"><button class="iconbtn">📌</button></div>
+          </div>
+          <div class="t">Ring tannlegen</div>
+          <div class="ft"><span>I dag</span></div>
+        </div>
+        <div class="tile low">
+          <div class="h"><span class="chp" style="color:var(--accent-low);">Lav</span>
+            <div class="todo-row-actions"><button class="iconbtn">📌</button></div>
+          </div>
+          <div class="t">Les kapittel 4 i historie</div>
+          <div class="ft"><span>Om 3 dager</span></div>
+        </div>
+        <div class="tile med">
+          <div class="h"><span class="chp" style="color:var(--accent-med);">Medium</span>
+            <div class="todo-row-actions"><button class="iconbtn">📌</button></div>
+          </div>
+          <div class="t">Plan helgeturen med Alma</div>
+          <div class="ft"><span>Ingen frist</span></div>
+        </div>
+      </div>
+
+      <div class="sect3">Fullført</div>
+      <div class="grid">
+        <div class="tile" style="opacity:.5"><div class="t" style="text-decoration:line-through;">Kjøp brød</div></div>
+        <div class="tile" style="opacity:.5"><div class="t" style="text-decoration:line-through;">Svar på e-post fra lærer</div></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+</body>
+</html>

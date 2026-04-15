@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<title>Pin widget — popup variants</title>
+<style>
+  :root {
+    --color-bg: #050505;
+    --color-surface: #0e0e0e;
+    --color-surface-2: #141414;
+    --color-border: rgba(255,255,255,0.07);
+    --color-text: #e8e8e2;
+    --color-text-muted: #505050;
+    --color-text-dim: #888888;
+    --accent: #f472b6;
+    --accent-high: #f87171;
+    --accent-med: #f59e0b;
+    --accent-low: #60a5fa;
+    --radius: 12px;
+    --radius-sm: 8px;
+    font-family: Inter, system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; color: var(--color-text); }
+  body {
+    padding: 32px 24px 120px;
+    background: #030304;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.014) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.014) 1px, transparent 1px);
+    background-size: 34px 34px;
+    position: relative;
+  }
+  body::after {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 34px 34px;
+    -webkit-mask-image: radial-gradient(circle at center, rgba(0,0,0,1) 0%, rgba(0,0,0,0.5) 6%, rgba(0,0,0,0.15) 14%, transparent 22%);
+            mask-image: radial-gradient(circle at center, rgba(0,0,0,1) 0%, rgba(0,0,0,0.5) 6%, rgba(0,0,0,0.15) 14%, transparent 22%);
+    -webkit-mask-size: 320% 320%; mask-size: 320% 320%;
+    -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+    animation: dot-sunbeam 90s ease-in-out infinite;
+  }
+  @keyframes dot-sunbeam {
+    0%   { -webkit-mask-position: 10% 5%;  mask-position: 10% 5%; }
+    25%  { -webkit-mask-position: 80% 20%; mask-position: 80% 20%; }
+    50%  { -webkit-mask-position: 90% 85%; mask-position: 90% 85%; }
+    75%  { -webkit-mask-position: 15% 75%; mask-position: 15% 75%; }
+    100% { -webkit-mask-position: 10% 5%;  mask-position: 10% 5%; }
+  }
+
+  h1.doc-title { font-size: 1.1rem; letter-spacing: .12em; text-transform: uppercase; color: var(--color-text-dim); margin: 0 0 6px; font-weight: 700; position: relative; z-index: 1; }
+  p.doc-sub { color: var(--color-text-muted); margin: 0 0 32px; font-size: .85rem; position: relative; z-index: 1; }
+  .pair { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px; position: relative; z-index: 1; max-width: 1200px; }
+
+  .case {
+    background: rgba(0,0,0,.4);
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    padding: 24px;
+    position: relative;
+    backdrop-filter: blur(4px);
+  }
+  .case h2 { margin: 0 0 4px; font-size: .9rem; letter-spacing: .08em; text-transform: uppercase; }
+  .case p { margin: 0 0 18px; font-size: .78rem; color: var(--color-text-dim); }
+
+  /* ==== Shared modal shell ==== */
+  .modal {
+    background: #0a0a0a;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 14px;
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04) inset;
+    overflow: hidden;
+  }
+  .modal .close { position: absolute; top: 14px; right: 14px; width: 24px; height: 24px; border-radius: 6px; background: rgba(255,255,255,.05); border: 1px solid var(--color-border); color: var(--color-text-dim); font-size: .7rem; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+
+  /* priority pill shared */
+  .pri { font-size: .64rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 3px 10px; border-radius: 999px; background: rgba(255,255,255,.04); border: 1px solid var(--color-border); }
+  .pri.high { color: var(--accent-high); border-color: rgba(248,113,113,.35); }
+  .pri.med  { color: var(--accent-med);  border-color: rgba(245,158,11,.35); }
+  .pri.low  { color: var(--accent-low);  border-color: rgba(96,165,250,.35); }
+
+  .deadline { font-size: .78rem; color: var(--color-text-dim); }
+  .deadline.over { color: var(--accent-high); }
+
+  .donebadge { font-size: .64rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 3px 10px; border-radius: 999px; background: rgba(244,114,182,.12); color: var(--accent); border: 1px solid rgba(244,114,182,.3); }
+
+  /* Button base shared across variants */
+  .btn { border-radius: 8px; font-size: .84rem; font-weight: 600; cursor: pointer; border: 1px solid var(--color-border); background: rgba(255,255,255,.03); color: var(--color-text); padding: 10px 14px; }
+  .btn.check { background: rgba(244,114,182,.14); border-color: rgba(244,114,182,.45); color: var(--accent); }
+  .btn.delete { color: var(--accent-high); border-color: rgba(248,113,113,.28); }
+
+  /* ═════════ V1 — Current (for comparison) ═════════ */
+  .v1 .m { padding: 22px; position: relative; }
+  .v1 .t { font-size: .64rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--color-text-dim); margin-bottom: 10px; }
+  .v1 .text { font-size: 1rem; line-height: 1.45; margin-bottom: 16px; }
+  .v1 .meta { display: flex; gap: 8px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+  .v1 .actions { display: flex; gap: 8px; }
+  .v1 .actions .btn { flex: 1; }
+
+  /* ═════════ V2 — Compact card with icon buttons ═════════ */
+  .v2 .head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--color-border);
+    background: linear-gradient(180deg, rgba(244,114,182,.08), transparent);
+  }
+  .v2 .head .ht { font-size: .7rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); display: flex; align-items: center; gap: 6px; }
+  .v2 .body { padding: 20px; }
+  .v2 .row { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 16px; }
+  .v2 .bigcheck { width: 26px; height: 26px; border-radius: 8px; border: 2px solid rgba(244,114,182,.5); flex-shrink: 0; margin-top: 2px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+  .v2 .bigcheck.done { background: var(--accent); border-color: var(--accent); color: #0a0a0a; }
+  .v2 .text { font-size: 1rem; line-height: 1.4; }
+  .v2 .meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; margin-left: 40px; }
+  .v2 .iconrow { display: flex; gap: 8px; margin-left: 40px; }
+  .v2 .ib {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 8px 10px; border-radius: 8px; border: 1px solid var(--color-border);
+    background: rgba(255,255,255,.03); color: var(--color-text-dim);
+    font-size: .78rem; font-weight: 600; cursor: pointer;
+  }
+  .v2 .ib:hover { background: rgba(255,255,255,.07); color: var(--color-text); }
+  .v2 .ib.delete { color: var(--accent-high); border-color: rgba(248,113,113,.25); }
+
+  /* ═════════ V3 — Big-type editorial (matches V3 page) ═════════ */
+  .v3 .m { padding: 28px 26px 22px; position: relative; }
+  .v3 .eyebrow { font-size: .64rem; letter-spacing: .14em; text-transform: uppercase; color: var(--color-text-muted); font-weight: 700; margin-bottom: 4px; }
+  .v3 .eyebrow span { color: var(--accent); }
+  .v3 .text { font-size: 1.2rem; font-weight: 600; line-height: 1.35; letter-spacing: -.01em; padding: 10px 0 14px; border-bottom: 1px solid var(--color-border); margin-bottom: 14px; }
+  .v3 .meta { display: flex; gap: 10px; align-items: center; margin-bottom: 22px; flex-wrap: wrap; font-size: .78rem; color: var(--color-text-dim); }
+  .v3 .meta .pridot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  .v3 .meta .pridot.high { background: var(--accent-high); }
+  .v3 .meta .pridot.med  { background: var(--accent-med); }
+  .v3 .meta .pridot.low  { background: var(--accent-low); }
+  .v3 .actions { display: flex; gap: 8px; }
+  .v3 .actions .btn { flex: 1; padding: 10px; font-size: .82rem; }
+
+  /* ═════════ V4 — Accent side-strip + stacked buttons ═════════ */
+  .v4.modal { display: grid; grid-template-columns: 8px 1fr; padding: 0; overflow: hidden; }
+  .v4 .strip { background: linear-gradient(180deg, var(--accent), rgba(244,114,182,.3)); }
+  .v4 .right { padding: 22px 22px 20px; position: relative; }
+  .v4 .top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+  .v4 .crumb { font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; color: var(--color-text-muted); font-weight: 700; }
+  .v4 .text { font-size: 1.05rem; line-height: 1.45; margin-bottom: 14px; }
+  .v4 .meta { display: flex; gap: 8px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+  .v4 .stack { display: flex; flex-direction: column; gap: 6px; }
+  .v4 .stack .btn { text-align: left; padding: 11px 14px; display: flex; align-items: center; gap: 10px; }
+  .v4 .stack .btn .ico { width: 22px; display: inline-flex; justify-content: center; color: var(--color-text-dim); }
+  .v4 .stack .btn.check .ico { color: var(--accent); }
+  .v4 .stack .btn.delete .ico { color: var(--accent-high); }
+
+  /* ═════════ V5 — Footer action bar ═════════ */
+  .v5 .body { padding: 26px 26px 22px; }
+  .v5 .tag { display: inline-flex; align-items: center; gap: 6px; font-size: .65rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+  .v5 .text { font-size: 1.1rem; line-height: 1.4; margin-bottom: 18px; }
+  .v5 .meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .v5 footer { display: flex; gap: 6px; padding: 12px 14px; background: rgba(255,255,255,.02); border-top: 1px solid var(--color-border); }
+  .v5 footer .btn { flex: 1; padding: 9px 10px; font-size: .78rem; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .v5 footer .btn.primary { background: var(--accent); color: #0a0a0a; border-color: var(--accent); }
+  .v5 footer .btn.primary:hover { filter: brightness(1.05); }
+</style>
+</head>
+<body>
+
+<h1 class="doc-title">Pin widget — popup variants</h1>
+<p class="doc-sub">Five takes on the popup that opens when you click a pinned-todo widget. Same content in each (full todo text, priority, deadline, three actions: check, edit, delete) — different layouts and button treatments. Pick one.</p>
+
+<div class="pair">
+
+  <!-- V1 current (for comparison) -->
+  <div class="case">
+    <h2>V1 · Current (what's shipped now)</h2>
+    <p>Minimal: eyebrow → text → inline meta → equal-width buttons in a row. What you just rejected, shown for reference.</p>
+    <div class="modal v1">
+      <div class="m">
+        <button class="close">✕</button>
+        <div class="t">Festet oppgave</div>
+        <div class="text">Sørge for at Emil er i mål (omtrent) med ak 4 til etter påske</div>
+        <div class="meta"><span class="pri high">Høy</span><span class="deadline over">16 dager forsinket</span></div>
+        <div class="actions">
+          <button class="btn check">✓ Marker som ferdig</button>
+          <button class="btn">✎ Rediger</button>
+          <button class="btn delete">🗑 Slett</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- V2 compact card with icon buttons -->
+  <div class="case">
+    <h2>V2 · Card with header strip + icon buttons</h2>
+    <p>Gradient pink header "📌 Festet". Big checkbox on the left aligns with the text. Secondary actions (edit/delete) are compact icon+label tiles below.</p>
+    <div class="modal v2">
+      <div class="head">
+        <span class="ht">📌 Festet</span>
+        <button class="close" style="position:static;">✕</button>
+      </div>
+      <div class="body">
+        <div class="row">
+          <span class="bigcheck" title="Merk som ferdig"></span>
+          <div class="text">Sørge for at Emil er i mål (omtrent) med ak 4 til etter påske</div>
+        </div>
+        <div class="meta"><span class="pri high">Høy</span><span class="deadline over">16 dager forsinket</span></div>
+        <div class="iconrow">
+          <button class="ib"><span>✎</span> Rediger</button>
+          <button class="ib delete"><span>🗑</span> Slett</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- V3 editorial -->
+  <div class="case">
+    <h2>V3 · Editorial (matches /todo page language)</h2>
+    <p>Same visual language as the V3 todo page you picked: eyebrow, big typographic title, divider line, tiny priority dot + deadline in a row. Chip-style actions at the bottom.</p>
+    <div class="modal v3">
+      <div class="m">
+        <button class="close">✕</button>
+        <div class="eyebrow">Festet · <span>Todo</span></div>
+        <div class="text">Sørge for at Emil er i mål (omtrent) med ak 4 til etter påske</div>
+        <div class="meta">
+          <span class="pridot high"></span> Høy
+          <span style="opacity:.4;">·</span>
+          <span class="deadline over">16 dager forsinket</span>
+        </div>
+        <div class="actions">
+          <button class="btn check">Marker som ferdig</button>
+          <button class="btn">Rediger</button>
+          <button class="btn delete">Slett</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- V4 accent strip + stacked buttons -->
+  <div class="case">
+    <h2>V4 · Pink side-strip, stacked buttons</h2>
+    <p>Vertical pink accent strip on the left signals "festet". Action buttons stack vertically with icons on the left — feels more like a slide-out panel than a dialog.</p>
+    <div class="modal v4">
+      <div class="strip"></div>
+      <div class="right">
+        <button class="close">✕</button>
+        <div class="top">
+          <div class="crumb">Festet oppgave</div>
+        </div>
+        <div class="text">Sørge for at Emil er i mål (omtrent) med ak 4 til etter påske</div>
+        <div class="meta"><span class="pri high">Høy</span><span class="deadline over">16 dager forsinket</span></div>
+        <div class="stack">
+          <button class="btn check"><span class="ico">✓</span> Marker som ferdig</button>
+          <button class="btn"><span class="ico">✎</span> Rediger</button>
+          <button class="btn delete"><span class="ico">🗑</span> Slett</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- V5 footer action bar -->
+  <div class="case">
+    <h2>V5 · Footer action bar + primary button</h2>
+    <p>Content sits calmly in the body. Actions live in a separate footer strip. "Marker som ferdig" is the full pink primary; edit/delete are ghost buttons. Most product-y feel.</p>
+    <div class="modal v5">
+      <div class="body" style="position:relative;">
+        <button class="close">✕</button>
+        <div class="tag">📌 Festet oppgave</div>
+        <div class="text">Sørge for at Emil er i mål (omtrent) med ak 4 til etter påske</div>
+        <div class="meta"><span class="pri high">Høy</span><span class="deadline over">16 dager forsinket</span></div>
+      </div>
+      <footer>
+        <button class="btn primary">✓ Merk ferdig</button>
+        <button class="btn">✎ Rediger</button>
+        <button class="btn delete">🗑 Slett</button>
+      </footer>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

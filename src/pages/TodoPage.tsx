@@ -1,17 +1,38 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Pin, PinOff } from 'lucide-react';
+import {
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  pointerWithin,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Modal, useToast } from '@/components/ui';
-import { SortableList } from '@/components/patterns';
 import { useSaveTodos, useTodos } from '@/hooks/useTodos';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useWidgets } from '@/hooks/useWidgets';
 import type { Priority, Todo } from '@/api/types';
 import { cn } from '@/lib/cn';
+import { playTodoCompleteSound } from '@/lib/sounds';
 
 const PRIORITY_LABEL: Record<Priority, string> = {
   high: 'Høy',
   medium: 'Medium',
   low: 'Lav',
 };
-const COLUMN_ORDER: Priority[] = ['high', 'medium', 'low'];
 
 /**
  * Todo page — faithful port of todo.html.
@@ -28,6 +49,7 @@ export function TodoPage() {
   const { data: todos } = useTodos();
   const saveTodos = useSaveTodos();
   const { toast } = useToast();
+  const { addWidget, removeWidgetByRefId } = useWidgets();
   const [view, setView] = useLocalStorage<'list' | 'columns'>('todo-view', 'list');
   const [editing, setEditing] = useState<Todo | null>(null);
   const [creating, setCreating] = useState<Priority | null>(null);
@@ -42,8 +64,37 @@ export function TodoPage() {
     });
   }
 
+  // Auto-purge: once per mount, drop any done todo whose completedAt is
+  // older than 7 days. Runs only after the initial fetch lands and only
+  // if there's actually something to purge — otherwise we'd cause a
+  // redundant POST on every page visit.
+  const purgedRef = useRef(false);
+  useEffect(() => {
+    if (purgedRef.current) return;
+    if (!todos) return;
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const expired = todos.filter(
+      (t) => t.done && t.completedAt && new Date(t.completedAt).getTime() < cutoff,
+    );
+    if (expired.length === 0) {
+      purgedRef.current = true;
+      return;
+    }
+    purgedRef.current = true;
+    const kept = todos.filter((t) => !expired.some((e) => e.id === t.id));
+    // Also drop any dangling widgets pointing at purged todos.
+    expired.forEach((t) => {
+      if (t.pinned) removeWidgetByRefId(t.id);
+    });
+    persist(kept);
+    // persist/removeWidgetByRefId and `todos` deps are intentionally
+    // excluded — purgedRef guards against re-entry.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [todos]);
+
   function handleSave(item: Todo) {
     const idx = sorted.findIndex((t) => t.id === item.id);
+    const prev = idx >= 0 ? sorted[idx] : undefined;
     let next: Todo[];
     if (idx >= 0) {
       next = [...sorted];
@@ -52,141 +103,103 @@ export function TodoPage() {
       next = [...sorted, item];
     }
     persist(next);
+
+    // Sync widget side-effect if pin state changed (or it's a new pinned todo).
+    const wasPinned = prev?.pinned ?? false;
+    const isPinned = item.pinned ?? false;
+    if (!wasPinned && isPinned) {
+      addWidget('todo', item.id);
+    } else if (wasPinned && !isPinned) {
+      removeWidgetByRefId(item.id);
+    }
+
     setEditing(null);
     setCreating(null);
   }
 
   function handleDelete(id: string) {
+    const target = sorted.find((t) => t.id === id);
     persist(sorted.filter((t) => t.id !== id));
+    // If the deleted todo had a widget, remove it too.
+    if (target?.pinned) {
+      removeWidgetByRefId(id);
+    }
     setEditing(null);
   }
 
   function toggleDone(id: string) {
+    const target = sorted.find((t) => t.id === id);
+    // Only the direct checkbox click fires this; drag-to-complete goes
+    // through persist() directly in the Dnd components, so sound fires
+    // only for explicit checkbox clicks (and only on false → true).
+    if (target && !target.done) playTodoCompleteSound();
     persist(sorted.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
   }
 
-  function reorderList(items: Todo[]) {
-    persist([...items, ...done]);
+  function togglePin(id: string) {
+    const target = sorted.find((t) => t.id === id);
+    if (!target) return;
+    const wasPinned = target.pinned ?? false;
+    persist(sorted.map((t) => (t.id === id ? { ...t, pinned: !wasPinned } : t)));
+    if (wasPinned) {
+      removeWidgetByRefId(id);
+    } else {
+      addWidget('todo', id);
+    }
   }
 
-  function reorderColumn(priority: Priority, items: Todo[]) {
-    const others = sorted.filter((t) => t.priority !== priority || t.done);
-    persist([...others, ...items]);
-  }
+
 
   return (
     <div className="todo-page">
-      <div className="todo-title-desktop">
-        <span className="todo-title-main">Todo</span>
-        <div className="todo-header-actions">
-          <div className="view-switch">
-            <button
-              className={cn('view-switch-btn', view === 'list' && 'active')}
-              onClick={() => setView('list')}
-              title="Listevisning"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
-              </svg>
-            </button>
-            <button
-              className={cn('view-switch-btn', view === 'columns' && 'active')}
-              onClick={() => setView('columns')}
-              title="Kolonnevisning"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M3 5v14h18V5H3zm6 12H5v-4h4v4zm0-6H5V7h4v4zm6 6h-4v-4h4v4zm0-6h-4V7h4v4zm6 6h-4v-4h4v4zm0-6h-4V7h4v4z" />
-              </svg>
-            </button>
+      <div className="todo-hero">
+        <div className="todo-hero-text">
+          <div className="todo-eyebrow">Oppgaver</div>
+          <h1 className="todo-title">Todo.</h1>
+          <div className="todo-count">
+            <strong>{active.length}</strong> aktive · {done.length} fullført
           </div>
-          <button className="btn-new-task" onClick={() => setCreating('medium')}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z" />
-            </svg>
-            Legg til oppgave
+        </div>
+        <div className="todo-controls">
+          <button
+            className={cn('todo-chip', view === 'list' && 'active')}
+            onClick={() => setView('list')}
+          >
+            Liste
+          </button>
+          <button
+            className={cn('todo-chip', view === 'columns' && 'active')}
+            onClick={() => setView('columns')}
+          >
+            Kolonner
+          </button>
+          <button className="todo-chip primary" onClick={() => setCreating('medium')}>
+            ＋ Ny
           </button>
         </div>
       </div>
 
       {view === 'list' ? (
-        <div>
-          <div className="todo-section-label">Aktive</div>
-          {active.length === 0 ? (
-            <div className="todo-empty-state">
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-              </svg>
-              Ingen oppgaver ennå.
-              <br />
-              Klikk «Legg til oppgave» for å starte.
-            </div>
-          ) : (
-            <SortableList
-              items={active}
-              onReorder={reorderList}
-              renderItem={(t) => (
-                <TodoItem
-                  todo={t}
-                  onEdit={() => setEditing(t)}
-                  onDelete={() => handleDelete(t.id)}
-                  onToggleDone={() => toggleDone(t.id)}
-                />
-              )}
-              className="todo-list"
-            />
-          )}
-        </div>
+        <TodoListDnd
+          active={active}
+          done={done}
+          onCommit={persist}
+          onEdit={setEditing}
+          onDelete={handleDelete}
+          onToggleDone={toggleDone}
+          onTogglePin={togglePin}
+        />
       ) : (
-        <div className="columns-grid">
-          {COLUMN_ORDER.map((priority) => {
-            const items = active.filter((t) => t.priority === priority);
-            return (
-              <div key={priority} className={cn('priority-col', priority)}>
-                <div className="col-header">
-                  <span className="col-dot" />
-                  <span className="col-label">{PRIORITY_LABEL[priority]}</span>
-                  <button
-                    className="col-add-btn"
-                    onClick={() => setCreating(priority)}
-                    title={`Legg til ${PRIORITY_LABEL[priority].toLowerCase()}-prioritet oppgave`}
-                  >
-                    +
-                  </button>
-                </div>
-                <SortableList
-                  items={items}
-                  onReorder={(next) => reorderColumn(priority, next)}
-                  renderItem={(t) => (
-                    <TodoItem
-                      todo={t}
-                      onEdit={() => setEditing(t)}
-                      onDelete={() => handleDelete(t.id)}
-                      onToggleDone={() => toggleDone(t.id)}
-                    />
-                  )}
-                  className="col-list"
-                />
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {done.length > 0 && (
-        <div>
-          <div className="todo-section-label">Fullført</div>
-          <div className="todo-list">
-            {done.map((t) => (
-              <TodoItem
-                key={t.id}
-                todo={t}
-                onEdit={() => setEditing(t)}
-                onDelete={() => handleDelete(t.id)}
-                onToggleDone={() => toggleDone(t.id)}
-              />
-            ))}
-          </div>
-        </div>
+        <ColumnsDnd
+          active={active}
+          done={done}
+          onCommit={persist}
+          onEdit={setEditing}
+          onDelete={handleDelete}
+          onToggleDone={toggleDone}
+          onTogglePin={togglePin}
+          onCreate={setCreating}
+        />
       )}
 
       {(editing || creating) && (
@@ -205,19 +218,576 @@ export function TodoPage() {
   );
 }
 
-/* ── Todo item card ──────────────────────────────────────────────────────── */
+/* ── List view with cross-section drag ─────────────────────────────────── */
+interface TodoListDndProps {
+  active: Todo[];
+  done: Todo[];
+  /** Persist the flat [...active, ...done] list (done flags already applied). */
+  onCommit: (flat: Todo[]) => void;
+  onEdit: (t: Todo) => void;
+  onDelete: (id: string) => void;
+  onToggleDone: (id: string) => void;
+  onTogglePin: (id: string) => void;
+}
+
+type ContainerId = 'active' | 'done';
+
+/**
+ * Multi-container drag between Aktive ↔ Fullført. Classic dnd-kit
+ * pattern: local state mirrors the props, `onDragOver` moves the item
+ * between containers mid-drag so the placeholder appears in the
+ * destination (no snap-back). `onDragEnd` commits the flat list.
+ */
+function TodoListDnd({
+  active,
+  done,
+  onCommit,
+  onEdit,
+  onDelete,
+  onToggleDone,
+  onTogglePin,
+}: TodoListDndProps) {
+  const [local, setLocal] = useState<Record<ContainerId, Todo[]>>({ active, done });
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  // Re-seed from props when the upstream data actually differs from our
+  // local state AND we're not mid-drag. A content-level compare avoids
+  // clobbering a just-committed drop before React Query's optimistic
+  // cache write has propagated — without it the UI appears to snap back.
+  useEffect(() => {
+    if (activeId) return;
+    const fieldKey = (t: Todo) =>
+      `${t.id}:${t.done ? 1 : 0}:${t.pinned ? 1 : 0}:${t.priority}:${t.text}:${t.deadline ?? ''}`;
+    const propsKey = [...active, ...done].map(fieldKey).join('|');
+    const localKey = [...local.active, ...local.done].map(fieldKey).join('|');
+    if (propsKey === localKey) return;
+    setLocal({ active, done });
+  }, [active, done, activeId, local]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  function findContainer(id: string): ContainerId | null {
+    if (id === 'active' || id === 'done') return id;
+    if (id === 'active-start' || id === 'active-end') return 'active';
+    if (id === 'done-start' || id === 'done-end') return 'done';
+    if (local.active.some((t) => t.id === id)) return 'active';
+    if (local.done.some((t) => t.id === id)) return 'done';
+    return null;
+  }
+
+  /** Insertion index into destination list given the drag's `over.id`. */
+  function insertionIndex(overId: string, toList: Todo[]): number {
+    if (overId.endsWith('-start')) return 0;
+    if (overId.endsWith('-end') || overId === 'active' || overId === 'done') {
+      return toList.length;
+    }
+    const idx = toList.findIndex((t) => t.id === overId);
+    return idx < 0 ? toList.length : idx;
+  }
+
+  function handleDragStart(e: DragStartEvent) {
+    setActiveId(String(e.active.id));
+  }
+
+  function handleDragOver(e: DragOverEvent) {
+    const { active: dragActive, over } = e;
+    if (!over) return;
+    const activeItemId = String(dragActive.id);
+    const overId = String(over.id);
+    const fromC = findContainer(activeItemId);
+    const toC = findContainer(overId);
+    if (!fromC || !toC || fromC === toC) return;
+
+    setLocal((prev) => {
+      const fromList = [...prev[fromC]];
+      const toList = [...prev[toC]];
+      const fromIdx = fromList.findIndex((t) => t.id === activeItemId);
+      if (fromIdx < 0) return prev;
+      const [moved] = fromList.splice(fromIdx, 1);
+      const flipped: Todo = { ...moved, done: toC === 'done' };
+      const insertIdx = insertionIndex(overId, toList);
+      toList.splice(insertIdx, 0, flipped);
+      return { ...prev, [fromC]: fromList, [toC]: toList };
+    });
+  }
+
+  function handleDragEnd(e: DragEndEvent) {
+    const { active: dragActive, over } = e;
+    setActiveId(null);
+    if (!over) {
+      // Drop missed any droppable — revert to upstream.
+      setLocal({ active, done });
+      return;
+    }
+    const activeItemId = String(dragActive.id);
+    const overId = String(over.id);
+    const containerId = findContainer(activeItemId);
+    if (!containerId) {
+      onCommit([...local.active, ...local.done]);
+      return;
+    }
+
+    const list = [...local[containerId]];
+    const fromIdx = list.findIndex((t) => t.id === activeItemId);
+    if (fromIdx < 0) {
+      onCommit([...local.active, ...local.done]);
+      return;
+    }
+    // Reorder within the destination container using the same rail-aware
+    // insertion logic so dropping on a section rail lands at the end/start.
+    let toIdx = insertionIndex(overId, list);
+    const [moved] = list.splice(fromIdx, 1);
+    // Compensate for the splice when inserting after the removed index.
+    if (toIdx > fromIdx) toIdx -= 1;
+    toIdx = Math.max(0, Math.min(list.length, toIdx));
+    list.splice(toIdx, 0, moved);
+    const next = { ...local, [containerId]: list };
+    setLocal(next);
+    onCommit([...next.active, ...next.done]);
+  }
+
+  const activeTodo =
+    activeId
+      ? local.active.find((t) => t.id === activeId) ?? local.done.find((t) => t.id === activeId)
+      : null;
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={pointerWithin}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+      onDragCancel={() => {
+        setActiveId(null);
+        setLocal({ active, done });
+      }}
+    >
+      <TodoSection
+        id="active"
+        label="Aktive"
+        items={local.active}
+        emptyMessage="Ingen oppgaver ennå. Klikk «＋ Ny» for å starte. Dra fullførte hit for å gjenåpne."
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onToggleDone={onToggleDone}
+        onTogglePin={onTogglePin}
+      />
+      <TodoSection
+        id="done"
+        label="Fullført"
+        items={local.done}
+        emptyMessage="Dra oppgaver hit for å markere som ferdig."
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onToggleDone={onToggleDone}
+        onTogglePin={onTogglePin}
+      />
+      <DragOverlay>
+        {activeTodo ? (
+          <TodoItem
+            todo={activeTodo}
+            onEdit={() => {}}
+            onDelete={() => {}}
+            onToggleDone={() => {}}
+            onTogglePin={() => {}}
+          />
+        ) : null}
+      </DragOverlay>
+    </DndContext>
+  );
+}
+
+interface TodoSectionProps {
+  id: 'active' | 'done';
+  label: string;
+  items: Todo[];
+  emptyMessage: string;
+  onEdit: (t: Todo) => void;
+  onDelete: (id: string) => void;
+  onToggleDone: (id: string) => void;
+  onTogglePin: (id: string) => void;
+}
+
+function TodoSection({
+  id,
+  label,
+  items,
+  emptyMessage,
+  onEdit,
+  onDelete,
+  onToggleDone,
+  onTogglePin,
+}: TodoSectionProps) {
+  const { setNodeRef: containerRef, isOver } = useDroppable({ id });
+  const { setNodeRef: startRailRef, isOver: isOverStart } = useDroppable({ id: `${id}-start` });
+  const { setNodeRef: endRailRef, isOver: isOverEnd } = useDroppable({ id: `${id}-end` });
+  return (
+    <div>
+      <div
+        ref={startRailRef}
+        className={cn('todo-section-label', 'todo-drop-rail', isOverStart && 'is-drop-target')}
+      >
+        {label}
+      </div>
+      <SortableContext items={items.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+        <div
+          ref={containerRef}
+          className={cn(
+            'todo-list',
+            `todo-list-${id}`,
+            items.length === 0 && 'empty',
+            (isOver || isOverStart || isOverEnd) && 'is-drop-target',
+          )}
+        >
+          {items.length === 0 ? (
+            <div className="todo-empty-state">{emptyMessage}</div>
+          ) : (
+            items.map((t) => (
+              <SortableTodoItem
+                key={t.id}
+                todo={t}
+                onEdit={() => onEdit(t)}
+                onDelete={() => onDelete(t.id)}
+                onToggleDone={() => onToggleDone(t.id)}
+                onTogglePin={() => onTogglePin(t.id)}
+              />
+            ))
+          )}
+        </div>
+      </SortableContext>
+      <div
+        ref={endRailRef}
+        className={cn('todo-drop-end-rail', isOverEnd && 'is-drop-target')}
+        aria-hidden
+      />
+    </div>
+  );
+}
+
+function SortableTodoItem(props: {
+  todo: Todo;
+  onEdit: () => void;
+  onDelete: () => void;
+  onToggleDone: () => void;
+  onTogglePin: () => void;
+}) {
+  const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
+    id: props.todo.id,
+  });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    // Hide the original while the DragOverlay renders the floating copy —
+    // otherwise the destination container shows both the overlay AND the
+    // mirrored row.
+    opacity: isDragging ? 0 : 1,
+  };
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <TodoItem {...props} />
+    </div>
+  );
+}
+
+/* ── Columns view with cross-column drag + done drag ───────────────────── */
+type ColumnId = Priority | 'done';
+const COLUMN_IDS: ColumnId[] = ['high', 'medium', 'low', 'done'];
+
+interface ColumnsDndProps {
+  active: Todo[];
+  done: Todo[];
+  onCommit: (flat: Todo[]) => void;
+  onEdit: (t: Todo) => void;
+  onDelete: (id: string) => void;
+  onToggleDone: (id: string) => void;
+  onTogglePin: (id: string) => void;
+  onCreate: (priority: Priority) => void;
+}
+
+function ColumnsDnd({
+  active,
+  done,
+  onCommit,
+  onEdit,
+  onDelete,
+  onToggleDone,
+  onTogglePin,
+  onCreate,
+}: ColumnsDndProps) {
+  function group(activeItems: Todo[], doneItems: Todo[]): Record<ColumnId, Todo[]> {
+    return {
+      high: activeItems.filter((t) => t.priority === 'high'),
+      medium: activeItems.filter((t) => t.priority === 'medium'),
+      low: activeItems.filter((t) => t.priority === 'low'),
+      done: doneItems,
+    };
+  }
+
+  const [local, setLocal] = useState<Record<ColumnId, Todo[]>>(() => group(active, done));
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (activeId) return;
+    const next = group(active, done);
+    const fieldKey = (t: Todo) =>
+      `${t.id}:${t.priority}:${t.done ? 1 : 0}:${t.pinned ? 1 : 0}:${t.text}:${t.deadline ?? ''}`;
+    const sameKey = (m: Record<ColumnId, Todo[]>) =>
+      COLUMN_IDS.map((c) => m[c].map(fieldKey).join(',')).join('|');
+    if (sameKey(next) === sameKey(local)) return;
+    setLocal(next);
+  }, [active, done, activeId, local]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  function findColumn(id: string): ColumnId | null {
+    for (const c of COLUMN_IDS) {
+      if (id === c) return c;
+      if (id === `${c}-start` || id === `${c}-end`) return c;
+    }
+    for (const c of COLUMN_IDS) {
+      if (local[c].some((t) => t.id === id)) return c;
+    }
+    return null;
+  }
+
+  function insertionIndex(overId: string, list: Todo[]): number {
+    if (overId.endsWith('-start')) return 0;
+    if (overId.endsWith('-end') || (COLUMN_IDS as string[]).includes(overId)) return list.length;
+    const idx = list.findIndex((t) => t.id === overId);
+    return idx < 0 ? list.length : idx;
+  }
+
+  function handleDragStart(e: DragStartEvent) {
+    setActiveId(String(e.active.id));
+  }
+
+  function handleDragOver(e: DragOverEvent) {
+    const { active: dragActive, over } = e;
+    if (!over) return;
+    const activeItemId = String(dragActive.id);
+    const overId = String(over.id);
+    const fromC = findColumn(activeItemId);
+    const toC = findColumn(overId);
+    if (!fromC || !toC || fromC === toC) return;
+
+    setLocal((prev) => {
+      const fromList = [...prev[fromC]];
+      const toList = [...prev[toC]];
+      const fromIdx = fromList.findIndex((t) => t.id === activeItemId);
+      if (fromIdx < 0) return prev;
+      const [moved] = fromList.splice(fromIdx, 1);
+      const next: Todo = {
+        ...moved,
+        // Priority columns set the priority and clear done. Done column
+        // sets done and keeps the existing priority (so unchecking later
+        // puts it back where it came from).
+        priority: toC === 'done' ? moved.priority : toC,
+        done: toC === 'done',
+      };
+      const insertIdx = insertionIndex(overId, toList);
+      toList.splice(insertIdx, 0, next);
+      return { ...prev, [fromC]: fromList, [toC]: toList };
+    });
+  }
+
+  function handleDragEnd(e: DragEndEvent) {
+    const { active: dragActive, over } = e;
+    setActiveId(null);
+    if (!over) {
+      setLocal(group(active, done));
+      return;
+    }
+    const activeItemId = String(dragActive.id);
+    const overId = String(over.id);
+    const columnId = findColumn(activeItemId);
+    if (!columnId) {
+      commit(local);
+      return;
+    }
+    const list = [...local[columnId]];
+    const fromIdx = list.findIndex((t) => t.id === activeItemId);
+    if (fromIdx < 0) {
+      commit(local);
+      return;
+    }
+    let toIdx = insertionIndex(overId, list);
+    const [moved] = list.splice(fromIdx, 1);
+    if (toIdx > fromIdx) toIdx -= 1;
+    toIdx = Math.max(0, Math.min(list.length, toIdx));
+    list.splice(toIdx, 0, moved);
+    const next = { ...local, [columnId]: list };
+    setLocal(next);
+    commit(next);
+  }
+
+  function commit(state: Record<ColumnId, Todo[]>) {
+    const activeFlat = [...state.high, ...state.medium, ...state.low];
+    onCommit([...activeFlat, ...state.done]);
+  }
+
+  const activeTodo =
+    activeId ? COLUMN_IDS.flatMap((c) => local[c]).find((t) => t.id === activeId) ?? null : null;
+
+  return (
+    <>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={pointerWithin}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+        onDragCancel={() => {
+          setActiveId(null);
+          setLocal(group(active, done));
+        }}
+      >
+        <div className="columns-grid">
+          {(['high', 'medium', 'low'] as Priority[]).map((p) => (
+            <ColumnDropZone
+              key={p}
+              id={p}
+              items={local[p]}
+              priority={p}
+              onCreate={() => onCreate(p)}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onToggleDone={onToggleDone}
+              onTogglePin={onTogglePin}
+            />
+          ))}
+        </div>
+        <TodoSection
+          id="done"
+          label="Fullført"
+          items={local.done}
+          emptyMessage="Dra oppgaver hit for å markere som ferdig."
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onToggleDone={onToggleDone}
+          onTogglePin={onTogglePin}
+        />
+        <DragOverlay>
+          {activeTodo ? (
+            <TodoItem
+              todo={activeTodo}
+              onEdit={() => {}}
+              onDelete={() => {}}
+              onToggleDone={() => {}}
+              onTogglePin={() => {}}
+            />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+    </>
+  );
+}
+
+interface ColumnDropZoneProps {
+  id: Priority;
+  priority: Priority;
+  items: Todo[];
+  onCreate: () => void;
+  onEdit: (t: Todo) => void;
+  onDelete: (id: string) => void;
+  onToggleDone: (id: string) => void;
+  onTogglePin: (id: string) => void;
+}
+
+function ColumnDropZone({
+  id,
+  priority,
+  items,
+  onCreate,
+  onEdit,
+  onDelete,
+  onToggleDone,
+  onTogglePin,
+}: ColumnDropZoneProps) {
+  const { setNodeRef: containerRef, isOver } = useDroppable({ id });
+  const { setNodeRef: startRailRef, isOver: isOverStart } = useDroppable({ id: `${id}-start` });
+  const { setNodeRef: endRailRef, isOver: isOverEnd } = useDroppable({ id: `${id}-end` });
+  return (
+    <div className={cn('priority-col', priority)}>
+      <div
+        ref={startRailRef}
+        className={cn('col-header', 'todo-drop-rail', isOverStart && 'is-drop-target')}
+      >
+        <span className="col-dot" />
+        <span className="col-label">{PRIORITY_LABEL[priority]}</span>
+        <span className="col-count">{items.length}</span>
+        <button
+          className="col-add-btn"
+          onClick={onCreate}
+          title={`Legg til ${PRIORITY_LABEL[priority].toLowerCase()}-prioritet oppgave`}
+        >
+          +
+        </button>
+      </div>
+      <SortableContext items={items.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+        <div
+          ref={containerRef}
+          className={cn(
+            'col-list',
+            'todo-list',
+            items.length === 0 && 'empty',
+            (isOver || isOverStart || isOverEnd) && 'is-drop-target',
+          )}
+        >
+          {items.length === 0 ? (
+            <div className="todo-empty-state" style={{ padding: '14px 8px', fontSize: '0.72rem' }}>
+              Dra hit eller klikk +
+            </div>
+          ) : (
+            items.map((t) => (
+              <SortableTodoItem
+                key={t.id}
+                todo={t}
+                onEdit={() => onEdit(t)}
+                onDelete={() => onDelete(t.id)}
+                onToggleDone={() => onToggleDone(t.id)}
+                onTogglePin={() => onTogglePin(t.id)}
+              />
+            ))
+          )}
+        </div>
+      </SortableContext>
+      <div
+        ref={endRailRef}
+        className={cn('todo-drop-end-rail', isOverEnd && 'is-drop-target')}
+        aria-hidden
+      />
+    </div>
+  );
+}
+
+/* ── Todo item row — V3 Minimal editorial ───────────────────────────────── */
 interface TodoItemProps {
   todo: Todo;
   onEdit: () => void;
   onDelete: () => void;
   onToggleDone: () => void;
+  onTogglePin: () => void;
 }
 
-function TodoItem({ todo, onEdit, onDelete, onToggleDone }: TodoItemProps) {
+function TodoItem({ todo, onEdit, onDelete, onToggleDone, onTogglePin }: TodoItemProps) {
   const deadlineInfo = todo.deadline ? formatDeadline(todo.deadline) : null;
 
   return (
-    <div className={cn('todo-item', `priority-${todo.priority}`, todo.done && 'done')}>
+    <div
+      className={cn(
+        'todo-item',
+        `priority-${todo.priority}`,
+        todo.done && 'done',
+        todo.pinned && 'pinned',
+      )}
+    >
       <button
         className="todo-check"
         onClick={(e) => {
@@ -227,27 +797,36 @@ function TodoItem({ todo, onEdit, onDelete, onToggleDone }: TodoItemProps) {
         aria-label={todo.done ? 'Marker som ufullført' : 'Marker som ferdig'}
       >
         {todo.done && (
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="3" strokeLinecap="round">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
             <polyline points="20 6 9 17 4 12" />
           </svg>
         )}
       </button>
 
-      <div className="todo-body">
-        <div className="todo-title">{todo.text}</div>
-        <div className="todo-meta">
-          <span className={cn('todo-badge', todo.priority)}>{PRIORITY_LABEL[todo.priority]}</span>
-          {deadlineInfo && (
-            <span className={cn('todo-deadline', deadlineInfo.overdue && 'overdue')}>
-              {deadlineInfo.label}
-            </span>
-          )}
-        </div>
-      </div>
+      <span className="todo-pri-dot" aria-hidden />
+
+      <div className="todo-title-text">{todo.text}</div>
+
+      {deadlineInfo && (
+        <span className={cn('todo-deadline', deadlineInfo.overdue && 'overdue')}>
+          {deadlineInfo.label}
+        </span>
+      )}
 
       <div className="todo-actions">
         <button
-          className="edit"
+          className={cn('todo-action-btn', 'pin', todo.pinned && 'pinned')}
+          onClick={(e) => {
+            e.stopPropagation();
+            onTogglePin();
+          }}
+          aria-label={todo.pinned ? 'Løsne' : 'Fest til dashboard'}
+          title={todo.pinned ? 'Løsne' : 'Fest til dashboard'}
+        >
+          {todo.pinned ? <PinOff size={14} /> : <Pin size={14} />}
+        </button>
+        <button
+          className="todo-action-btn edit"
           onClick={(e) => {
             e.stopPropagation();
             onEdit();
@@ -260,7 +839,7 @@ function TodoItem({ todo, onEdit, onDelete, onToggleDone }: TodoItemProps) {
           </svg>
         </button>
         <button
-          className="delete"
+          className="todo-action-btn delete"
           onClick={(e) => {
             e.stopPropagation();
             onDelete();
@@ -277,7 +856,103 @@ function TodoItem({ todo, onEdit, onDelete, onToggleDone }: TodoItemProps) {
   );
 }
 
-function formatDeadline(iso: string): { label: string; overdue: boolean } {
+/**
+ * Text-style date input showing dd/mm/yy, storing ISO (yyyy-mm-dd).
+ *
+ * The native `<input type="date">` follows browser locale and can't be
+ * forced into dd/mm/yy cross-browser, so this wraps a text input with
+ * auto-slash masking and parses on blur. Two-digit years are assumed
+ * to live in the 2000s (e.g. "26" → "2026").
+ */
+function DeadlineInput({
+  id,
+  value,
+  onChange,
+}: {
+  id?: string;
+  value: string | null;
+  onChange: (next: string | null) => void;
+}) {
+  const [text, setText] = useState(() => (value ? isoToDisplay(value) : ''));
+
+  // Keep local text in sync when the underlying ISO value changes from outside.
+  useEffect(() => {
+    setText(value ? isoToDisplay(value) : '');
+  }, [value]);
+
+  function handleInput(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value.replace(/[^\d]/g, '').slice(0, 6);
+    // Auto-slash: DD/MM/YY as the user types.
+    let masked = raw;
+    if (raw.length >= 3 && raw.length <= 4) masked = `${raw.slice(0, 2)}/${raw.slice(2)}`;
+    else if (raw.length >= 5) masked = `${raw.slice(0, 2)}/${raw.slice(2, 4)}/${raw.slice(4, 6)}`;
+    setText(masked);
+  }
+
+  function commit() {
+    if (!text.trim()) {
+      onChange(null);
+      return;
+    }
+    const iso = displayToIso(text);
+    if (iso) {
+      onChange(iso);
+      setText(isoToDisplay(iso));
+    } else {
+      // Invalid parse — snap back to last valid value.
+      setText(value ? isoToDisplay(value) : '');
+    }
+  }
+
+  return (
+    <input
+      id={id}
+      type="text"
+      inputMode="numeric"
+      placeholder="dd/mm/åå"
+      maxLength={8}
+      autoComplete="off"
+      value={text}
+      onChange={handleInput}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          (e.target as HTMLInputElement).blur();
+        }
+      }}
+    />
+  );
+}
+
+function isoToDisplay(iso: string): string {
+  const [y, m, d] = iso.split('-');
+  if (!y || !m || !d) return '';
+  return `${d}/${m}/${y.slice(-2)}`;
+}
+
+function displayToIso(text: string): string | null {
+  const m = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{1,4})$/);
+  if (!m) return null;
+  const dd = Number(m[1]);
+  const mm = Number(m[2]);
+  let yyyy = Number(m[3]);
+  if (m[3].length === 2) yyyy = 2000 + yyyy;
+  if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return null;
+  const date = new Date(Date.UTC(yyyy, mm - 1, dd));
+  if (
+    date.getUTCFullYear() !== yyyy ||
+    date.getUTCMonth() !== mm - 1 ||
+    date.getUTCDate() !== dd
+  ) {
+    return null;
+  }
+  const mmStr = String(mm).padStart(2, '0');
+  const ddStr = String(dd).padStart(2, '0');
+  return `${yyyy}-${mmStr}-${ddStr}`;
+}
+
+export function formatDeadline(iso: string): { label: string; overdue: boolean } {
   const due = new Date(iso);
   const now = new Date();
   const diffDays = Math.round((due.getTime() - now.getTime()) / 86_400_000);
@@ -293,7 +968,7 @@ function formatDeadline(iso: string): { label: string; overdue: boolean } {
 }
 
 /* ── Edit modal ──────────────────────────────────────────────────────────── */
-interface TodoModalProps {
+export interface TodoModalProps {
   item: Todo | null;
   defaultPriority: Priority;
   onClose: () => void;
@@ -301,7 +976,7 @@ interface TodoModalProps {
   onDelete?: () => void;
 }
 
-function TodoModal({ item, defaultPriority, onClose, onSave, onDelete }: TodoModalProps) {
+export function TodoModal({ item, defaultPriority, onClose, onSave, onDelete }: TodoModalProps) {
   const [form, setForm] = useState<Todo>(
     item ?? {
       id: String(Date.now()),
@@ -374,12 +1049,35 @@ function TodoModal({ item, defaultPriority, onClose, onSave, onDelete }: TodoMod
 
         <div className="todo-field">
           <label htmlFor="t-deadline">Frist</label>
-          <input
-            id="t-deadline"
-            type="date"
-            value={form.deadline ?? ''}
-            onChange={(e) => update('deadline', e.target.value || null)}
-          />
+          <div className="todo-deadline-row">
+            <DeadlineInput
+              id="t-deadline"
+              value={form.deadline ?? null}
+              onChange={(next) => update('deadline', next)}
+            />
+            {form.deadline && (
+              <button
+                type="button"
+                className="todo-deadline-clear"
+                onClick={() => update('deadline', null)}
+                aria-label="Fjern frist"
+                title="Fjern frist"
+              >
+                ✕ Fjern
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="todo-field">
+          <label className="todo-pin-toggle">
+            <input
+              type="checkbox"
+              checked={form.pinned ?? false}
+              onChange={(e) => update('pinned', e.target.checked)}
+            />
+            <span>Fest til dashboard</span>
+          </label>
         </div>
 
         <div className="todo-modal-actions">

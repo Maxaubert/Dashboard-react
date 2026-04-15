@@ -19,6 +19,10 @@ export interface Todo {
   /** ISO 8601 date string (YYYY-MM-DD). Optional. */
   deadline?: string | null;
   done: boolean;
+  /** True when the user has pinned this todo to the home page as a widget. */
+  pinned?: boolean;
+  /** ISO timestamp the todo was marked done. Used to auto-purge after 7 days. */
+  completedAt?: string | null;
 }
 
 // ─── Plan (weekly schedule) ──────────────────────────────────────────────
@@ -231,7 +235,7 @@ export interface HomeEnvelope {
 /** Persisted widget tile (NOT the timer runtime state). */
 export interface HomeWidget {
   id: string;
-  type: 'habit' | 'countdown' | 'pomodoro' | 'stopwatch' | 'alarm';
+  type: 'habit' | 'countdown' | 'pomodoro' | 'stopwatch' | 'alarm' | 'todo';
   refId: string;
 }
 

@@ -25,6 +25,7 @@ import { CountdownWidget } from './timers/CountdownWidget';
 import { PomodoroWidget } from './timers/PomodoroWidget';
 import { StopwatchWidget } from './timers/StopwatchWidget';
 import { AlarmWidget } from './timers/AlarmWidget';
+import { TodoWidget } from './todo/TodoWidget';
 import { TimerPopup } from './timers/TimerPopup';
 import { useTimers, type TimerInstance } from '@/context/TimerContext';
 
@@ -276,6 +277,9 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
           onColorChange={(c) => ctx.setColor('stopwatch', c)}
         />
       );
+    }
+    if (w.type === 'todo') {
+      return <TodoWidget refId={w.refId} />;
     }
     if (w.type === 'alarm') {
       const t = ctx.getTimer('alarm');

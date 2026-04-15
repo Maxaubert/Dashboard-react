@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<title>Pinned-todo widget — variants</title>
+<style>
+  :root {
+    --color-bg: #050505;
+    --color-surface: #0e0e0e;
+    --color-surface-2: #141414;
+    --color-border: rgba(255,255,255,0.07);
+    --color-text: #e8e8e2;
+    --color-text-muted: #505050;
+    --color-text-dim: #888888;
+    --accent: #f472b6;
+    --accent-high: #f87171;
+    --accent-med: #f59e0b;
+    --accent-low: #60a5fa;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --sidebar-w: 220px;
+    font-family: Inter, system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; color: var(--color-text); }
+  body {
+    padding: 32px 24px 120px;
+    background: #030304;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.014) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.014) 1px, transparent 1px);
+    background-size: 34px 34px;
+    position: relative;
+  }
+  body::after {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 34px 34px;
+    -webkit-mask-image: radial-gradient(circle at center, rgba(0,0,0,1) 0%, rgba(0,0,0,0.5) 6%, rgba(0,0,0,0.15) 14%, transparent 22%);
+            mask-image: radial-gradient(circle at center, rgba(0,0,0,1) 0%, rgba(0,0,0,0.5) 6%, rgba(0,0,0,0.15) 14%, transparent 22%);
+    -webkit-mask-size: 320% 320%; mask-size: 320% 320%;
+    -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+    animation: dot-sunbeam 90s ease-in-out infinite;
+  }
+  @keyframes dot-sunbeam {
+    0%   { -webkit-mask-position: 10% 5%;  mask-position: 10% 5%; }
+    25%  { -webkit-mask-position: 80% 20%; mask-position: 80% 20%; }
+    50%  { -webkit-mask-position: 90% 85%; mask-position: 90% 85%; }
+    75%  { -webkit-mask-position: 15% 75%; mask-position: 15% 75%; }
+    100% { -webkit-mask-position: 10% 5%;  mask-position: 10% 5%; }
+  }
+  h1.doc-title, p.doc-sub, .variant-wrap { position: relative; z-index: 1; }
+  h1.doc-title { font-size: 1.1rem; letter-spacing: .12em; text-transform: uppercase; color: var(--color-text-dim); margin: 0 0 6px; font-weight: 700; }
+  p.doc-sub { color: var(--color-text-muted); margin: 0 0 10px; font-size: .85rem; }
+  p.doc-sub strong { color: var(--color-text-dim); }
+
+  .variant-wrap {
+    margin-bottom: 60px;
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    overflow: hidden;
+    background: transparent;
+  }
+  .variant-label {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--color-border);
+    display: flex; justify-content: space-between; align-items: baseline; gap: 20px;
+    background: #0a0a0a;
+  }
+  .variant-label h2 { margin: 0; font-size: 1rem; letter-spacing: .08em; text-transform: uppercase; }
+  .variant-label .tag { font-size: .68rem; padding: 2px 8px; border-radius: 4px; background: rgba(244,114,182,.12); color: var(--accent); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .variant-label .variant-desc { color: var(--color-text-dim); font-size: .78rem; flex: 1; text-align: right; }
+
+  /* Shell */
+  .shell { display: flex; min-height: 720px; }
+  .sidebar {
+    width: var(--sidebar-w); flex-shrink: 0;
+    background: rgba(5,5,6,.88);
+    border-right: 1px solid var(--color-border);
+    padding: 20px 0;
+  }
+  .sb-logo { display: flex; align-items: center; gap: 10px; padding: 0 18px 20px; border-bottom: 1px solid var(--color-border); }
+  .sb-logo-mark { width: 30px; height: 30px; border-radius: 8px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .75rem; }
+  .sb-logo-text { font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+  .sb-section-label { font-size: .6rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--color-text-muted); padding: 16px 18px 4px; }
+  .sb-link { display: flex; align-items: center; gap: 10px; padding: 8px 20px; font-size: .82rem; color: var(--color-text-dim); }
+  .sb-link .dot { width: 14px; height: 14px; border-radius: 3px; background: rgba(255,255,255,.08); }
+  .sb-link.active { color: var(--color-text); background: rgba(255,255,255,.05); box-shadow: inset 3px 0 0 rgba(255,255,255,.4); }
+
+  .main { flex: 1; padding: 32px 36px 40px; }
+  .eyebrow { font-size: .68rem; letter-spacing: .14em; text-transform: uppercase; color: var(--color-text-muted); font-weight: 700; }
+  .page-title { font-size: 1.8rem; font-weight: 700; margin: 4px 0 2px; }
+  .page-sub { font-size: .82rem; color: var(--color-text-dim); margin-bottom: 20px; }
+
+  .section-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: 8px; margin-bottom: 12px;
+    font-size: .72rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--color-text-muted);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .section-header .grip { display: inline-block; margin-right: 10px; color: var(--color-text-muted); letter-spacing: 0; }
+  .sh-link { font-size: .7rem; color: var(--color-text-dim); letter-spacing: 0; text-transform: none; font-weight: 400; }
+
+  /* Categories (static) */
+  .cards-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 22px; }
+  .cat {
+    background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius);
+    padding: 12px; display: flex; flex-direction: column; gap: 6px; min-height: 78px;
+  }
+  .cat .ci { width: 22px; height: 22px; border-radius: 6px; background: rgba(255,255,255,.05); display: flex; align-items: center; justify-content: center; color: var(--cc); font-size: .7rem; }
+  .cat .cn { font-size: .82rem; font-weight: 600; }
+  .cat .cd { font-size: .68rem; color: var(--color-text-dim); }
+
+  /* Widgets grid — 164×156 tiles per HomeWidget */
+  .widgets-grid { display: grid; grid-template-columns: repeat(6, 164px); gap: 12px; margin-bottom: 22px; }
+  .wshell {
+    width: 164px; height: 156px;
+    background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius);
+    padding: 12px; display: flex; flex-direction: column; position: relative; overflow: hidden;
+  }
+  .wshell .wh { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .wshell .wtype { font-size: .6rem; letter-spacing: .12em; text-transform: uppercase; color: var(--color-text-muted); font-weight: 700; }
+  .wshell .wactions { display: flex; gap: 4px; }
+  .wshell .wbody { flex: 1; }
+  .wshell.habit .hgrid { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; margin-top: 8px; }
+  .wshell.habit .hg { aspect-ratio: 1; background: rgba(96,165,250,.1); border-radius: 2px; }
+  .wshell.habit .hg.on { background: var(--accent-low); }
+  .wshell.habit .ttl { font-size: .82rem; font-weight: 600; }
+  .wshell.habit .sub { font-size: .66rem; color: var(--color-text-dim); margin-top: 2px; }
+  .wshell.timer { align-items: center; justify-content: center; }
+  .wshell.timer .big { font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .wshell.timer .sub { font-size: .68rem; color: var(--color-text-dim); text-transform: uppercase; letter-spacing: .1em; }
+
+  /* Priority colors */
+  .pri-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .pri-dot.high { background: var(--accent-high); }
+  .pri-dot.med  { background: var(--accent-med); }
+  .pri-dot.low  { background: var(--accent-low); }
+
+  .mini-btn { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; color: var(--color-text-muted); font-size: .8rem; }
+
+  /* ─── A1: Per-todo tile, minimal ─── */
+  .a1-todo { border-top: 2px solid var(--accent); }
+  .a1-todo .task {
+    display: flex; gap: 8px; align-items: flex-start; margin-top: 8px;
+  }
+  .a1-todo .ck { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid rgba(255,255,255,.22); flex-shrink: 0; margin-top: 2px; }
+  .a1-todo .t { font-size: .82rem; font-weight: 500; line-height: 1.3; }
+  .a1-todo .m { margin-top: auto; display: flex; gap: 6px; align-items: center; font-size: .66rem; color: var(--color-text-dim); }
+  .a1-todo .d.over { color: var(--accent-high); }
+
+  /* ─── A2: Per-todo tile, bold pink gradient ─── */
+  .a2-todo {
+    background: linear-gradient(135deg, rgba(244,114,182,.22) 0%, var(--color-surface) 70%);
+    border-color: rgba(244,114,182,.35);
+  }
+  .a2-todo .wtype { color: var(--accent); }
+  .a2-todo .t { font-size: .86rem; font-weight: 600; line-height: 1.3; margin-top: 6px; }
+  .a2-todo .bigcheck {
+    width: 22px; height: 22px; border-radius: 6px;
+    border: 1.5px solid rgba(244,114,182,.55);
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-top: 10px;
+  }
+  .a2-todo .m { margin-top: auto; display: flex; gap: 6px; align-items: center; font-size: .66rem; }
+  .a2-todo .m .pill { padding: 2px 8px; border-radius: 999px; background: rgba(0,0,0,.3); border: 1px solid var(--color-border); color: var(--color-text-dim); }
+
+  /* ─── B1: Combined list widget (wide) ─── */
+  .wshell.wide2 { width: 340px; }
+  .wshell.wide3 { width: 516px; }
+  .b1 .ttl { font-size: .86rem; font-weight: 700; display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .b1 .ttl .badge { font-size: .6rem; padding: 1px 6px; background: rgba(244,114,182,.15); color: var(--accent); border-radius: 4px; letter-spacing: .08em; font-weight: 700; }
+  .b1 .row { display: flex; gap: 8px; align-items: center; padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,.05); font-size: .76rem; }
+  .b1 .row:last-child { border-bottom: 0; }
+  .b1 .row .ck { width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid rgba(255,255,255,.2); flex-shrink: 0; }
+  .b1 .row.done .ck { background: var(--accent); border-color: var(--accent); }
+  .b1 .row.done .t { text-decoration: line-through; color: var(--color-text-dim); }
+  .b1 .t { flex: 1; }
+  .b1 .d { font-size: .66rem; color: var(--color-text-dim); }
+  .b1 .d.over { color: var(--accent-high); }
+
+  /* ─── B2: Combined with progress ─── */
+  .b2 .head { display: flex; justify-content: space-between; align-items: baseline; }
+  .b2 .head .big { font-size: 1.4rem; font-weight: 700; }
+  .b2 .head .muted { font-size: .7rem; color: var(--color-text-dim); }
+  .b2 .pbar { height: 4px; background: rgba(255,255,255,.05); border-radius: 2px; margin: 8px 0 10px; overflow: hidden; }
+  .b2 .pbar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), #db5fa0); border-radius: 2px; }
+  .b2 .list { display: flex; flex-direction: column; gap: 4px; font-size: .74rem; }
+  .b2 .list .r { display: flex; gap: 6px; align-items: center; }
+  .b2 .list .r .ck { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.22); flex-shrink: 0; }
+  .b2 .list .r .t { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .b2 .list .r .d { color: var(--color-text-dim); font-size: .66rem; }
+  .b2 .list .r.over .d { color: var(--accent-high); }
+
+  /* Sample extra widgets for context */
+  .wshell.alarm { background: linear-gradient(135deg, rgba(245,158,11,.08) 0%, var(--color-surface) 70%); border-color: rgba(245,158,11,.15); }
+  .wshell.alarm .atime { font-size: 1.5rem; font-weight: 700; text-align: center; margin: auto 0; }
+  .wshell.alarm .alabel { font-size: .68rem; color: var(--color-text-dim); text-align: center; text-transform: uppercase; letter-spacing: .1em; }
+</style>
+</head>
+<body>
+
+<h1 class="doc-title">Pin widget — variants</h1>
+<p class="doc-sub">How a pinned todo should render in the <strong>widgets</strong> section of the home page. A1/A2 = <strong>Option A</strong> (each pinned todo = its own tile). B1/B2 = <strong>Option B</strong> (one combined "Pinned" widget).</p>
+<p class="doc-sub" style="margin-bottom:32px;">Each mockup shows the whole home page above the widgets section so you can see scale, spacing, and how pinned todos mix with existing habit/timer/alarm widgets.</p>
+
+<!-- ============ A1 ============ -->
+<div class="variant-wrap">
+  <div class="variant-label">
+    <h2>A1 · Per-todo tile, minimal <span class="tag">Option A</span></h2>
+    <span class="variant-desc">Each pinned todo = one 164×156 widget. Thin pink top-edge, checkbox + title + deadline. Feels like the existing habit/timer tiles.</span>
+  </div>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="sb-logo"><div class="sb-logo-mark">D</div><div class="sb-logo-text">Dashboard</div></div>
+      <div class="sb-section-label">Nav</div>
+      <div class="sb-link active"><span class="dot"></span>Hjem</div>
+      <div class="sb-link"><span class="dot"></span>Plan</div>
+      <div class="sb-link"><span class="dot"></span>Todo</div>
+      <div class="sb-link"><span class="dot"></span>Skole</div>
+      <div class="sb-link"><span class="dot"></span>Notater</div>
+      <div class="sb-link"><span class="dot"></span>Sport</div>
+      <div class="sb-link"><span class="dot"></span>Gaming</div>
+    </aside>
+    <main class="main">
+      <div class="eyebrow">Hjem</div>
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub">Velg en kategori</div>
+
+      <div class="section-header"><span><span class="grip">⋮⋮</span>Kategorier</span></div>
+      <div class="cards-grid">
+        <div class="cat" style="--cc:#a78bfa"><div class="ci">P</div><div class="cn">Plan</div><div class="cd">Ukeplan</div></div>
+        <div class="cat" style="--cc:#f472b6"><div class="ci">T</div><div class="cn">Todo</div><div class="cd">Oppgaver</div></div>
+        <div class="cat" style="--cc:#f59e0b"><div class="ci">S</div><div class="cn">Skole</div><div class="cd">Fag</div></div>
+        <div class="cat" style="--cc:#34d399"><div class="ci">N</div><div class="cn">Notater</div><div class="cd">Egne notater</div></div>
+        <div class="cat" style="--cc:#22d3ee"><div class="ci">S</div><div class="cn">Sport</div><div class="cd">Resultater</div></div>
+      </div>
+
+      <div class="section-header"><span><span class="grip">⋮⋮</span>Widgets</span><span class="sh-link">＋ Legg til</span></div>
+      <div class="widgets-grid">
+        <!-- existing widgets for context -->
+        <div class="wshell habit">
+          <div class="wh"><span class="wtype">Vane</span><div class="wactions"><span class="mini-btn">⋯</span></div></div>
+          <div class="ttl">Løp</div>
+          <div class="sub">5 av 7 dager</div>
+          <div class="hgrid">
+            <div class="hg on"></div><div class="hg on"></div><div class="hg"></div><div class="hg on"></div><div class="hg on"></div><div class="hg on"></div><div class="hg"></div>
+          </div>
+        </div>
+        <div class="wshell timer">
+          <div class="wh" style="width:100%"><span class="wtype">Pomodoro</span><div class="wactions"><span class="mini-btn">⋯</span></div></div>
+          <div class="big">24:13</div>
+          <div class="sub">Fokus</div>
+        </div>
+        <!-- PINNED TODOS (A1) -->
+        <div class="wshell a1-todo">
+          <div class="wh"><span class="wtype" style="color:var(--accent);">📌 Todo</span><div class="wactions"><span class="mini-btn">⋯</span></div></div>
+          <div class="task"><div class="ck"></div><div class="t">Lever mattebesvarelse</div></div>
+          <div class="m"><span class="pri-dot high"></span><span>Høy</span>·<span class="d over">I går</span></div>
+        </div>
+        <div class="wshell a1-todo">
+          <div class="wh"><span class="wtype" style="color:var(--accent);">📌 Todo</span><div class="wactions"><span class="mini-btn">⋯</span></div></div>
+          <div class="task"><div class="ck"></div><div class="t">Ring tannlegen</div></div>
+          <div class="m"><span class="pri-dot med"></span><span>Medium</span>·<span class="d">I dag</span></div>
+        </div>
+        <div class="wshell alarm">
+          <div class="wh"><span class="wtype">Alarm</span><div class="wactions"><span class="mini-btn">⋯</span></div></div>
+          <div class="atime">07:30</div>
+          <div class="alabel">Hverdager</div>
+        </div>
+        <div class="wshell habit">
+          <div class="wh"><span class="wtype">Vane</span><div class="wactions"><span class="mini-btn">⋯</span></div></div>
+          <div class="ttl">Lesing</div>
+          <div class="sub">3 av 7 dager</div>
+          <div class="hgrid">
+            <div class="hg"></div><div class="hg on"></div><div class="hg"></div><div class="hg on"></div><div class="hg"></div><div class="hg on"></div><div class="hg"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ============ A2 ============ -->
+<div class="variant-wrap">
+  <div class="variant-label">
+    <h2>A2 · Per-todo tile, pink gradient <span class="tag">Option A</span></h2>
+    <span class="variant-desc">Same per-todo layout but tiles are tinted with a pink gradient so pinned todos stand out from other widgets.</span>
+  </div>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="sb-logo"><div class="sb-logo-mark">D</div><div class="sb-logo-text">Dashboard</div></div>
+      <div class="sb-section-label">Nav</div>
+      <div class="sb-link active"><span class="dot"></span>Hjem</div>
+      <div class="sb-link"><span class="dot"></span>Plan</div>
+      <div class="sb-link"><span class="dot"></span>Todo</div>
+      <div class="sb-link"><span class="dot"></span>Skole</div>
+      <div class="sb-link"><span class="dot"></span>Notater</div>
+      <div class="sb-link"><span class="dot"></span>Sport</div>
+      <div class="sb-link"><span class="dot"></span>Gaming</div>
+    </aside>
+    <main class="main">
+      <div class="eyebrow">Hjem</div>
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub">Velg en kategori</div>
+
+      <div class="section-header"><span><span class="grip">⋮⋮</span>Widgets</span><span class="sh-link">＋ Legg til</span></div>
+      <div class="widgets-grid">
+        <div class="wshell habit">
+          <div class="wh"><span class="wtype">Vane</span><div class="wactions"><span class="mini-btn">⋯</span></div></div>
+          <div class="ttl">Løp</div>
+          <div class="sub">5 av 7 dager</div>
+          <div class="hgrid">
+            <div class="hg on"></div><div class="hg on"></div><div class="hg"></div><div class="hg on"></div><div class="hg on"></div><div class="hg on"></div><div class="hg"></div>
+          </div>
+        </div>
+        <!-- PINNED TODOS (A2) -->
+        <div class="wshell a2-todo">
+          <div class="wh"><span class="wtype">📌 Festet</span><div class="wactions"><span class="mini-btn">⋯</span></div></div>
+          <div class="bigcheck"></div>
+          <div class="t">Lever mattebesvarelse</div>
+          <div class="m"><span class="pill">Høy</span><span class="pill" style="color:var(--accent-high);">I går</span></div>
+        </div>
+        <div class="wshell a2-todo">
+          <div class="wh"><span class="wtype">📌 Festet</span><div class="wactions"><span class="mini-btn">⋯</span></div></div>
+          <div class="bigcheck"></div>
+          <div class="t">Ring tannlegen</div>
+          <div class="m"><span class="pill">Medium</span><span class="pill">I dag</span></div>
+        </div>
+        <div class="wshell timer">
+          <div class="wh" style="width:100%"><span class="wtype">Pomodoro</span><div class="wactions"><span class="mini-btn">⋯</span></div></div>
+          <div class="big">24:13</div>
+          <div class="sub">Fokus</div>
+        </div>
+        <div class="wshell alarm">
+          <div class="wh"><span class="wtype">Alarm</span><div class="wactions"><span class="mini-btn">⋯</span></div></div>
+          <div class="atime">07:30</div>
+          <div class="alabel">Hverdager</div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ============ B1 ============ -->
+<div class="variant-wrap">
+  <div class="variant-label">
+    <h2>B1 · Combined list widget <span class="tag">Option B</span></h2>
+    <span class="variant-desc">All pinned todos live in one wider widget (2× width). Dashed-divider list. Smaller home footprint when many todos are pinned.</span>
+  </div>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="sb-logo"><div class="sb-logo-mark">D</div><div class="sb-logo-text">Dashboard</div></div>
+      <div class="sb-section-label">Nav</div>
+      <div class="sb-link active"><span class="dot"></span>Hjem</div>
+      <div class="sb-link"><span class="dot"></span>Plan</div>
+      <div class="sb-link"><span class="dot"></span>Todo</div>
+      <div class="sb-link"><span class="dot"></span>Skole</div>
+      <div class="sb-link"><span class="dot"></span>Notater</div>
+      <div class="sb-link"><span class="dot"></span>Sport</div>
+      <div class="sb-link"><span class="dot"></span>Gaming</div>
+    </aside>
+    <main class="main">
+      <div class="eyebrow">Hjem</div>
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub">Velg en kategori</div>
+
+      <div class="section-header"><span><span class="grip">⋮⋮</span>Widgets</span><span class="sh-link">＋ Legg til</span></div>
+      <div class="widgets-grid">
+        <div class="wshell habit">
+          <div class="wh"><span class="wtype">Vane</span><div class="wactions"><span class="mini-btn">⋯</span></div></div>
+          <div class="ttl">Løp</div>
+          <div class="sub">5 av 7 dager</div>
+          <div class="hgrid">
+            <div class="hg on"></div><div class="hg on"></div><div class="hg"></div><div class="hg on"></div><div class="hg on"></div><div class="hg on"></div><div class="hg"></div>
+          </div>
+        </div>
+        <!-- COMBINED PINNED WIDGET (B1) -->
+        <div class="wshell wide2 b1">
+          <div class="wh"><span class="wtype" style="color:var(--accent);">📌 Festede oppgaver</span><div class="wactions"><span class="mini-btn">⋯</span></div></div>
+          <div class="ttl" style="margin-top:6px;">4 oppgaver<span class="badge">1 forsinket</span></div>
+          <div style="margin-top:6px;flex:1;overflow:hidden;">
+            <div class="row"><div class="ck"></div><span class="pri-dot high"></span><div class="t">Lever mattebesvarelse</div><div class="d over">I går</div></div>
+            <div class="row"><div class="ck"></div><span class="pri-dot med"></span><div class="t">Ring tannlegen</div><div class="d">I dag</div></div>
+            <div class="row"><div class="ck"></div><span class="pri-dot low"></span><div class="t">Les historie kap. 4</div><div class="d">Om 3d</div></div>
+            <div class="row"><div class="ck"></div><span class="pri-dot med"></span><div class="t">Plan helgeturen</div><div class="d">—</div></div>
+          </div>
+        </div>
+        <div class="wshell timer">
+          <div class="wh" style="width:100%"><span class="wtype">Pomodoro</span><div class="wactions"><span class="mini-btn">⋯</span></div></div>
+          <div class="big">24:13</div>
+          <div class="sub">Fokus</div>
+        </div>
+        <div class="wshell alarm">
+          <div class="wh"><span class="wtype">Alarm</span><div class="wactions"><span class="mini-btn">⋯</span></div></div>
+          <div class="atime">07:30</div>
+          <div class="alabel">Hverdager</div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ============ B2 ============ -->
+<div class="variant-wrap">
+  <div class="variant-label">
+    <h2>B2 · Combined with progress bar <span class="tag">Option B</span></h2>
+    <span class="variant-desc">One wide widget with count stat, gradient progress bar (done/total), and a truncated list below. Summary-first feel.</span>
+  </div>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="sb-logo"><div class="sb-logo-mark">D</div><div class="sb-logo-text">Dashboard</div></div>
+      <div class="sb-section-label">Nav</div>
+      <div class="sb-link active"><span class="dot"></span>Hjem</div>
+      <div class="sb-link"><span class="dot"></span>Plan</div>
+      <div class="sb-link"><span class="dot"></span>Todo</div>
+      <div class="sb-link"><span class="dot"></span>Skole</div>
+      <div class="sb-link"><span class="dot"></span>Notater</div>
+      <div class="sb-link"><span class="dot"></span>Sport</div>
+      <div class="sb-link"><span class="dot"></span>Gaming</div>
+    </aside>
+    <main class="main">
+      <div class="eyebrow">Hjem</div>
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub">Velg en kategori</div>
+
+      <div class="section-header"><span><span class="grip">⋮⋮</span>Widgets</span><span class="sh-link">＋ Legg til</span></div>
+      <div class="widgets-grid">
+        <div class="wshell habit">
+          <div class="wh"><span class="wtype">Vane</span><div class="wactions"><span class="mini-btn">⋯</span></div></div>
+          <div class="ttl">Løp</div>
+          <div class="sub">5 av 7 dager</div>
+          <div class="hgrid">
+            <div class="hg on"></div><div class="hg on"></div><div class="hg"></div><div class="hg on"></div><div class="hg on"></div><div class="hg on"></div><div class="hg"></div>
+          </div>
+        </div>
+        <!-- COMBINED PINNED WIDGET (B2) -->
+        <div class="wshell wide2 b2">
+          <div class="wh"><span class="wtype" style="color:var(--accent);">📌 Festede oppgaver</span><div class="wactions"><span class="mini-btn">⋯</span></div></div>
+          <div class="head">
+            <div><span class="big">1</span><span class="muted"> av 4 ferdig</span></div>
+            <div class="muted" style="color:var(--accent-high)">1 forsinket</div>
+          </div>
+          <div class="pbar"><span style="width:25%"></span></div>
+          <div class="list">
+            <div class="r over"><div class="ck"></div><span class="pri-dot high"></span><div class="t">Lever mattebesvarelse</div><div class="d">I går</div></div>
+            <div class="r"><div class="ck"></div><span class="pri-dot med"></span><div class="t">Ring tannlegen</div><div class="d">I dag</div></div>
+            <div class="r"><div class="ck"></div><span class="pri-dot low"></span><div class="t">Les historie</div><div class="d">Om 3d</div></div>
+          </div>
+        </div>
+        <div class="wshell timer">
+          <div class="wh" style="width:100%"><span class="wtype">Pomodoro</span><div class="wactions"><span class="mini-btn">⋯</span></div></div>
+          <div class="big">24:13</div>
+          <div class="sub">Fokus</div>
+        </div>
+        <div class="wshell alarm">
+          <div class="wh"><span class="wtype">Alarm</span><div class="wactions"><span class="mini-btn">⋯</span></div></div>
+          <div class="atime">07:30</div>
+          <div class="alabel">Hverdager</div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+</body>
+</html>
