@@ -362,7 +362,9 @@ function DagensPlanSection({ handleProps }: { handleProps?: HandleProps }) {
 
   const now = new Date();
   const todayDow = (now.getDay() + 6) % 7; // 0=Mon..6=Sun
-  const todayIso = now.toISOString().slice(0, 10);
+  // Local-time ISO (YYYY-MM-DD) — toISOString() would return UTC, which
+  // is off-by-one for events dated "today" near local midnight.
+  const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const nowMin = now.getHours() * 60 + now.getMinutes();
   const dateLabel = `${DAY_NO[todayDow]} ${now.getDate()}. ${MON_NO[now.getMonth()]}`;
 
@@ -434,14 +436,18 @@ function VaerSection({ handleProps }: { handleProps?: HandleProps }) {
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     setSearchError('');
-    const hit = await searchLocation(searchInput);
-    if (!hit) {
-      setSearchError('Fant ingen sted');
-      return;
+    try {
+      const hit = await searchLocation(searchInput);
+      if (!hit) {
+        setSearchError('Fant ingen sted');
+        return;
+      }
+      setLocation(hit);
+      setEditing(false);
+      setSearchInput('');
+    } catch {
+      setSearchError('Kunne ikke søke');
     }
-    setLocation(hit);
-    setEditing(false);
-    setSearchInput('');
   }
 
   const dayShort = (date: string, idx: number) => {

@@ -47,9 +47,17 @@ export function useWeather() {
     if (typeof navigator === 'undefined' || !navigator.geolocation) return;
 
     navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const reverse = await reverseLocation(pos.coords.latitude, pos.coords.longitude);
-        if (reverse) setLocation(reverse);
+      (pos) => {
+        // Fire-and-forget; reverseLocation already catches its own fetch
+        // errors, but guard the promise chain so an unexpected throw
+        // doesn't become an unhandled rejection.
+        reverseLocation(pos.coords.latitude, pos.coords.longitude)
+          .then((reverse) => {
+            if (reverse) setLocation(reverse);
+          })
+          .catch(() => {
+            /* keep the Halden default */
+          });
       },
       () => {
         /* permission denied — keep the Halden default */

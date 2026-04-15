@@ -44,7 +44,17 @@ export function NotesPage() {
   const [currentFont, setCurrentFont] = useState<string>('');
   const editorRef = useRef<HTMLDivElement>(null);
   const saveTimerRef = useRef<number | null>(null);
+  const savedHideTimerRef = useRef<number | null>(null);
   const [savedVisible, setSavedVisible] = useState(false);
+
+  // Flush any pending autosave on unmount so we don't fire setState after
+  // the component is gone (and don't leak the timeouts).
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+      if (savedHideTimerRef.current) window.clearTimeout(savedHideTimerRef.current);
+    };
+  }, []);
 
   const sorted = useMemo(() => {
     if (!notes) return [];
@@ -132,7 +142,8 @@ export function NotesPage() {
         {
           onSuccess: () => {
             setSavedVisible(true);
-            window.setTimeout(() => setSavedVisible(false), 1200);
+            if (savedHideTimerRef.current) window.clearTimeout(savedHideTimerRef.current);
+            savedHideTimerRef.current = window.setTimeout(() => setSavedVisible(false), 1200);
           },
         }
       );

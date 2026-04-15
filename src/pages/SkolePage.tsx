@@ -445,12 +445,17 @@ interface DueLabel {
 function formatDue(iso: string): DueLabel {
   const due = new Date(iso);
   const now = new Date();
-  const diffMs = due.getTime() - now.getTime();
-  const diffDays = Math.round(diffMs / 86_400_000);
+
+  // Calendar-day diff (not ms/86400000, which rounds "today at 23:00" to
+  // "tomorrow" if it's currently morning). Compare midnight-to-midnight.
+  const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate()).getTime();
+  const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const diffDays = Math.round((dueDay - nowDay) / 86_400_000);
+  const isOverdue = due.getTime() < now.getTime();
 
   const time = `${String(due.getHours()).padStart(2, '0')}:${String(due.getMinutes()).padStart(2, '0')}`;
 
-  if (diffDays < 0) return { top: 'FORFALT', main: time, tone: 'overdue' };
+  if (isOverdue) return { top: 'FORFALT', main: time, tone: 'overdue' };
   if (diffDays === 0) return { top: 'I DAG', main: time, tone: 'urgent' };
   if (diffDays === 1) return { top: 'I MOR', main: time, tone: 'urgent' };
   if (diffDays < 7) {
