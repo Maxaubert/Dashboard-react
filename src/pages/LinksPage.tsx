@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useLinks, useSaveLinks } from '@/hooks/useLinks';
 import { OTHER_CATEGORY_ID } from '@/api/types';
 import type { LinkItem } from '@/api/types';
