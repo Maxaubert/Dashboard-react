@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useLinks, useSaveLinks } from '@/hooks/useLinks';
 import { OTHER_CATEGORY_ID } from '@/api/types';
 import type { LinkItem } from '@/api/types';
@@ -263,8 +263,40 @@ function SortableLinkCard({
     transition,
     opacity: isDragging ? 0.4 : 1,
   };
+
+  // When a drag finishes, the browser still delivers the pointer-up as a
+  // `click` on the stretched anchor, which opens the link in a new tab.
+  // Track the drag transition and swallow the very next click.
+  const suppressClickRef = useRef(false);
+  const prevIsDragging = useRef(isDragging);
+  useEffect(() => {
+    if (prevIsDragging.current && !isDragging) {
+      suppressClickRef.current = true;
+      // Clear on the next macrotask — `click` fires synchronously after
+      // pointerup, so by setTimeout 0 the offending click has already been
+      // swallowed and future clicks go through.
+      const id = window.setTimeout(() => { suppressClickRef.current = false; }, 0);
+      return () => window.clearTimeout(id);
+    }
+    prevIsDragging.current = isDragging;
+  }, [isDragging]);
+
+  function handleClickCapture(e: React.MouseEvent) {
+    if (suppressClickRef.current || isDragging) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }
+
   return (
-    <div ref={setNodeRef} style={style} className="touch-none" {...attributes} {...listeners}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="touch-none"
+      onClickCapture={handleClickCapture}
+      {...attributes}
+      {...listeners}
+    >
       <LinkCard link={link} onEdit={onEdit} onDelete={onDelete} onToggleFavorite={onToggleFavorite} />
     </div>
   );
