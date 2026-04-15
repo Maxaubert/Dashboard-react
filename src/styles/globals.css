@@ -6766,11 +6766,13 @@
   /* The corner pin-off icon replaces the built-in X close. */
   .lm-content:has(.todo-view) .lm-close { display: none; }
 
-  .todo-view { position: relative; }
-  .todo-view-pin {
+  /* The view popup's parent .lm-content already has position: relative,
+   * so we anchor the pin-off button to the modal's top-right corner —
+   * roughly where the X close used to sit. */
+  .lm-content:has(.todo-view) .todo-view-pin {
     position: absolute;
-    top: -4px;
-    right: -2px;
+    top: 14px;
+    right: 14px;
     width: 28px;
     height: 28px;
     display: inline-flex;
