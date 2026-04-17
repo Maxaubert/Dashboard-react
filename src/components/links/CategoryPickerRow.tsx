@@ -21,7 +21,6 @@ export function CategoryPickerRow({
     .filter((c) => c.id !== FAVORITES_CATEGORY_ID && c.id !== OTHER_CATEGORY_ID)
     .sort((a, b) => a.order - b.order);
 
-  const favCount = links.filter((l) => l.favorite === true).length;
   const otherCount = links.filter((l) => !l.favorite && !l.category).length;
 
   function countFor(catId: string): number {
@@ -39,12 +38,6 @@ export function CategoryPickerRow({
 
   return (
     <div className="cat-picker-list">
-      <div className={cn('cat-picker-row', 'disabled')} title="Bruk stjerneknappen på kortet">
-        <span className="cat-picker-radio" />
-        <span className="cat-picker-name">★ Favorites</span>
-        <span className="cat-picker-count">{favCount}</span>
-      </div>
-
       {userCats.map((c) => {
         const selected = value === c.id;
         return (

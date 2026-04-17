@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useLinks, useSaveLinks } from '@/hooks/useLinks';
+import { FAVORITES_CATEGORY_ID, OTHER_CATEGORY_ID } from '@/api/types';
 import type { LinkItem } from '@/api/types';
 import { Modal, useToast } from '@/components/ui';
 import { IconPicker, type IconPickerHandle } from '@/components/patterns';
@@ -71,6 +72,10 @@ export function LinksLibrary() {
 
   const [editing, setEditing] = useState<LinkItem | null>(null);
   const [creating, setCreating] = useState(false);
+  // Set by the outer right-click handler to the category id that was under
+  // the cursor; seeded into the add-link modal so the popup opens with that
+  // category pre-selected. Pseudo sections (Favorites/Other) → undefined.
+  const pendingCategoryRef = useRef<string | undefined>(undefined);
 
   const derivedSections = useMemo(() => groupLinks(links, categories), [links, categories]);
 
@@ -294,13 +299,29 @@ export function LinksLibrary() {
     <>
       <ContextMenu.Root>
         <ContextMenu.Trigger asChild>
-          <div className="links-library-root">
+          <div
+            className="links-library-root"
+            onContextMenu={(e) => {
+              const hit = (e.target as HTMLElement).closest('[data-category-id]');
+              const id = hit?.getAttribute('data-category-id') ?? undefined;
+              pendingCategoryRef.current =
+                id && id !== FAVORITES_CATEGORY_ID && id !== OTHER_CATEGORY_ID
+                  ? id
+                  : undefined;
+            }}
+          >
             <div className="lenker-header">
               <div className="lenker-title-wrap">
                 <div className="lenker-title">Lenkebibliotek</div>
                 <div className="lenker-sub">Dine lagrede lenker</div>
               </div>
-              <button className="btn-new-link" onClick={() => setCreating(true)}>
+              <button
+                className="btn-new-link"
+                onClick={() => {
+                  pendingCategoryRef.current = undefined;
+                  setCreating(true);
+                }}
+              >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <line x1="12" y1="5" x2="12" y2="19" />
                   <line x1="5" y1="12" x2="19" y2="12" />
@@ -385,9 +406,11 @@ export function LinksLibrary() {
       {(editing || creating) && (
         <LinkEditModal
           item={editing}
+          defaultCategoryId={creating && !editing ? pendingCategoryRef.current : undefined}
           onClose={() => {
             setEditing(null);
             setCreating(false);
+            pendingCategoryRef.current = undefined;
           }}
           onSave={handleSave}
           onDelete={editing ? () => handleDelete(editing.id) : undefined}
@@ -499,7 +522,13 @@ function SortableSection({
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="links-section" {...attributes}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="links-section"
+      data-category-id={section.category.id}
+      {...attributes}
+    >
       <SectionHeader
         title={section.kind === 'favorites' ? '★ Favorites' : section.category.name}
         count={section.links.length}
@@ -650,12 +679,13 @@ function getDomain(url: string): string | null {
 /* ── Edit modal ──────────────────────────────────────────────────────────── */
 interface LinkEditModalProps {
   item: LinkItem | null;
+  defaultCategoryId?: string;
   onClose: () => void;
   onSave: (item: LinkItem) => void;
   onDelete?: () => void;
 }
 
-function LinkEditModal({ item, onClose, onSave, onDelete }: LinkEditModalProps) {
+function LinkEditModal({ item, defaultCategoryId, onClose, onSave, onDelete }: LinkEditModalProps) {
   const [form, setForm] = useState<LinkItem>(
     item ?? {
       id: `link_${Date.now()}`,
@@ -664,6 +694,7 @@ function LinkEditModal({ item, onClose, onSave, onDelete }: LinkEditModalProps) 
       sub: '',
       color: LINK_COLOR_PRESETS[6], // legacy default purple
       favorite: false,
+      category: defaultCategoryId,
     }
   );
   const pickerRef = useRef<IconPickerHandle>(null);
