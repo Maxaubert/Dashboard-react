@@ -25,9 +25,9 @@ export function useSaveLinks() {
   return useMutation({
     mutationFn: (envelope: LinksEnvelope) => linksApi.saveAll(envelope),
     onMutate: async (next) => {
-      await qc.cancelQueries({ queryKey: queryKeys.links });
       const previous = qc.getQueryData<LinksEnvelope>(queryKeys.links);
       qc.setQueryData(queryKeys.links, next);
+      await qc.cancelQueries({ queryKey: queryKeys.links });
       return { previous };
     },
     onError: (_err, _next, ctx) => {

@@ -4029,6 +4029,21 @@
   @media (max-width: 768px) {
     .page-inner { padding: 20px 16px; }
   }
+  .links-library-root {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    /* Fill the visible page so right-clicks in the empty area below the
+     * last card still hit the outer "Ny lenke" Radix trigger instead of
+     * falling through to the browser's default context menu. .page-inner
+     * pads 28px top/bottom = 56px total. */
+    min-height: calc(100vh - 60px);
+  }
+  /* Inside the popup the wrapper must shrink to the dialog's column
+   * (links-popup-body has fixed height), not stretch to viewport. */
+  .links-popup-body .links-library-root {
+    min-height: 0;
+  }
   .lenker-header {
     display: flex;
     align-items: center;
@@ -6820,6 +6835,11 @@
     color: #e6e8ec;
     font-size: 13px;
     font-weight: 600;
+    /* Shrink to content so right-clicks on the empty area to the right
+     * of the header text fall through to the outer "Ny lenke" menu
+     * instead of triggering this header's Rename/Delete menu. */
+    width: fit-content;
+    max-width: 100%;
   }
   .links-section-header:first-child { margin-top: 0; }
   .links-section-title {}

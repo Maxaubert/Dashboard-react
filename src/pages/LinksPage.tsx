@@ -1,6 +1,5 @@
-import { useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useLinks, useSaveLinks } from '@/hooks/useLinks';
-import { OTHER_CATEGORY_ID } from '@/api/types';
 import type { LinkItem } from '@/api/types';
 import { Modal, useToast } from '@/components/ui';
 import { IconPicker, type IconPickerHandle } from '@/components/patterns';
@@ -9,19 +8,21 @@ import { resolveSvgIcon } from '@/data/svgIcons';
 import { LINK_COLOR_PRESETS } from '@/data/linkColors';
 import * as ContextMenu from '@radix-ui/react-context-menu';
 import { cn } from '@/lib/cn';
-import { groupLinks } from '@/lib/groupLinks';
+import { groupLinks, type SectionRender } from '@/lib/groupLinks';
 import { SectionHeader } from '@/components/links/SectionHeader';
 import { CategoryPickerRow } from '@/components/links/CategoryPickerRow';
 import { useCategories } from '@/hooks/useCategories';
 import {
   DndContext,
-  useDndMonitor,
-  closestCenter,
+  DragOverlay,
+  closestCorners,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -71,7 +72,33 @@ export function LinksLibrary() {
   const [editing, setEditing] = useState<LinkItem | null>(null);
   const [creating, setCreating] = useState(false);
 
-  const sections = useMemo(() => groupLinks(links, categories), [links, categories]);
+  const derivedSections = useMemo(() => groupLinks(links, categories), [links, categories]);
+
+  // Multi-container drag pattern (mirrors TodoPage): mirror sections into
+  // local state and move items between sections during `onDragOver` so the
+  // dragged card visually lives in the destination mid-drag instead of
+  // snapping back to its source SortableContext.
+  const [localSections, setLocalSections] = useState<SectionRender[]>(derivedSections);
+  const [activeLinkId, setActiveLinkId] = useState<string | null>(null);
+  const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
+
+  // Re-seed local from upstream when props actually differ AND no drag is
+  // in progress. Content-level compare prevents clobbering a just-committed
+  // drop before the optimistic cache write has propagated.
+  useEffect(() => {
+    if (activeLinkId || activeSectionId) return;
+    const keyOf = (sections: SectionRender[]) =>
+      sections
+        .map((s) =>
+          [
+            s.category.id,
+            s.links.map((l) => `${l.id}#${l.favorite ? 1 : 0}#${l.category ?? '-'}`).join(','),
+          ].join(':'),
+        )
+        .join('|');
+    if (keyOf(derivedSections) === keyOf(localSections)) return;
+    setLocalSections(derivedSections);
+  }, [derivedSections, localSections, activeLinkId, activeSectionId]);
 
   const { reorder: reorderCategories, rename: renameCategory, remove: removeCategory } = useCategories();
   const sensors = useSensors(
@@ -109,129 +136,251 @@ export function LinksLibrary() {
     persist(links.map((l) => (l.id === id ? { ...l, favorite: !l.favorite } : l)));
   }
 
+  /** Resolve which section an id belongs to, using local state. */
+  function findLocalSection(id: string): SectionRender | undefined {
+    const asSection = localSections.find((s) => s.category.id === id);
+    if (asSection) return asSection;
+    return localSections.find((s) => s.links.some((l) => l.id === id));
+  }
+
+  function handleDragStart(e: DragStartEvent) {
+    const id = String(e.active.id);
+    if (localSections.some((s) => s.category.id === id)) {
+      setActiveSectionId(id);
+    } else {
+      setActiveLinkId(id);
+    }
+  }
+
+  function handleDragOver(e: DragOverEvent) {
+    // Section drags don't need mid-drag container moves — they're handled
+    // by the outer SortableContext purely via transforms.
+    if (!activeLinkId) return;
+    const { active, over } = e;
+    if (!over) return;
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    const fromSection = localSections.find((s) => s.links.some((l) => l.id === activeId));
+    const toSection = findLocalSection(overId);
+    if (!fromSection || !toSection || fromSection.category.id === toSection.category.id) return;
+
+    setLocalSections((prev) => {
+      const next = prev.map((s) => ({ ...s, links: [...s.links] }));
+      const from = next.find((s) => s.category.id === fromSection.category.id);
+      const to = next.find((s) => s.category.id === toSection.category.id);
+      if (!from || !to) return prev;
+      const fromIdx = from.links.findIndex((l) => l.id === activeId);
+      if (fromIdx < 0) return prev;
+      const [moved] = from.links.splice(fromIdx, 1);
+      // Insertion index: if hovering the section wrapper, append; otherwise
+      // insert before the over-item so the placeholder appears at its slot.
+      let insertIdx: number;
+      if (overId === to.category.id) {
+        insertIdx = to.links.length;
+      } else {
+        const idx = to.links.findIndex((l) => l.id === overId);
+        insertIdx = idx < 0 ? to.links.length : idx;
+      }
+      to.links.splice(insertIdx, 0, moved);
+      return next;
+    });
+  }
+
+  function handleDragEnd(e: DragEndEvent) {
+    const { active, over } = e;
+    const wasSectionDrag = activeSectionId !== null;
+    const wasLinkDrag = activeLinkId !== null;
+    setActiveSectionId(null);
+    setActiveLinkId(null);
+
+    if (!over) {
+      // Dropped outside any droppable — revert.
+      setLocalSections(derivedSections);
+      return;
+    }
+
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    // Section reordering path.
+    if (wasSectionDrag) {
+      if (activeId === overId) return;
+      const sectionIds = localSections.map((s) => s.category.id);
+      const oldIndex = sectionIds.indexOf(activeId);
+      const newIndex = sectionIds.indexOf(overId);
+      if (oldIndex < 0 || newIndex < 0) return;
+      const nextOrder = arrayMove(sectionIds, oldIndex, newIndex);
+      const visible = new Set(nextOrder);
+      const hidden = categories
+        .filter((c) => !visible.has(c.id))
+        .sort((a, b) => a.order - b.order)
+        .map((c) => c.id);
+      reorderCategories([...nextOrder, ...hidden]);
+      return;
+    }
+
+    if (!wasLinkDrag) return;
+
+    // Stretched <a> inside each card would otherwise open the link when
+    // the browser fires the synthetic click after pointerup. Swallow it.
+    installOneShotClickSuppress();
+
+    // Link drop: determine the final section + order from localSections
+    // (already updated by onDragOver for cross-section moves), apply any
+    // within-section reorder against the over target, then persist.
+    const toSection = localSections.find((s) => s.links.some((l) => l.id === activeId));
+    if (!toSection) return;
+
+    let finalSections = localSections;
+    if (overId !== toSection.category.id) {
+      const ids = toSection.links.map((l) => l.id);
+      const fromIdx = ids.indexOf(activeId);
+      const toIdx = ids.indexOf(overId);
+      if (fromIdx >= 0 && toIdx >= 0 && fromIdx !== toIdx) {
+        const reordered = arrayMove(toSection.links, fromIdx, toIdx);
+        finalSections = localSections.map((s) =>
+          s.category.id === toSection.category.id ? { ...s, links: reordered } : s,
+        );
+        setLocalSections(finalSections);
+      }
+    }
+
+    // Rebuild the flat links array preserving both section membership and
+    // within-section order. `groupLinks` buckets by input order, so the
+    // persisted order must reflect what the user sees.
+    const now = Date.now();
+    const upstreamById = new Map(links.map((l) => [l.id, l]));
+    const newLinks: LinkItem[] = [];
+    for (const section of finalSections) {
+      for (const link of section.links) {
+        const upstream = upstreamById.get(link.id);
+        if (!upstream) continue;
+        const update: Partial<LinkItem> = {};
+        if (section.kind === 'favorites') {
+          update.favorite = true;
+        } else if (section.kind === 'other') {
+          update.favorite = false;
+          update.category = undefined;
+        } else {
+          update.favorite = false;
+          update.category = section.category.id;
+        }
+        const isMoved = link.id === activeId;
+        newLinks.push({
+          ...upstream,
+          ...update,
+          updatedAt: isMoved ? now : upstream.updatedAt,
+        });
+      }
+    }
+
+    persist(newLinks);
+  }
+
+  function handleDragCancel() {
+    if (activeLinkId !== null) installOneShotClickSuppress();
+    setActiveLinkId(null);
+    setActiveSectionId(null);
+    setLocalSections(derivedSections);
+  }
+
+  const activeLink =
+    activeLinkId != null
+      ? localSections.flatMap((s) => s.links).find((l) => l.id === activeLinkId) ?? null
+      : null;
+
   return (
     <>
-      <div className="lenker-header">
-        <div className="lenker-title-wrap">
-          <div className="lenker-title">Lenkebibliotek</div>
-          <div className="lenker-sub">Dine lagrede lenker</div>
-        </div>
-        <button className="btn-new-link" onClick={() => setCreating(true)}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Ny lenke
-        </button>
-      </div>
+      <ContextMenu.Root>
+        <ContextMenu.Trigger asChild>
+          <div className="links-library-root">
+            <div className="lenker-header">
+              <div className="lenker-title-wrap">
+                <div className="lenker-title">Lenkebibliotek</div>
+                <div className="lenker-sub">Dine lagrede lenker</div>
+              </div>
+              <button className="btn-new-link" onClick={() => setCreating(true)}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Ny lenke
+              </button>
+            </div>
 
-      {sections.length === 0 ? (
-        <div className="links-grid">
-          <div className="links-empty">
-            Ingen lenker ennå.
-            <br />
-            Klikk «Ny lenke» for å legge til den første.
+            {localSections.length === 0 ? (
+              <div className="links-grid">
+                <div className="links-empty">
+                  Ingen lenker ennå.
+                  <br />
+                  Klikk «Ny lenke» for å legge til den første.
+                </div>
+              </div>
+            ) : (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCorners}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDragEnd={handleDragEnd}
+                onDragCancel={handleDragCancel}
+              >
+                <SortableContext
+                  items={localSections.map((s) => s.category.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {localSections.map((section) => (
+                    <SortableSection
+                      key={section.category.id}
+                      section={section}
+                      readonly={section.kind !== 'user'}
+                      onRename={(next) => renameCategory(section.category.id, next)}
+                      onDeleteSection={() => {
+                        if (
+                          confirm(
+                            section.links.length === 0
+                              ? `Slett kategorien «${section.category.name}»?`
+                              : `Slett «${section.category.name}»? ${section.links.length} lenker flyttes til Other.`,
+                          )
+                        ) {
+                          removeCategory(section.category.id);
+                        }
+                      }}
+                      onEdit={(l) => setEditing(l)}
+                      onDelete={handleDelete}
+                      onToggleFavorite={toggleFavorite}
+                    />
+                  ))}
+                </SortableContext>
+                <DragOverlay>
+                  {activeLink ? <LinkCardOverlay link={activeLink} /> : null}
+                </DragOverlay>
+              </DndContext>
+            )}
           </div>
-        </div>
-      ) : (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={(e: DragEndEvent) => {
-            const { active, over } = e;
-            if (!over || active.id === over.id) return;
-
-            const activeId = String(active.id);
-            const overId = String(over.id);
-
-            const sectionIds = sections.map((s) => s.category.id);
-            const activeIsSection = sectionIds.includes(activeId);
-            const overIsSection = sectionIds.includes(overId);
-
-            if (activeIsSection && overIsSection) {
-              const oldIndex = sectionIds.indexOf(activeId);
-              const newIndex = sectionIds.indexOf(overId);
-              const nextOrder = arrayMove(sectionIds, oldIndex, newIndex);
-              const visible = new Set(nextOrder);
-              const hidden = categories.filter((c) => !visible.has(c.id)).sort((a, b) => a.order - b.order).map((c) => c.id);
-              reorderCategories([...nextOrder, ...hidden]);
-              return;
-            }
-
-            const findSection = (linkId: string) => sections.find((s) => s.links.some((l) => l.id === linkId));
-            const sourceSection = findSection(activeId);
-            if (!sourceSection) return;
-
-            let targetSection = findSection(overId);
-            if (!targetSection && overIsSection) {
-              targetSection = sections.find((s) => s.category.id === overId);
-            }
-            if (!targetSection) return;
-
-            if (sourceSection === targetSection) {
-              const ids = targetSection.links.map((l) => l.id);
-              const oldIndex = ids.indexOf(activeId);
-              const newIndex = ids.indexOf(overId);
-              if (oldIndex < 0 || newIndex < 0) return;
-              const reordered = arrayMove(targetSection.links, oldIndex, newIndex);
-              const keep = links.filter((l) => {
-                if (targetSection!.kind === 'favorites') return l.favorite !== true;
-                if (targetSection!.kind === 'other') {
-                  return l.favorite === true || (l.category !== undefined && categories.some((c) => c.id === l.category && c.id !== OTHER_CATEGORY_ID));
-                }
-                return l.favorite === true || l.category !== targetSection!.category.id;
-              });
-              persist([...keep, ...reordered]);
-              return;
-            }
-
-            const movedLink = links.find((l) => l.id === activeId);
-            if (!movedLink) return;
-            const nextLinkPartial: Partial<LinkItem> = {};
-            if (targetSection.kind === 'favorites') {
-              nextLinkPartial.favorite = true;
-            } else if (targetSection.kind === 'other') {
-              nextLinkPartial.category = undefined;
-              nextLinkPartial.favorite = false;
-            } else {
-              nextLinkPartial.category = targetSection.category.id;
-              nextLinkPartial.favorite = false;
-            }
-            const nextLinks = links.map((l) =>
-              l.id === activeId ? { ...l, ...nextLinkPartial, updatedAt: Date.now() } : l,
-            );
-            persist(nextLinks);
-          }}
-        >
-          <SortableContext
-            items={sections.map((s) => s.category.id)}
-            strategy={verticalListSortingStrategy}
+        </ContextMenu.Trigger>
+        <ContextMenu.Portal>
+          <ContextMenu.Content
+            style={{
+              background: '#0a0a0a',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: 8,
+              padding: 4,
+              minWidth: 140,
+              zIndex: 50,
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.5)',
+            }}
           >
-            {sections.map((section) => (
-              <SortableSection
-                key={section.category.id}
-                section={section}
-                readonly={section.kind !== 'user'}
-                onRename={(next) => renameCategory(section.category.id, next)}
-                onDeleteSection={() => {
-                  if (
-                    confirm(
-                      section.links.length === 0
-                        ? `Slett kategorien «${section.category.name}»?`
-                        : `Slett «${section.category.name}»? ${section.links.length} lenker flyttes til Other.`,
-                    )
-                  ) {
-                    removeCategory(section.category.id);
-                  }
-                }}
-                onEdit={(l) => setEditing(l)}
-                onDelete={handleDelete}
-                onToggleFavorite={toggleFavorite}
-              />
-            ))}
-          </SortableContext>
-        </DndContext>
-      )}
+            <ContextMenu.Item
+              onSelect={() => setCreating(true)}
+              style={{ padding: '6px 10px', color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.78rem', cursor: 'pointer', borderRadius: 4, outline: 'none' }}
+            >
+              Ny lenke
+            </ContextMenu.Item>
+          </ContextMenu.Content>
+        </ContextMenu.Portal>
+      </ContextMenu.Root>
 
       {(editing || creating) && (
         <LinkEditModal
@@ -260,31 +409,11 @@ function SortableLinkCard({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: link.id });
 
-  // After a drag, the browser still fires the synthetic `click` on the
-  // stretched anchor, which opens the link. React-level handlers aren't
-  // reliable here (timing races with dnd-kit's state updates), so on
-  // drag end we install a one-shot native capture listener on the
-  // document that eats the very next click at the lowest level.
-  useDndMonitor({
-    onDragEnd(e) {
-      if (e.active.id !== link.id) return;
-      installOneShotClickSuppress();
-    },
-    onDragCancel(e) {
-      if (e.active.id !== link.id) return;
-      installOneShotClickSuppress();
-    },
-  });
-
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
-    // Transition is only useful for OTHER items shifting into place as the
-    // dragged card moves around. For the dragged card itself on release,
-    // dnd-kit applies a lingering transition that animates it back to the
-    // new slot from the drop position — reads as a small "slide" glitch.
-    // Skip the transition on the dragged card so it snaps cleanly.
-    transition: isDragging ? transition : undefined,
-    opacity: isDragging ? 0.4 : 1,
+    transition,
+    // The dragged card is rendered in the DragOverlay; hide the source.
+    opacity: isDragging ? 0 : 1,
   };
 
   return (
@@ -296,6 +425,20 @@ function SortableLinkCard({
       {...listeners}
     >
       <LinkCard link={link} onEdit={onEdit} onDelete={onDelete} onToggleFavorite={onToggleFavorite} />
+    </div>
+  );
+}
+
+/** The dragged card shown in the DragOverlay portal during drag. */
+function LinkCardOverlay({ link }: { link: LinkItem }) {
+  return (
+    <div style={{ cursor: 'grabbing' }}>
+      <LinkCard
+        link={link}
+        onEdit={() => {}}
+        onDelete={() => {}}
+        onToggleFavorite={() => {}}
+      />
     </div>
   );
 }

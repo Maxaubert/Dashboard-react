@@ -45,8 +45,11 @@ export const SectionHeader = forwardRef<HTMLDivElement, SectionHeaderProps>(
 
     const onContextMenu = useCallback(
       (e: MouseEvent<HTMLDivElement>) => {
-        if (readonly) return;
+        // Always swallow on the header row so the outer "Ny lenke" Radix
+        // context menu doesn't also fire here — the header is not empty area.
         e.preventDefault();
+        e.stopPropagation();
+        if (readonly) return;
         setMenuX(e.clientX);
         setMenuY(e.clientY);
         setMenuOpen(true);
