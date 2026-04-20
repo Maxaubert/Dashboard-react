@@ -32,6 +32,7 @@ import { LinkIconRender } from './LinksPage';
 import type { LinkItem, NewsItem, PlanItem } from '@/api/types';
 import { cn } from '@/lib/cn';
 import { WidgetsSection } from '@/components/widgets/WidgetsSection';
+import { PromptLauncher } from '@/components/launcher/PromptLauncher';
 
 /* ── Drag handle ────────────────────────────────────────────────────────── */
 type HandleProps = Record<string, unknown>;
@@ -53,6 +54,7 @@ function GripHandle({ handleProps }: { handleProps?: HandleProps }) {
 
 /* ── Section ordering ───────────────────────────────────────────────────── */
 const SECTION_IDS = [
+  'prompt-launcher',
   'kategorier',
   'widgets',
   'ext-lenker',
@@ -148,6 +150,7 @@ function SortableHomeSection({ id }: { id: SectionId }) {
 
   return (
     <div ref={setNodeRef} style={style} className={cn(isDragging && 'db-section-dragging')}>
+      {id === 'prompt-launcher' && <PromptLauncher handleProps={handleProps} />}
       {id === 'kategorier' && <KategorierSection handleProps={handleProps} />}
       {id === 'widgets' && <WidgetsSection handleProps={handleProps} />}
       {id === 'ext-lenker' && <EksterneLenkerSection handleProps={handleProps} />}
