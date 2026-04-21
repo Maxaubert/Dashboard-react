@@ -142,8 +142,12 @@ function SortableHomeSection({ id }: { id: SectionId }) {
   const { setNodeRef, transform, transition, isDragging, attributes, listeners } = useSortable({
     id,
   });
+  // CSS.Translate (not CSS.Transform) so the ghost only translates and
+  // doesn't pick up dnd-kit's scaleY when hovering over a section of a
+  // different height — that scaling is what made sections visually morph
+  // mid-drag.
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Translate.toString(transform),
     transition,
   };
   const handleProps: HandleProps = { ...attributes, ...(listeners ?? {}) };
