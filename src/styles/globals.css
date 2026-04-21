@@ -4106,7 +4106,7 @@
   .prompt-launcher-card {
     position: relative;
     background: rgb(7, 7, 7);
-    border: 1px solid rgba(194, 65, 12, 0.45);
+    border: 1px solid rgba(120, 53, 15, 0.35);
     border-radius: 14px;
     padding: 12px;
     backdrop-filter: blur(12px);
