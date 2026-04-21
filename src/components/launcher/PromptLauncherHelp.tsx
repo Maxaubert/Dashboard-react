@@ -65,10 +65,6 @@ export function PromptLauncherHelp({ open, onOpenChange }: Props) {
             >
               Install userscript ↗
             </a>
-            <div style={{ marginTop: 6, fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>
-              Tampermonkey takes over this tab to show its install dialog —
-              hit back when you're done.
-            </div>
           </div>
         </Step>
 
