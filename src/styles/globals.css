@@ -3585,6 +3585,25 @@
   .lm-title:last-child,
   .lm-title + .lm-body { margin-top: 16px; }
 
+  /* Backdrop behind the links library popup. Manual (not Dialog.Overlay)
+   * because the popup uses modal={false} and Radix suppresses the overlay
+   * in that mode. pointer-events:none keeps clicks falling through to the
+   * popup itself / dismiss handlers. */
+  .links-popup-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 299;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    pointer-events: none;
+    animation: links-popup-backdrop-fade 180ms ease-out;
+  }
+  @keyframes links-popup-backdrop-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
   /* ── Links library popup (sidebar → Lenker quick-access) ─────────────── */
   /* Fixed size (does NOT shrink with content), layered neutral background
    * with a blueprint-grid overlay, a thin accent bar along the top edge,
