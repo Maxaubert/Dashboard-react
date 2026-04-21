@@ -18,11 +18,13 @@ import {
   DragOverlay,
   MeasuringStrategy,
   closestCorners,
+  pointerWithin,
   KeyboardSensor,
   PointerSensor,
   useDroppable,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
@@ -351,7 +353,11 @@ export function LinksLibrary() {
             ) : (
               <DndContext
                 sensors={sensors}
-                collisionDetection={closestCorners}
+                // pointerWithin first: an empty drop zone the cursor is
+                // literally on top of beats anything else by intent.
+                // Fall back to closestCorners for the in-between gaps
+                // between cards so reordering still feels right.
+                collisionDetection={pointerOrCorners}
                 // Re-measure droppables on every render. Without this,
                 // dnd-kit caches rects from mount time, so a section
                 // whose grid grows or shrinks mid-drag (placeholder ↔
@@ -467,6 +473,14 @@ function SortableLinkCard({
     </div>
   );
 }
+
+/** Combined collision detector: prefer the droppable directly under the
+ *  pointer (best for empty drop zones), fall back to closest-corners
+ *  (best for inserting between sibling cards). */
+const pointerOrCorners: CollisionDetection = (args) => {
+  const pointer = pointerWithin(args);
+  return pointer.length > 0 ? pointer : closestCorners(args);
+};
 
 /** Always-mounted grid container that doubles as a useDroppable for the
  *  section. Keeping the droppable mounted across renders (instead of
