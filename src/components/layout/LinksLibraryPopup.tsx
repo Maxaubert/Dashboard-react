@@ -27,7 +27,17 @@ export function LinksLibraryPopup({ open, onOpenChange }: LinksLibraryPopupProps
           className="lm-overlay"
           onClick={() => onOpenChange(false)}
         />
-        <Dialog.Content className="lm-content links-popup-content">
+        <Dialog.Content
+          className="lm-content links-popup-content"
+          // Don't auto-close when the click is on the sidebar trigger
+          // button — its own onClick handles toggling. Without this, both
+          // Radix's outside-dismiss and the button's toggle fire in the
+          // same event, the second wins, and the popup re-opens.
+          onPointerDownOutside={(e) => {
+            const t = e.target as Element | null;
+            if (t?.closest?.('.sidebar-links-icon')) e.preventDefault();
+          }}
+        >
           <Dialog.Title className="sr-only">Lenkebibliotek</Dialog.Title>
           <Dialog.Description className="sr-only">
             Administrer dine lagrede lenker
