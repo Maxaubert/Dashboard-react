@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { ArrowUp, HelpCircle, Sparkles } from 'lucide-react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { buildPromptUrl, ENGINES, type EngineId } from './engines';
 import { PromptLauncherHelp } from './PromptLauncherHelp';
@@ -22,13 +23,15 @@ function GripHandle({ handleProps }: { handleProps?: HandleProps }) {
 
 /**
  * Home-page section that opens a prompt in Claude / ChatGPT / Perplexity /
- * Google in a new tab. Enter or Go both submit. The `?` button explains the
- * Claude-specific Tampermonkey userscript setup.
+ * Google in a new tab. Multi-line composer: Enter sends, Shift+Enter inserts
+ * a newline. Frosted-glass card with a subtle violet ring pulse. The `?`
+ * button explains the Tampermonkey userscript setup needed for Claude/ChatGPT.
  */
 export function PromptLauncher({ handleProps }: { handleProps?: HandleProps }) {
   const [engine, setEngine] = useLocalStorage<EngineId>('prompt-launcher-engine', 'claude');
   const [query, setQuery] = useState('');
   const [helpOpen, setHelpOpen] = useState(false);
+  const taRef = useRef<HTMLTextAreaElement>(null);
 
   // Guard against a stale localStorage value pointing at an engine we no
   // longer ship. Reset to the default so the UI doesn't get stuck.
@@ -37,8 +40,16 @@ export function PromptLauncher({ handleProps }: { handleProps?: HandleProps }) {
     if (!isKnown) setEngine('claude');
   }, [isKnown, setEngine]);
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  // Auto-grow the textarea up to a reasonable max so longer prompts have
+  // room without the bar dominating the page.
+  useEffect(() => {
+    const el = taRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 220)}px`;
+  }, [query]);
+
+  function submit() {
     const q = query.trim();
     if (!q) return;
     const url = buildPromptUrl(engine, q);
@@ -46,7 +57,20 @@ export function PromptLauncher({ handleProps }: { handleProps?: HandleProps }) {
     setQuery('');
   }
 
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    submit();
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault();
+      submit();
+    }
+  }
+
   const activeEngine = ENGINES.find((x) => x.id === engine) ?? ENGINES[0];
+  const canSubmit = query.trim().length > 0;
 
   return (
     <section>
@@ -57,74 +81,44 @@ export function PromptLauncher({ handleProps }: { handleProps?: HandleProps }) {
         </span>
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        style={{
-          display: 'flex',
-          gap: 8,
-          alignItems: 'stretch',
-          background: 'rgba(255,255,255,0.03)',
-          border: '1px solid rgba(255,255,255,0.06)',
-          borderRadius: 10,
-          padding: 8,
-        }}
-      >
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={`Spør ${activeEngine.label}…`}
-          aria-label="Prompt query"
-          style={{
-            flex: 1,
-            background: 'transparent',
-            border: 'none',
-            outline: 'none',
-            color: 'var(--color-text)',
-            fontSize: '0.9rem',
-            fontFamily: 'inherit',
-            padding: '6px 8px',
-          }}
-        />
+      <form onSubmit={handleSubmit} className="prompt-launcher-card">
+        <div className="prompt-launcher-row">
+          <Sparkles size={18} className="prompt-launcher-icon" aria-hidden="true" />
+          <textarea
+            ref={taRef}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={`Spør ${activeEngine.label}…`}
+            aria-label="Prompt query"
+            rows={2}
+            className="prompt-launcher-textarea"
+          />
+        </div>
 
-        <EngineDropdown value={engine} onChange={setEngine} />
-
-        <button
-          type="submit"
-          disabled={!query.trim()}
-          className="modal-btn-primary"
-          style={{
-            flex: '0 0 auto',
-            padding: '6px 18px',
-            fontSize: '0.82rem',
-            opacity: query.trim() ? 1 : 0.4,
-            cursor: query.trim() ? 'pointer' : 'not-allowed',
-          }}
-        >
-          Go
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setHelpOpen(true)}
-          aria-label="Hvordan virker dette?"
-          title="Hvordan virker dette?"
-          style={{
-            flex: '0 0 auto',
-            width: 32,
-            height: 32,
-            alignSelf: 'center',
-            borderRadius: '50%',
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            color: 'rgba(255,255,255,0.7)',
-            cursor: 'pointer',
-            fontSize: '0.78rem',
-            fontWeight: 700,
-          }}
-        >
-          ?
-        </button>
+        <div className="prompt-launcher-footer">
+          <EngineDropdown value={engine} onChange={setEngine} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button
+              type="button"
+              onClick={() => setHelpOpen(true)}
+              aria-label="Hvordan virker dette?"
+              title="Hvordan virker dette?"
+              className="prompt-launcher-help"
+            >
+              <HelpCircle size={14} />
+            </button>
+            <button
+              type="submit"
+              disabled={!canSubmit}
+              aria-label="Send"
+              title="Send"
+              className="prompt-launcher-send"
+            >
+              <ArrowUp size={16} strokeWidth={2.4} />
+            </button>
+          </div>
+        </div>
       </form>
 
       <PromptLauncherHelp open={helpOpen} onOpenChange={setHelpOpen} />
@@ -132,7 +126,7 @@ export function PromptLauncher({ handleProps }: { handleProps?: HandleProps }) {
   );
 }
 
-/* ── Engine dropdown (mirrors NewsSourceDropdown pattern in HomePage) ───── */
+/* ── Engine dropdown — violet pill, opens above so it doesn't clip ─────── */
 
 function EngineDropdown({
   value,
@@ -169,20 +163,7 @@ function EngineDropdown({
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 4,
-          background: 'rgba(255,255,255,0.05)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: 8,
-          padding: '6px 10px',
-          color: 'rgba(255,255,255,0.8)',
-          fontSize: '0.78rem',
-          fontWeight: 600,
-          cursor: 'pointer',
-          height: '100%',
-        }}
+        className="prompt-launcher-engine-pill"
       >
         {current?.label ?? value}
         <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -190,21 +171,7 @@ function EngineDropdown({
         </svg>
       </button>
       {open && (
-        <div
-          role="listbox"
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 4px)',
-            right: 0,
-            background: '#0a0a0a',
-            border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: 8,
-            padding: 4,
-            minWidth: 140,
-            zIndex: 50,
-            boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
-          }}
-        >
+        <div role="listbox" className="prompt-launcher-engine-menu">
           {ENGINES.map((e) => (
             <button
               key={e.id}
@@ -215,18 +182,10 @@ function EngineDropdown({
                 onChange(e.id);
                 setOpen(false);
               }}
-              style={{
-                display: 'block',
-                width: '100%',
-                textAlign: 'left',
-                background: e.id === value ? 'rgba(255,255,255,0.06)' : 'transparent',
-                border: 'none',
-                color: 'rgba(255,255,255,0.85)',
-                padding: '6px 10px',
-                fontSize: '0.8rem',
-                borderRadius: 4,
-                cursor: 'pointer',
-              }}
+              className={
+                'prompt-launcher-engine-option' +
+                (e.id === value ? ' is-active' : '')
+              }
             >
               {e.label}
             </button>
