@@ -26,7 +26,9 @@ export const ENGINES: readonly Engine[] = [
   {
     id: 'chatgpt',
     label: 'ChatGPT',
-    needsUserscript: false,
+    // ChatGPT also stopped auto-submitting `?q=` (it now only pre-fills,
+    // same as Claude). The bundled userscript handles both hosts.
+    needsUserscript: true,
     buildUrl: (q) => `https://chatgpt.com/?q=${encodeURIComponent(q)}&hints=search`,
   },
   {

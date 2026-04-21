@@ -7,9 +7,9 @@ describe('ENGINES registry', () => {
     expect(ENGINES.map((e) => e.id)).toEqual(['claude', 'chatgpt', 'perplexity', 'google']);
   });
 
-  it('marks Claude as the only one that needs a userscript', () => {
+  it('marks Claude and ChatGPT as the engines that need a userscript', () => {
     const needs = ENGINES.filter((e) => e.needsUserscript).map((e) => e.id);
-    expect(needs).toEqual(['claude']);
+    expect(needs).toEqual(['claude', 'chatgpt']);
   });
 });
 

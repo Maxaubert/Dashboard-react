@@ -16,16 +16,17 @@ export function PromptLauncherHelp({ open, onOpenChange }: Props) {
     <Modal
       open={open}
       onOpenChange={onOpenChange}
-      title="Sending prompts to Claude"
+      title="Sending prompts to Claude / ChatGPT"
       variant="standard"
       size="lg"
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14, fontSize: '0.85rem', lineHeight: 1.5 }}>
         <p style={{ margin: 0, color: 'rgba(255,255,255,0.75)' }}>
-          ChatGPT, Perplexity and Google accept a query directly in the URL and
-          submit automatically. Claude doesn't — so for Claude specifically
-          we install a tiny one-time browser script that does the last step
-          for you.
+          Perplexity and Google accept a query directly in the URL and submit
+          automatically. Claude and ChatGPT only pre-fill the input — they don't
+          auto-send. A tiny one-time browser script fixes that for both sites.
+          If you've already installed an earlier version, click the button again
+          to update.
         </p>
 
         <Step n={1} title="Install Tampermonkey">
@@ -46,7 +47,7 @@ export function PromptLauncherHelp({ open, onOpenChange }: Props) {
           </div>
         </Step>
 
-        <Step n={2} title="Install the Claude auto-submit script">
+        <Step n={2} title="Install the auto-submit script">
           <p style={{ margin: 0 }}>
             Click the link below. Tampermonkey will open an install prompt — click
             <strong> Install</strong>.
@@ -76,15 +77,15 @@ export function PromptLauncherHelp({ open, onOpenChange }: Props) {
 
         <Step n={3} title="Try it">
           <p style={{ margin: 0 }}>
-            Pick <strong>Claude</strong> in the engine dropdown, type a prompt, hit
-            <strong> Go</strong>. A claude.ai tab will open, the prompt will be
-            typed in for you and sent automatically.
+            Pick <strong>Claude</strong> or <strong>ChatGPT</strong> in the engine
+            dropdown, type a prompt, hit <strong>Go</strong>. A new tab opens,
+            the prompt is typed in for you and sent automatically.
           </p>
         </Step>
 
         <p style={{ margin: 0, color: 'rgba(255,255,255,0.45)', fontSize: '0.75rem' }}>
-          If nothing happens on claude.ai, open the browser console and look for
-          <code> [claude-prompt-from-url] </code> messages — probably the site's
+          If a prompt pre-fills but doesn't send, open the browser console and
+          look for <code>[prompt-launcher]</code> messages — probably the site's
           DOM changed and the script's selectors need updating.
         </p>
       </div>
