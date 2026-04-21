@@ -4106,12 +4106,12 @@
   .prompt-launcher-card {
     position: relative;
     background: rgb(7, 7, 7);
-    border: 1px solid rgba(14, 116, 144, 0.32);
+    border: 1px solid rgba(100, 116, 139, 0.35);
     border-radius: 14px;
     padding: 12px;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    box-shadow: 0 0 22px rgba(14, 116, 144, 0.14);
+    box-shadow: 0 0 22px rgba(100, 116, 139, 0.14);
   }
   .prompt-launcher-row {
     display: flex;
@@ -4119,7 +4119,7 @@
     gap: 10px;
   }
   .prompt-launcher-icon {
-    color: #5eead4;
+    color: #94a3b8;
     flex: 0 0 auto;
     margin-top: 8px;
   }
@@ -4153,9 +4153,9 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: rgba(14, 116, 144, 0.22);
-    border: 1px solid rgba(14, 116, 144, 0.4);
-    color: #99f6e4;
+    background: rgba(100, 116, 139, 0.22);
+    border: 1px solid rgba(100, 116, 139, 0.4);
+    color: #cbd5e1;
     border-radius: 9999px;
     padding: 5px 11px;
     font-size: 0.75rem;
@@ -4164,8 +4164,8 @@
     transition: background 0.15s, border-color 0.15s;
   }
   .prompt-launcher-engine-pill:hover {
-    background: rgba(14, 116, 144, 0.32);
-    border-color: rgba(14, 116, 144, 0.55);
+    background: rgba(100, 116, 139, 0.32);
+    border-color: rgba(100, 116, 139, 0.55);
   }
   .prompt-launcher-engine-menu {
     position: absolute;
@@ -4195,8 +4195,8 @@
     background: rgba(255, 255, 255, 0.06);
   }
   .prompt-launcher-engine-option.is-active {
-    background: rgba(14, 116, 144, 0.22);
-    color: #99f6e4;
+    background: rgba(100, 116, 139, 0.22);
+    color: #cbd5e1;
   }
   .prompt-launcher-help {
     width: 28px;
@@ -4218,22 +4218,22 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: #0e7490;
+    background: #475569;
     color: #fff;
     border: none;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 14px rgba(14, 116, 144, 0.35);
+    box-shadow: 0 2px 14px rgba(100, 116, 139, 0.32);
     transition: background 0.15s, opacity 0.15s, box-shadow 0.15s;
   }
   .prompt-launcher-send:hover:not(:disabled) {
-    background: #155e75;
-    box-shadow: 0 4px 18px rgba(14, 116, 144, 0.5);
+    background: #334155;
+    box-shadow: 0 4px 18px rgba(100, 116, 139, 0.45);
   }
   .prompt-launcher-send:disabled {
-    background: rgba(14, 116, 144, 0.4);
+    background: rgba(100, 116, 139, 0.4);
     cursor: not-allowed;
     box-shadow: none;
     opacity: 0.6;
