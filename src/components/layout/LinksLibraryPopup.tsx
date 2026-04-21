@@ -23,10 +23,10 @@ export function LinksLibraryPopup({ open, onOpenChange }: LinksLibraryPopupProps
      * captures dnd-kit needs. Outside-click + Escape still dismiss. */
     <Dialog.Root open={open} onOpenChange={onOpenChange} modal={false}>
       <Dialog.Portal>
-        <Dialog.Overlay
-          className="lm-overlay"
-          onClick={() => onOpenChange(false)}
-        />
+        {/* Manual backdrop. Radix's <Dialog.Overlay /> doesn't render when
+         * modal=false, so we draw our own. pointer-events:none keeps it
+         * out of the way of dnd-kit + the popup's outside-click dismiss. */}
+        <div className="links-popup-backdrop" aria-hidden="true" />
         <Dialog.Content
           className="lm-content links-popup-content"
           // Don't auto-close when the click is on the sidebar trigger
