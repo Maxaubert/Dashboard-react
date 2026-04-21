@@ -21,14 +21,6 @@ export function PromptLauncherHelp({ open, onOpenChange }: Props) {
       size="lg"
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14, fontSize: '0.85rem', lineHeight: 1.5 }}>
-        <p style={{ margin: 0, color: 'rgba(255,255,255,0.75)' }}>
-          Perplexity and Google accept a query directly in the URL and submit
-          automatically. Claude and ChatGPT only pre-fill the input — they don't
-          auto-send. A tiny one-time browser script fixes that for both sites.
-          If you've already installed an earlier version, click the button again
-          to update.
-        </p>
-
         <Step n={1} title="Install Tampermonkey">
           <p style={{ margin: 0 }}>
             Tampermonkey is a browser extension that runs user-made scripts on
