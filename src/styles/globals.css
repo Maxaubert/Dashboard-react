@@ -4109,10 +4109,11 @@
     font-style: italic;
     transition: border-color 0.15s, color 0.15s, background 0.15s;
   }
-  .links-grid-droptarget:hover {
-    border-color: rgba(255, 255, 255, 0.16);
-    color: rgba(255, 255, 255, 0.45);
-    background: rgba(255, 255, 255, 0.02);
+  .links-grid-droptarget:hover,
+  .links-grid-droptarget.is-over {
+    border-color: rgba(167, 139, 250, 0.45);
+    color: rgba(255, 255, 255, 0.6);
+    background: rgba(167, 139, 250, 0.06);
   }
   .links-empty {
     grid-column: 1 / -1;

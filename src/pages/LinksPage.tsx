@@ -19,6 +19,7 @@ import {
   closestCorners,
   KeyboardSensor,
   PointerSensor,
+  useDroppable,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -141,11 +142,14 @@ export function LinksLibrary() {
     persist(links.map((l) => (l.id === id ? { ...l, favorite: !l.favorite } : l)));
   }
 
-  /** Resolve which section an id belongs to, using local state. */
+  /** Resolve which section an id belongs to, using local state.
+   *  Empty-section drop placeholders use id `${categoryId}::empty`, so we
+   *  strip that suffix before matching. */
   function findLocalSection(id: string): SectionRender | undefined {
-    const asSection = localSections.find((s) => s.category.id === id);
+    const realId = id.endsWith('::empty') ? id.slice(0, -'::empty'.length) : id;
+    const asSection = localSections.find((s) => s.category.id === realId);
     if (asSection) return asSection;
-    return localSections.find((s) => s.links.some((l) => l.id === id));
+    return localSections.find((s) => s.links.some((l) => l.id === realId));
   }
 
   function handleDragStart(e: DragStartEvent) {
@@ -452,6 +456,21 @@ function SortableLinkCard({
   );
 }
 
+/** Drop target rendered when a section has no link items. The id carries
+ *  a `::empty` suffix so it doesn't collide with the section's own
+ *  useSortable droppable; findLocalSection() strips the suffix. */
+function EmptyDropPlaceholder({ sectionId }: { sectionId: string }) {
+  const { setNodeRef, isOver } = useDroppable({ id: `${sectionId}::empty` });
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn('links-grid-droptarget', isOver && 'is-over')}
+    >
+      Slipp lenker her
+    </div>
+  );
+}
+
 /** The dragged card shown in the DragOverlay portal during drag. */
 function LinkCardOverlay({ link }: { link: LinkItem }) {
   return (
@@ -541,10 +560,11 @@ function SortableSection({
       <SortableContext items={section.links.map((l) => l.id)} strategy={rectSortingStrategy}>
         <div className="links-grid">
           {section.links.length === 0 ? (
-            // Empty sections collapse to zero height, leaving no hit area
-            // for dnd-kit's drop detection. This placeholder gives the
-            // section a usable drop zone so dragged links can land here.
-            <div className="links-grid-droptarget">Slipp lenker her</div>
+            // Empty sections collapse to zero height with no link items
+            // registered as droppables, so dnd-kit has nothing to land on.
+            // EmptyDropPlaceholder registers an explicit useDroppable so a
+            // dragged link can drop back into the section.
+            <EmptyDropPlaceholder sectionId={section.category.id} />
           ) : (
             section.links.map((link) => (
               <SortableLinkCard
