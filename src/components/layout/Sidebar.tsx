@@ -103,9 +103,10 @@ export function Sidebar({
       <button
         type="button"
         className="sidebar-links-icon"
-        onClick={() => setLinksOpen(true)}
+        onClick={() => setLinksOpen((o) => !o)}
         title="Lenkebibliotek"
-        aria-label="Åpne lenkebibliotek"
+        aria-label={linksOpen ? 'Lukk lenkebibliotek' : 'Åpne lenkebibliotek'}
+        aria-pressed={linksOpen}
       >
         <Link2 size={18} strokeWidth={1.75} />
       </button>
