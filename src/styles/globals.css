@@ -4105,9 +4105,8 @@
   /* ── Prompt launcher (home section) ──────────────────────────────────── */
   .prompt-launcher-card {
     position: relative;
-    /* Sit at-or-below the page background so the violet ring is what
-     * carries the visual weight, not a bright surface. */
-    background: rgba(0, 0, 0, 0.45);
+    /* Slight dark tint so the card recedes a touch but isn't a pit. */
+    background: rgba(0, 0, 0, 0.22);
     border-radius: 14px;
     padding: 12px;
     backdrop-filter: blur(12px);
