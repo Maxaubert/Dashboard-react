@@ -241,17 +241,6 @@ function EngineDropdown({
               }}
             >
               {e.label}
-              {e.needsUserscript && (
-                <span
-                  style={{
-                    marginLeft: 6,
-                    fontSize: '0.62rem',
-                    color: 'rgba(255,255,255,0.35)',
-                  }}
-                >
-                  (trenger skript)
-                </span>
-              )}
             </button>
           ))}
         </div>
