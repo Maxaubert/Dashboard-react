@@ -2,13 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>PromptLauncher — composer iterations</title>
+  <title>PromptLauncher E2 — color iterations</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     * { box-sizing: border-box; }
     html, body {
-      margin: 0;
-      padding: 0;
+      margin: 0; padding: 0;
       background: #030304;
       color: #e6e8ec;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -20,10 +19,10 @@
       padding: 56px 28px 100px;
       display: flex;
       flex-direction: column;
-      gap: 60px;
+      gap: 56px;
     }
     h1 { font-size: 1.4rem; margin: 0 0 6px; }
-    .lede { color: rgba(255,255,255,0.5); margin: 0 0 0; font-size: 0.85rem; }
+    .lede { color: rgba(255,255,255,0.5); margin: 0; font-size: 0.85rem; }
     .variant-label {
       font-size: 0.62rem;
       color: rgba(255,255,255,0.45);
@@ -41,15 +40,8 @@
       background: rgba(255,255,255,0.012);
       border: 1px dashed rgba(255,255,255,0.05);
       border-radius: 14px;
-      padding: 32px 28px;
+      padding: 36px 28px;
     }
-    /* keyframes for E2 ring glow */
-    @keyframes glowPulse {
-      0%, 100% { box-shadow: 0 0 0 1px rgba(124,58,237,0.18), 0 0 24px rgba(124,58,237,0.08); }
-      50%      { box-shadow: 0 0 0 1px rgba(124,58,237,0.28), 0 0 32px rgba(124,58,237,0.18); }
-    }
-
-    /* ── Shared composer pieces ──────────────────────────────── */
     .composer-textarea {
       width: 100%;
       background: transparent;
@@ -67,9 +59,6 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      color: rgba(255,255,255,0.85);
       padding: 5px 11px;
       border-radius: 9999px;
       font-size: 0.75rem;
@@ -77,31 +66,16 @@
       cursor: pointer;
       transition: background 0.15s, border-color 0.15s;
     }
-    .pill:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.16); }
-    .pill svg { opacity: 0.6; }
-    .send-btn {
-      background: #7c3aed;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 7px 16px;
-      font-size: 0.82rem;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .send-btn:hover { background: #6d28d9; }
     .send-icon-btn {
       width: 32px;
       height: 32px;
       border-radius: 50%;
-      background: #7c3aed;
       color: #fff;
       border: none;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 2px 10px rgba(124,58,237,0.35);
     }
     .ghost-icon {
       width: 28px;
@@ -118,67 +92,151 @@
       font-weight: 700;
     }
     .ghost-icon:hover { color: rgba(255,255,255,0.85); border-color: rgba(255,255,255,0.2); }
-    .kbd {
-      font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-bottom-width: 2px;
-      border-radius: 4px;
-      padding: 1px 5px;
-      font-size: 0.7rem;
-      color: rgba(255,255,255,0.65);
+
+    /* ── Variant-driven theming via CSS variables ────────────── */
+    .e2 {
+      max-width: 720px;
+      margin: 0 auto;
+      background: rgba(255,255,255,0.035);
+      border-radius: 14px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 12px;
+      animation: glowPulse 4s ease-in-out infinite;
     }
+    @keyframes glowPulse {
+      0%, 100% { box-shadow: 0 0 0 1px var(--accent-soft), 0 0 24px var(--accent-glow-low); }
+      50%      { box-shadow: 0 0 0 1px var(--accent-strong), 0 0 36px var(--accent-glow-high); }
+    }
+    .e2 .icon { color: var(--accent-icon); margin-top: 8px; flex: 0 0 auto; }
+    .e2 .pill {
+      background: var(--accent-pill-bg);
+      border: 1px solid var(--accent-pill-border);
+      color: var(--accent-pill-text);
+    }
+    .e2 .send-icon-btn {
+      background: var(--accent-send);
+      box-shadow: 0 2px 14px var(--accent-glow-high);
+    }
+    .frame-aura { padding: 36px 28px; border-radius: 14px; }
+
+    /* Per-variant palette tokens */
+    .v-violet {
+      --accent-icon: #a78bfa;
+      --accent-soft: rgba(124,58,237,0.18);
+      --accent-strong: rgba(124,58,237,0.30);
+      --accent-glow-low: rgba(124,58,237,0.10);
+      --accent-glow-high: rgba(124,58,237,0.22);
+      --accent-pill-bg: rgba(124,58,237,0.16);
+      --accent-pill-border: rgba(124,58,237,0.32);
+      --accent-pill-text: #c4b5fd;
+      --accent-send: #7c3aed;
+    }
+    .v-cyan {
+      --accent-icon: #67e8f9;
+      --accent-soft: rgba(6,182,212,0.20);
+      --accent-strong: rgba(6,182,212,0.32);
+      --accent-glow-low: rgba(6,182,212,0.10);
+      --accent-glow-high: rgba(6,182,212,0.24);
+      --accent-pill-bg: rgba(6,182,212,0.16);
+      --accent-pill-border: rgba(6,182,212,0.34);
+      --accent-pill-text: #a5f3fc;
+      --accent-send: #06b6d4;
+    }
+    .v-emerald {
+      --accent-icon: #6ee7b7;
+      --accent-soft: rgba(16,185,129,0.20);
+      --accent-strong: rgba(16,185,129,0.32);
+      --accent-glow-low: rgba(16,185,129,0.10);
+      --accent-glow-high: rgba(16,185,129,0.24);
+      --accent-pill-bg: rgba(16,185,129,0.16);
+      --accent-pill-border: rgba(16,185,129,0.34);
+      --accent-pill-text: #a7f3d0;
+      --accent-send: #10b981;
+    }
+    .v-amber {
+      --accent-icon: #fcd34d;
+      --accent-soft: rgba(245,158,11,0.22);
+      --accent-strong: rgba(245,158,11,0.34);
+      --accent-glow-low: rgba(245,158,11,0.10);
+      --accent-glow-high: rgba(245,158,11,0.26);
+      --accent-pill-bg: rgba(245,158,11,0.18);
+      --accent-pill-border: rgba(245,158,11,0.38);
+      --accent-pill-text: #fde68a;
+      --accent-send: #f59e0b;
+    }
+    .v-rose {
+      --accent-icon: #fda4af;
+      --accent-soft: rgba(244,63,94,0.22);
+      --accent-strong: rgba(244,63,94,0.34);
+      --accent-glow-low: rgba(244,63,94,0.10);
+      --accent-glow-high: rgba(244,63,94,0.24);
+      --accent-pill-bg: rgba(244,63,94,0.16);
+      --accent-pill-border: rgba(244,63,94,0.34);
+      --accent-pill-text: #fecdd3;
+      --accent-send: #f43f5e;
+    }
+    .v-blue {
+      --accent-icon: #93c5fd;
+      --accent-soft: rgba(59,130,246,0.20);
+      --accent-strong: rgba(59,130,246,0.32);
+      --accent-glow-low: rgba(59,130,246,0.10);
+      --accent-glow-high: rgba(59,130,246,0.24);
+      --accent-pill-bg: rgba(59,130,246,0.16);
+      --accent-pill-border: rgba(59,130,246,0.34);
+      --accent-pill-text: #bfdbfe;
+      --accent-send: #3b82f6;
+    }
+    .v-mono {
+      --accent-icon: #d1d5db;
+      --accent-soft: rgba(255,255,255,0.16);
+      --accent-strong: rgba(255,255,255,0.26);
+      --accent-glow-low: rgba(255,255,255,0.04);
+      --accent-glow-high: rgba(255,255,255,0.10);
+      --accent-pill-bg: rgba(255,255,255,0.10);
+      --accent-pill-border: rgba(255,255,255,0.20);
+      --accent-pill-text: #f9fafb;
+      --accent-send: #e5e7eb;
+    }
+    .v-mono .send-icon-btn { color: #0a0a0a; }
+
+    /* "Aura" radial halo for the surrounding frame, tinted to the variant */
+    .aura-violet { background: radial-gradient(circle at 50% 0%, rgba(124,58,237,0.05), transparent 60%); }
+    .aura-cyan { background: radial-gradient(circle at 50% 0%, rgba(6,182,212,0.05), transparent 60%); }
+    .aura-emerald { background: radial-gradient(circle at 50% 0%, rgba(16,185,129,0.05), transparent 60%); }
+    .aura-amber { background: radial-gradient(circle at 50% 0%, rgba(245,158,11,0.05), transparent 60%); }
+    .aura-rose { background: radial-gradient(circle at 50% 0%, rgba(244,63,94,0.05), transparent 60%); }
+    .aura-blue { background: radial-gradient(circle at 50% 0%, rgba(59,130,246,0.05), transparent 60%); }
+    .aura-mono { background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.04), transparent 60%); }
   </style>
 </head>
 <body>
 <main>
   <header>
-    <h1>PromptLauncher — composer iterations</h1>
-    <p class="lede">5 takes on the multi-line composer. Tell me which one (E1–E5) and I'll wire it in.</p>
+    <h1>PromptLauncher E2 — color iterations</h1>
+    <p class="lede">Same glass + ring-pulse design, different palettes. Pick a letter (or say "use Claude's brand colors when Claude is active, etc.").</p>
   </header>
 
-  <!-- ─── E1: refined baseline (clean, neutral) ──────────────── -->
+  <!-- Per-variant template repeated 7 times -->
+  <!-- A: Violet -->
   <section>
-    <div class="variant-label">E1 — Refined baseline</div>
-    <div class="variant-sub">Same shape as the original mockup, tighter spacing and cleaner footer divider. Neutral, minimal, fits anywhere.</div>
-    <div class="variant-frame">
-      <div style="max-width:720px;margin:0 auto;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:10px;">
-        <textarea class="composer-textarea" rows="3" placeholder="Skriv en prompt…"></textarea>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 4px 2px;border-top:1px solid rgba(255,255,255,0.05);margin-top:4px;">
-          <button class="pill">Claude
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
-          </button>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <span style="color:rgba(255,255,255,0.35);font-size:0.7rem;">
-              <span class="kbd">⇧</span> + <span class="kbd">↵</span> ny linje
-            </span>
-            <button class="ghost-icon" title="Help">?</button>
-            <button class="send-btn">Send <span style="opacity:.7;font-weight:400;margin-left:2px;">↵</span></button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ─── E2: glass + glow ───────────────────────────────────── -->
-  <section>
-    <div class="variant-label">E2 — Glass + glow</div>
-    <div class="variant-sub">Frosted backdrop, subtle violet outer glow on the active ring. Send is a circular icon button. Most "AI app" feeling.</div>
-    <div class="variant-frame" style="background:radial-gradient(circle at 50% 0%, rgba(124,58,237,0.05), transparent 60%);">
-      <div style="max-width:720px;margin:0 auto;background:rgba(255,255,255,0.035);border-radius:14px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:12px;animation:glowPulse 4s ease-in-out infinite;">
+    <div class="variant-label">A — Violet</div>
+    <div class="variant-sub">The original. Anthropic-adjacent purple, neutral and serious.</div>
+    <div class="variant-frame aura-violet">
+      <div class="e2 v-violet">
         <div style="display:flex;align-items:flex-start;gap:10px;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:8px;flex:0 0 auto;">
+          <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>
           </svg>
           <textarea class="composer-textarea" rows="3" placeholder="Hva lurer du på i dag?"></textarea>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 4px 2px;border-top:1px solid rgba(255,255,255,0.05);margin-top:4px;">
-          <button class="pill" style="background:rgba(124,58,237,0.16);border-color:rgba(124,58,237,0.32);color:#c4b5fd;">Claude
+          <button class="pill">Claude
             <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
           </button>
           <div style="display:flex;gap:10px;align-items:center;">
             <button class="ghost-icon" title="Help">?</button>
-            <button class="send-icon-btn" title="Send" aria-label="Send">
+            <button class="send-icon-btn" title="Send">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
               </svg>
@@ -189,85 +247,177 @@
     </div>
   </section>
 
-  <!-- ─── E3: terminal / code ────────────────────────────────── -->
+  <!-- B: Cyan -->
   <section>
-    <div class="variant-label">E3 — Terminal / code</div>
-    <div class="variant-sub">Mono input with a $-prefix, near-invisible chrome, send via plain ↵ icon. Reads as a developer tool.</div>
-    <div class="variant-frame">
-      <div style="max-width:720px;margin:0 auto;background:#070708;border:1px solid rgba(255,255,255,0.04);border-radius:8px;padding:14px 16px;font-family:ui-monospace,'SF Mono',Menlo,monospace;">
-        <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.85rem;line-height:1.5;">
-          <span style="color:#7dd3fc;flex:0 0 auto;">claude $</span>
-          <textarea class="composer-textarea" rows="3" placeholder="ask anything…" style="font-family:inherit;font-size:0.85rem;color:#e6e8ec;padding:0;"></textarea>
+    <div class="variant-label">B — Cyan</div>
+    <div class="variant-sub">Cooler, brighter, airier. Reads as "fresh and friendly."</div>
+    <div class="variant-frame aura-cyan">
+      <div class="e2 v-cyan">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>
+          </svg>
+          <textarea class="composer-textarea" rows="3" placeholder="Hva lurer du på i dag?"></textarea>
         </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;font-size:0.7rem;color:rgba(255,255,255,0.4);">
-          <div>
-            <span style="color:rgba(255,255,255,0.5);">engine:</span>
-            <button style="background:none;border:none;color:#a78bfa;font-family:inherit;cursor:pointer;font-size:0.7rem;padding:0 2px;text-decoration:underline dotted;">claude</button>
-            <span style="color:rgba(255,255,255,0.25);margin:0 6px;">|</span>
-            <span>chatgpt · perplexity · google</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span style="color:rgba(255,255,255,0.3);"><span class="kbd">↵</span> run · <span class="kbd">?</span> help</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ─── E4: roomy / hero with engine tabs ──────────────────── -->
-  <section>
-    <div class="variant-label">E4 — Roomy / hero with engine tabs</div>
-    <div class="variant-sub">Engine selector elevated to tabs at the top, big input below, gradient Send. Most "look at me" of the bunch.</div>
-    <div class="variant-frame" style="background:radial-gradient(circle at 50% 0%, rgba(124,58,237,0.04), transparent 70%);padding-top:36px;padding-bottom:36px;">
-      <div style="max-width:720px;margin:0 auto;">
-        <div style="display:flex;gap:2px;margin-bottom:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:3px;width:fit-content;">
-          <!-- tab buttons -->
-          <button style="background:rgba(124,58,237,0.16);border:none;color:#c4b5fd;padding:7px 16px;border-radius:7px;font-size:0.78rem;font-weight:600;cursor:pointer;">Claude</button>
-          <button style="background:transparent;border:none;color:rgba(255,255,255,0.55);padding:7px 16px;border-radius:7px;font-size:0.78rem;font-weight:600;cursor:pointer;">ChatGPT</button>
-          <button style="background:transparent;border:none;color:rgba(255,255,255,0.55);padding:7px 16px;border-radius:7px;font-size:0.78rem;font-weight:600;cursor:pointer;">Perplexity</button>
-          <button style="background:transparent;border:none;color:rgba(255,255,255,0.55);padding:7px 16px;border-radius:7px;font-size:0.78rem;font-weight:600;cursor:pointer;">Google</button>
-        </div>
-        <div style="background:linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px;box-shadow:0 12px 36px rgba(0,0,0,0.4);">
-          <textarea class="composer-textarea" rows="3" placeholder="Spør Claude om hva som helst…" style="font-size:1rem;"></textarea>
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.05);margin-top:6px;">
-            <span style="color:rgba(255,255,255,0.35);font-size:0.7rem;">
-              <span class="kbd">⇧</span> + <span class="kbd">↵</span> ny linje · <span class="kbd">↵</span> send
-            </span>
-            <div style="display:flex;align-items:center;gap:10px;">
-              <button class="ghost-icon" title="Help">?</button>
-              <button style="background:linear-gradient(135deg,#7c3aed 0%,#6366f1 100%);color:#fff;border:none;border-radius:9px;padding:9px 22px;font-weight:700;font-size:0.85rem;cursor:pointer;box-shadow:0 4px 14px rgba(124,58,237,0.35);">Send</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ─── E5: accented engine bar (left edge) ────────────────── -->
-  <section>
-    <div class="variant-label">E5 — Engine-accented edge</div>
-    <div class="variant-sub">Compact composer with a colored left edge (engine accent), engine pill in footer with brand color. Most personality, smallest footprint.</div>
-    <div class="variant-frame">
-      <div style="max-width:720px;margin:0 auto;display:grid;grid-template-columns:3px 1fr;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.07);border-radius:10px;overflow:hidden;">
-        <div style="background:linear-gradient(180deg,#a78bfa 0%,#7c3aed 100%);"></div>
-        <div style="padding:10px 12px;">
-          <textarea class="composer-textarea" rows="3" placeholder="Skriv en prompt…"></textarea>
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0 0;border-top:1px solid rgba(255,255,255,0.04);margin-top:4px;">
-            <button class="pill" style="background:rgba(167,139,250,0.12);border-color:rgba(167,139,250,0.3);color:#c4b5fd;">
-              <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#a78bfa;"></span>
-              Claude
-              <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 4px 2px;border-top:1px solid rgba(255,255,255,0.05);margin-top:4px;">
+          <button class="pill">Claude
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+          </button>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <button class="ghost-icon" title="Help">?</button>
+            <button class="send-icon-btn" title="Send">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
+              </svg>
             </button>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <button class="ghost-icon" title="Help">?</button>
-              <button class="send-btn" style="background:#a78bfa;color:#0a0a0a;">Send ↵</button>
-            </div>
           </div>
         </div>
       </div>
-      <p style="text-align:center;color:rgba(255,255,255,0.3);font-size:0.7rem;margin:10px 0 0;">
-        Edge color + accent change with selected engine (Claude purple, ChatGPT teal, Perplexity blue, Google amber).
-      </p>
+    </div>
+  </section>
+
+  <!-- C: Emerald -->
+  <section>
+    <div class="variant-label">C — Emerald</div>
+    <div class="variant-sub">Calm, focused, productive. Goes well with the dashboard's other green accents.</div>
+    <div class="variant-frame aura-emerald">
+      <div class="e2 v-emerald">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>
+          </svg>
+          <textarea class="composer-textarea" rows="3" placeholder="Hva lurer du på i dag?"></textarea>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 4px 2px;border-top:1px solid rgba(255,255,255,0.05);margin-top:4px;">
+          <button class="pill">Claude
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+          </button>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <button class="ghost-icon" title="Help">?</button>
+            <button class="send-icon-btn" title="Send">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- D: Amber -->
+  <section>
+    <div class="variant-label">D — Amber</div>
+    <div class="variant-sub">Warm, confident, slightly playful. Pops most against the dark background.</div>
+    <div class="variant-frame aura-amber">
+      <div class="e2 v-amber">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>
+          </svg>
+          <textarea class="composer-textarea" rows="3" placeholder="Hva lurer du på i dag?"></textarea>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 4px 2px;border-top:1px solid rgba(255,255,255,0.05);margin-top:4px;">
+          <button class="pill">Claude
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+          </button>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <button class="ghost-icon" title="Help">?</button>
+            <button class="send-icon-btn" title="Send">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- E: Rose -->
+  <section>
+    <div class="variant-label">E — Rose</div>
+    <div class="variant-sub">Striking and personal. Strongest "this is mine, not a generic AI" identity.</div>
+    <div class="variant-frame aura-rose">
+      <div class="e2 v-rose">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>
+          </svg>
+          <textarea class="composer-textarea" rows="3" placeholder="Hva lurer du på i dag?"></textarea>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 4px 2px;border-top:1px solid rgba(255,255,255,0.05);margin-top:4px;">
+          <button class="pill">Claude
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+          </button>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <button class="ghost-icon" title="Help">?</button>
+            <button class="send-icon-btn" title="Send">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- F: Blue -->
+  <section>
+    <div class="variant-label">F — Blue</div>
+    <div class="variant-sub">Classic, trustworthy, neutral. Disappears into the background more than the warmer hues.</div>
+    <div class="variant-frame aura-blue">
+      <div class="e2 v-blue">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>
+          </svg>
+          <textarea class="composer-textarea" rows="3" placeholder="Hva lurer du på i dag?"></textarea>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 4px 2px;border-top:1px solid rgba(255,255,255,0.05);margin-top:4px;">
+          <button class="pill">Claude
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+          </button>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <button class="ghost-icon" title="Help">?</button>
+            <button class="send-icon-btn" title="Send">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- G: Mono -->
+  <section>
+    <div class="variant-label">G — Monochrome</div>
+    <div class="variant-sub">No accent — pure white-on-dark. The most restrained option, lets the rest of the dashboard own all the color.</div>
+    <div class="variant-frame aura-mono">
+      <div class="e2 v-mono">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>
+          </svg>
+          <textarea class="composer-textarea" rows="3" placeholder="Hva lurer du på i dag?"></textarea>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 4px 2px;border-top:1px solid rgba(255,255,255,0.05);margin-top:4px;">
+          <button class="pill">Claude
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+          </button>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <button class="ghost-icon" title="Help">?</button>
+            <button class="send-icon-btn" title="Send">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 </main>
