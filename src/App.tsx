@@ -21,7 +21,6 @@ import { ToolBgRemovePage } from './pages/tools/ToolBgRemovePage';
 import { ToolPdfPage } from './pages/tools/ToolPdfPage';
 import { ToolConvertPage } from './pages/tools/ToolConvertPage';
 import { NotFoundPage } from './pages/NotFoundPage';
-import { PromptMockupsPage } from './pages/dev/PromptMockupsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -59,7 +58,6 @@ export function App() {
                 <Route path="/tools/bgremove" element={<ToolBgRemovePage />} />
                 <Route path="/tools/pdf" element={<ToolPdfPage />} />
                 <Route path="/tools/convert" element={<ToolConvertPage />} />
-                <Route path="/dev/prompt-mockups" element={<PromptMockupsPage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </AppShell>
