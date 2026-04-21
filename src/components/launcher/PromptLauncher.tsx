@@ -127,18 +127,6 @@ export function PromptLauncher({ handleProps }: { handleProps?: HandleProps }) {
         </button>
       </form>
 
-      {activeEngine.needsUserscript && (
-        <div
-          style={{
-            marginTop: 6,
-            fontSize: '0.68rem',
-            color: 'rgba(255,255,255,0.35)',
-          }}
-        >
-          Claude trenger en engangs-brukerskript. Trykk <strong>?</strong> for oppsett.
-        </div>
-      )}
-
       <PromptLauncherHelp open={helpOpen} onOpenChange={setHelpOpen} />
     </section>
   );
