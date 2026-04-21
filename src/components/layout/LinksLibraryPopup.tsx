@@ -35,10 +35,6 @@ export function LinksLibraryPopup({ open, onOpenChange }: LinksLibraryPopupProps
           // same event, the second wins, and the popup re-opens.
           // (The real click target is on `detail.originalEvent.target`;
           // `e.target` is the dialog content itself.)
-          onPointerDownOutside={(e) => {
-            const t = e.detail.originalEvent.target as Element | null;
-            if (t?.closest?.('.sidebar-links-icon')) e.preventDefault();
-          }}
           onInteractOutside={(e) => {
             const evt = e.detail.originalEvent as Event;
             const t = evt.target as Element | null;
