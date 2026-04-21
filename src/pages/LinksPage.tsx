@@ -540,15 +540,22 @@ function SortableSection({
       />
       <SortableContext items={section.links.map((l) => l.id)} strategy={rectSortingStrategy}>
         <div className="links-grid">
-          {section.links.map((link) => (
-            <SortableLinkCard
-              key={link.id}
-              link={link}
-              onEdit={() => onEdit(link)}
-              onDelete={() => onDelete(link.id)}
-              onToggleFavorite={() => onToggleFavorite(link.id)}
-            />
-          ))}
+          {section.links.length === 0 ? (
+            // Empty sections collapse to zero height, leaving no hit area
+            // for dnd-kit's drop detection. This placeholder gives the
+            // section a usable drop zone so dragged links can land here.
+            <div className="links-grid-droptarget">Slipp lenker her</div>
+          ) : (
+            section.links.map((link) => (
+              <SortableLinkCard
+                key={link.id}
+                link={link}
+                onEdit={() => onEdit(link)}
+                onDelete={() => onDelete(link.id)}
+                onToggleFavorite={() => onToggleFavorite(link.id)}
+              />
+            ))
+          )}
         </div>
       </SortableContext>
     </div>

@@ -4094,6 +4094,26 @@
     grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
     gap: 10px;
   }
+  /* Drop placeholder for an empty category — keeps the section a viable
+   * drop target after the last item is dragged out. */
+  .links-grid-droptarget {
+    grid-column: 1 / -1;
+    min-height: 86px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    color: rgba(255, 255, 255, 0.28);
+    font-size: 0.78rem;
+    font-style: italic;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+  .links-grid-droptarget:hover {
+    border-color: rgba(255, 255, 255, 0.16);
+    color: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.02);
+  }
   .links-empty {
     grid-column: 1 / -1;
     padding: 60px 20px;
