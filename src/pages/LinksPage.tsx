@@ -16,6 +16,7 @@ import { useCategories } from '@/hooks/useCategories';
 import {
   DndContext,
   DragOverlay,
+  MeasuringStrategy,
   closestCorners,
   KeyboardSensor,
   PointerSensor,
@@ -203,21 +204,18 @@ export function LinksLibrary() {
     setActiveSectionId(null);
     setActiveLinkId(null);
 
-    if (!over) {
-      // Dropped outside any droppable — revert.
-      setLocalSections(derivedSections);
-      return;
-    }
-
     const activeId = String(active.id);
-    const overId = String(over.id);
+    const overId = over ? String(over.id) : null;
 
-    // Section reordering path.
+    // Section reordering path — requires a valid over target.
     if (wasSectionDrag) {
-      if (activeId === overId) return;
+      if (!over || activeId === overId) {
+        setLocalSections(derivedSections);
+        return;
+      }
       const sectionIds = localSections.map((s) => s.category.id);
       const oldIndex = sectionIds.indexOf(activeId);
-      const newIndex = sectionIds.indexOf(overId);
+      const newIndex = sectionIds.indexOf(overId!);
       if (oldIndex < 0 || newIndex < 0) return;
       const nextOrder = arrayMove(sectionIds, oldIndex, newIndex);
       const visible = new Set(nextOrder);
@@ -238,11 +236,19 @@ export function LinksLibrary() {
     // Link drop: determine the final section + order from localSections
     // (already updated by onDragOver for cross-section moves), apply any
     // within-section reorder against the over target, then persist.
+    // We DON'T revert when `over` is null — handleDragOver may have
+    // already moved the link to the correct section, and a brief loss
+    // of `over` at drop time (e.g. droppable size mid-render) shouldn't
+    // discard that progress. If nothing actually moved (localSections
+    // matches derivedSections), the persist below is a no-op write.
     const toSection = localSections.find((s) => s.links.some((l) => l.id === activeId));
-    if (!toSection) return;
+    if (!toSection) {
+      setLocalSections(derivedSections);
+      return;
+    }
 
     let finalSections = localSections;
-    if (overId !== toSection.category.id) {
+    if (overId !== null && overId !== toSection.category.id) {
       const ids = toSection.links.map((l) => l.id);
       const fromIdx = ids.indexOf(activeId);
       const toIdx = ids.indexOf(overId);
@@ -346,6 +352,12 @@ export function LinksLibrary() {
               <DndContext
                 sensors={sensors}
                 collisionDetection={closestCorners}
+                // Re-measure droppables on every render. Without this,
+                // dnd-kit caches rects from mount time, so a section
+                // whose grid grows or shrinks mid-drag (placeholder ↔
+                // first item) keeps its stale size and the over-target
+                // misses or misroutes.
+                measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
                 onDragEnd={handleDragEnd}
