@@ -143,10 +143,10 @@ export function LinksLibrary() {
   }
 
   /** Resolve which section an id belongs to, using local state.
-   *  Empty-section drop placeholders use id `${categoryId}::empty`, so we
-   *  strip that suffix before matching. */
+   *  The section's grid droppable uses id `${categoryId}::grid`; strip
+   *  any droppable suffix before matching. */
   function findLocalSection(id: string): SectionRender | undefined {
-    const realId = id.endsWith('::empty') ? id.slice(0, -'::empty'.length) : id;
+    const realId = id.replace(/::(empty|grid)$/, '');
     const asSection = localSections.find((s) => s.category.id === realId);
     if (asSection) return asSection;
     return localSections.find((s) => s.links.some((l) => l.id === realId));
@@ -456,17 +456,32 @@ function SortableLinkCard({
   );
 }
 
-/** Drop target rendered when a section has no link items. The id carries
- *  a `::empty` suffix so it doesn't collide with the section's own
- *  useSortable droppable; findLocalSection() strips the suffix. */
-function EmptyDropPlaceholder({ sectionId }: { sectionId: string }) {
-  const { setNodeRef, isOver } = useDroppable({ id: `${sectionId}::empty` });
+/** Always-mounted grid container that doubles as a useDroppable for the
+ *  section. Keeping the droppable mounted across renders (instead of
+ *  attaching it to the empty-state placeholder) prevents dnd-kit from
+ *  losing the `over` target the instant a link is moved in mid-drag —
+ *  which would otherwise hit the "dropped in no-mans-land → revert"
+ *  path on dragEnd. The id uses a `::grid` suffix so it doesn't collide
+ *  with the section's outer useSortable droppable; findLocalSection
+ *  strips the suffix. */
+function SectionGrid({
+  sectionId,
+  empty,
+  children,
+}: {
+  sectionId: string;
+  empty: boolean;
+  children: React.ReactNode;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: `${sectionId}::grid` });
   return (
-    <div
-      ref={setNodeRef}
-      className={cn('links-grid-droptarget', isOver && 'is-over')}
-    >
-      Slipp lenker her
+    <div ref={setNodeRef} className="links-grid">
+      {children}
+      {empty && (
+        <div className={cn('links-grid-droptarget', isOver && 'is-over')}>
+          Slipp lenker her
+        </div>
+      )}
     </div>
   );
 }
@@ -558,25 +573,20 @@ function SortableSection({
         dragging={isDragging}
       />
       <SortableContext items={section.links.map((l) => l.id)} strategy={rectSortingStrategy}>
-        <div className="links-grid">
-          {section.links.length === 0 ? (
-            // Empty sections collapse to zero height with no link items
-            // registered as droppables, so dnd-kit has nothing to land on.
-            // EmptyDropPlaceholder registers an explicit useDroppable so a
-            // dragged link can drop back into the section.
-            <EmptyDropPlaceholder sectionId={section.category.id} />
-          ) : (
-            section.links.map((link) => (
-              <SortableLinkCard
-                key={link.id}
-                link={link}
-                onEdit={() => onEdit(link)}
-                onDelete={() => onDelete(link.id)}
-                onToggleFavorite={() => onToggleFavorite(link.id)}
-              />
-            ))
-          )}
-        </div>
+        <SectionGrid
+          sectionId={section.category.id}
+          empty={section.links.length === 0}
+        >
+          {section.links.map((link) => (
+            <SortableLinkCard
+              key={link.id}
+              link={link}
+              onEdit={() => onEdit(link)}
+              onDelete={() => onDelete(link.id)}
+              onToggleFavorite={() => onToggleFavorite(link.id)}
+            />
+          ))}
+        </SectionGrid>
       </SortableContext>
     </div>
   );
