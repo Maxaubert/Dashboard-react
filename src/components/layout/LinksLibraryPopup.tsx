@@ -25,8 +25,20 @@ export function LinksLibraryPopup({ open, onOpenChange }: LinksLibraryPopupProps
       <Dialog.Portal>
         {/* Manual backdrop. Radix's <Dialog.Overlay /> doesn't render when
          * modal=false, so we draw our own. pointer-events:none keeps it
-         * out of the way of dnd-kit + the popup's outside-click dismiss. */}
-        <div className="links-popup-backdrop" aria-hidden="true" />
+         * out of the way of dnd-kit + the popup's outside-click dismiss.
+         * `backdrop-filter` is set inline because the project's CSS
+         * minifier (Lightning CSS via Tailwind v4) was stripping the
+         * unprefixed property and leaving only -webkit-backdrop-filter,
+         * which Firefox doesn't recognize. Inline styles bypass the
+         * minifier entirely. */}
+        <div
+          className="links-popup-backdrop"
+          aria-hidden="true"
+          style={{
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+          }}
+        />
         <Dialog.Content
           className="lm-content links-popup-content"
           // Don't auto-close when the click is on the sidebar trigger
