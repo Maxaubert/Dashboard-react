@@ -53,10 +53,11 @@ export function PromptLauncherHelp({ open, onOpenChange }: Props) {
             <strong> Install</strong>.
           </p>
           <div style={{ marginTop: 8 }}>
+            {/* No target="_blank": Tampermonkey opens its own install tab and
+                leaves the would-be new tab blank if we ask for one. Same-tab
+                navigation lets Tampermonkey just take over this tab. */}
             <a
               href="/claude-prompt.user.js"
-              target="_blank"
-              rel="noreferrer noopener"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -72,6 +73,10 @@ export function PromptLauncherHelp({ open, onOpenChange }: Props) {
             >
               Install userscript ↗
             </a>
+            <div style={{ marginTop: 6, fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>
+              Tampermonkey takes over this tab to show its install dialog —
+              hit back when you're done.
+            </div>
           </div>
         </Step>
 
