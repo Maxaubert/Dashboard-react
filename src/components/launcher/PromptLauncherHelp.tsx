@@ -68,19 +68,6 @@ export function PromptLauncherHelp({ open, onOpenChange }: Props) {
           </div>
         </Step>
 
-        <Step n={3} title="Try it">
-          <p style={{ margin: 0 }}>
-            Pick <strong>Claude</strong> or <strong>ChatGPT</strong> in the engine
-            dropdown, type a prompt, hit <strong>Go</strong>. A new tab opens,
-            the prompt is typed in for you and sent automatically.
-          </p>
-        </Step>
-
-        <p style={{ margin: 0, color: 'rgba(255,255,255,0.45)', fontSize: '0.75rem' }}>
-          If a prompt pre-fills but doesn't send, open the browser console and
-          look for <code>[prompt-launcher]</code> messages — probably the site's
-          DOM changed and the script's selectors need updating.
-        </p>
       </div>
     </Modal>
   );
