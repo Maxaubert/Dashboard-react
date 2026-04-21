@@ -4105,7 +4105,7 @@
   /* ── Prompt launcher (home section) ──────────────────────────────────── */
   .prompt-launcher-card {
     position: relative;
-    background: rgb(7, 7, 7);
+    background: rgb(5, 5, 5);
     border: 1px solid rgba(120, 53, 15, 0.35);
     border-radius: 14px;
     padding: 12px;
