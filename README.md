@@ -8,9 +8,51 @@
 
 <table>
 <tr>
-<td width="33%" valign="top" align="center"><b>Schedule &amp; tasks.</b><br><sub>Weekly calendar with the class schedule, prioritized to-do list, and the latest school announcements.</sub></td>
-<td width="34%" valign="top" align="center"><b>Personal hub.</b><br><sub>Markdown notes, sport TV schedule, Steam wishlist, and a saved-link library.</sub></td>
-<td width="33%" valign="top" align="center"><b>Toolbox.</b><br><sub>Eight small utilities: calculator, QR, timer &amp; Pomodoro, PDF tools, reader mode, video downloader, background remover, file converter.</sub></td>
+<th align="center" width="25%">Hub</th>
+<th align="center" width="25%">Daily</th>
+<th align="center" width="25%">Toolbox</th>
+<th align="center" width="25%">Gaming</th>
+</tr>
+<tr>
+<td valign="top">
+<ul>
+<li>Today's events</li>
+<li>Widgets</li>
+<li>External links</li>
+<li>Quick prompt to AI</li>
+<li>News feed</li>
+</ul>
+</td>
+<td valign="top">
+<ul>
+<li>Plan (weekly calendar)</li>
+<li>Todo (priorities, kanban)</li>
+<li>Skole (announcements)</li>
+<li>Sport (TV schedule)</li>
+<li>Notes (markdown)</li>
+<li>Links library</li>
+</ul>
+</td>
+<td valign="top">
+<ul>
+<li>Calculator</li>
+<li>QR generator</li>
+<li>Timer &amp; Pomodoro</li>
+<li>PDF tools</li>
+<li>Reader mode</li>
+<li>Video downloader</li>
+<li>Background remover</li>
+<li>File converter</li>
+</ul>
+</td>
+<td valign="top">
+<ul>
+<li>Fetches Steam wishlist</li>
+<li>Tracks sales</li>
+<li>Price history via ITAD API</li>
+<li>Steam events calendar</li>
+</ul>
+</td>
 </tr>
 </table>
 
@@ -30,6 +72,10 @@
 <tr>
 <td><img src="screenshots/06-sport.png" alt="Sport"><br><sub><b>Sport.</b> TV schedule for football, cross-country, and biathlon.</sub></td>
 <td><img src="screenshots/09-tools.png" alt="Verktoy"><br><sub><b>Toolbox.</b> Card grid linking to all eight built-in utilities.</sub></td>
+</tr>
+<tr>
+<td><img src="screenshots/07-gaming.png" alt="Gaming"><br><sub><b>Gaming.</b> Steam wishlist with sale badges and price tags.</sub></td>
+<td><img src="screenshots/07b-gaming-detail.png" alt="Gaming detalj"><br><sub><b>Price history.</b> ITAD chart and Steam link when you click a game.</sub></td>
 </tr>
 <tr>
 <td><img src="screenshots/10-tools-calculator.png" alt="Kalkulator"><br><sub><b>Calculator.</b> Scientific and statistics modes, with history.</sub></td>
