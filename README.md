@@ -66,24 +66,20 @@
 
 <table>
 <tr>
-<td width="50%"><img src="screenshots/02-plan.png" alt="Plan"><br><sub><b>Plan.</b> Weekly calendar with the class schedule.</sub></td>
-<td width="50%"><img src="screenshots/03-todo.png" alt="Todo"><br><sub><b>Todo.</b> Active and completed tasks, list or kanban view.</sub></td>
+<td width="50%"><img src="screenshots/07-gaming.png" alt="Gaming"><br><sub><b>Gaming.</b> Steam wishlist with sale badges and price tags.</sub></td>
+<td width="50%"><img src="screenshots/07b-gaming-detail.png" alt="Gaming detalj"><br><sub><b>Price history.</b> ITAD chart and Steam link when you click a game.</sub></td>
+</tr>
+<tr>
+<td><img src="screenshots/02-plan.png" alt="Plan"><br><sub><b>Plan.</b> Weekly calendar with the class schedule.</sub></td>
+<td><img src="screenshots/03-todo.png" alt="Todo"><br><sub><b>Todo.</b> Active and completed tasks, list or kanban view.</sub></td>
 </tr>
 <tr>
 <td><img src="screenshots/06-sport.png" alt="Sport"><br><sub><b>Sport.</b> TV schedule for football, cross-country, and biathlon.</sub></td>
 <td><img src="screenshots/09-tools.png" alt="Verktoy"><br><sub><b>Toolbox.</b> Card grid linking to all eight built-in utilities.</sub></td>
 </tr>
 <tr>
-<td><img src="screenshots/07-gaming.png" alt="Gaming"><br><sub><b>Gaming.</b> Steam wishlist with sale badges and price tags.</sub></td>
-<td><img src="screenshots/07b-gaming-detail.png" alt="Gaming detalj"><br><sub><b>Price history.</b> ITAD chart and Steam link when you click a game.</sub></td>
-</tr>
-<tr>
-<td><img src="screenshots/10-tools-calculator.png" alt="Kalkulator"><br><sub><b>Calculator.</b> Scientific and statistics modes, with history.</sub></td>
 <td><img src="screenshots/11-tools-qr.png" alt="QR-kode generator"><br><sub><b>QR.</b> Generate a code from any link or piece of text.</sub></td>
-</tr>
-<tr>
 <td><img src="screenshots/12-tools-timer.png" alt="Timer"><br><sub><b>Timer &amp; Pomodoro.</b> Alarm, timer, stopwatch, and Pomodoro in one tool.</sub></td>
-<td><img src="screenshots/17-tools-convert.png" alt="Fil-konverterer"><br><sub><b>File converter.</b> Convert between image, audio, video, and text formats.</sub></td>
 </tr>
 </table>
 
