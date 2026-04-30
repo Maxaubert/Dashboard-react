@@ -29,7 +29,7 @@
 <li>Todo (priorities, kanban)</li>
 <li>Skole (announcements)</li>
 <li>Sport (TV schedule)</li>
-<li>Notes (markdown)</li>
+<li>Notes</li>
 <li>Links library</li>
 </ul>
 </td>
