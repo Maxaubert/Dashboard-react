@@ -16,6 +16,10 @@ dashboard.txt
 _discover.py
 _deploy.py
 
+# Bug/feature reports — personal notes, mirrored from /opt/dashboard/reports/
+# on the server via _pull_reports.py. Don't push these to the public repo.
+reports/
+
 # Editor
 .vscode/*
 !.vscode/extensions.json
