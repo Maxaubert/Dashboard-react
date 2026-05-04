@@ -21,9 +21,20 @@ REMOTE_WWW = '/opt/dashboard/www'
 REMOTE_NGINX = '/etc/nginx/sites-enabled/default'
 
 
+def _creds_path():
+    """`dashboard.txt` is gitignored; from a worktree, walk up to the main checkout."""
+    local = os.path.join(HERE, 'dashboard.txt')
+    if os.path.isfile(local):
+        return local
+    parent = os.path.normpath(os.path.join(HERE, '..', '..', 'dashboard.txt'))
+    if os.path.isfile(parent):
+        return parent
+    return local
+
+
 def load_creds():
     creds = {}
-    with open(os.path.join(HERE, 'dashboard.txt'), 'r', encoding='utf-8') as f:
+    with open(_creds_path(), 'r', encoding='utf-8') as f:
         for line in f:
             line = line.strip()
             if '=' in line:

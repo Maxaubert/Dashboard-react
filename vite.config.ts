@@ -2,6 +2,7 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'node:path';
+import { reportsDevPlugin } from './vite-plugins/reports';
 
 // Vite config for the dashboard.
 //
@@ -12,7 +13,7 @@ import path from 'node:path';
 // on 127.0.0.1:3001 (already configured in server/nginx.conf), so no host hardcoding
 // is needed in the React code — every fetch uses a relative path.
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), reportsDevPlugin()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -60,6 +61,6 @@ export default defineConfig({
   // Only pick up *.vitest.ts files. Several pre-existing *.test.ts files use
   // a custom tsx-based runner (process.exit) and aren't vitest-compatible.
   test: {
-    include: ['src/**/*.vitest.ts'],
+    include: ['src/**/*.vitest.ts', 'vite-plugins/**/*.vitest.ts'],
   },
 });
