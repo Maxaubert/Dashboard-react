@@ -1,0 +1,778 @@
+#!/usr/bin/env python3
+"""
+Dashboard API — pure Python 3, no external dependencies.
+Runs on port 3001.
+  GET  /api/todos        → read todos.json
+  POST /api/todos        → write todos.json
+  GET  /api/news         → fetch NRK top stories RSS and return JSON
+"""
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import json, os, re, time
+try:
+    from urllib.request import urlopen, Request
+except ImportError:
+    from urllib2 import urlopen, Request
+
+DATA_FILE    = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'todos.json')
+PLAN_FILE    = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'plan.json')
+LINKS_FILE   = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'links.json')
+HOME_FILE    = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'home.json')
+WISH_CACHE   = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'wishlist_cache.json')
+VG_HOME      = 'https://www.vg.no/'
+VG_RSS       = 'https://www.vg.no/rss/feed/'
+HEADERS      = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+STEAM_API_KEY  = '1C38BB7BFD6456B00945249B9160CAEF'
+ITAD_API_KEY   = 'bbb182d083a1e9a41190660669883e05d133cca2'
+STEAM_ID       = '76561198308660639'
+WISH_TTL       = 3600  # cache for 1 hour
+
+CANVAS_TOKEN   = '10900~CW8nBUFemJXYTrH8wCQ44LRcLPxUL7KJH8KUZGYNnYfzwzTBZYw6QuQzYJHe4rVh'
+CANVAS_BASE    = 'https://hiof.instructure.com/api/v1'
+SKOLE_CACHE    = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'skole_cache.json')
+SKOLE_TTL      = 1800  # 30 minutes
+PDF_CACHE_DIR  = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pdf_cache')
+PDF_TTL        = 86400  # 24 hours
+
+# Reports (bug / feature log) — kept ONE LEVEL UP from www so nginx
+# doesn't serve the markdown publicly. The api.py service runs as
+# root with WorkingDirectory=/opt/dashboard/www, so writes here
+# resolve to /opt/dashboard/reports/.
+REPORTS_DIR    = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'reports'))
+REPORT_TYPES   = ('bug', 'feature')
+REPORT_MAX_BODY     = 8000
+REPORT_MAX_TITLE    = 200
+REPORT_MAX_PAYLOAD  = 64_000
+
+CANVAS_COURSES = {
+    10644: {'name': 'Statistikk',             'short': 'STAT', 'color': '#38bdf8', 'total_expected': 7},
+    10666: {'name': 'Parallell programmering', 'short': 'PARA', 'color': '#a78bfa', 'total_expected': 14},
+}
+
+PARPROG_DEADLINES = {
+    'lab1':  '2026-01-14T22:59:00Z', 'lab2':  '2026-01-21T22:59:00Z',
+    'lab3':  '2026-01-28T22:59:00Z', 'lab4':  '2026-02-04T22:59:00Z',
+    'lab5':  '2026-02-14T22:59:00Z', 'lab6':  '2026-02-25T22:59:00Z',
+    'lab7':  '2026-03-04T22:59:00Z', 'lab8':  '2026-03-11T22:59:00Z',
+    'lab9':  '2026-03-18T22:59:00Z', 'lab10': '2026-03-25T22:59:00Z',
+    'lab11': '2026-04-01T22:59:00Z',
+}
+
+# Labs confirmed submitted via GitHub (Canvas doesn't track these)
+PARPROG_SUBMITTED = {'lab1','lab2','lab3','lab4','lab5','lab6','lab7','lab8','lab9','lab10'}
+
+# Manual assignments not yet on Canvas (injected so they appear as upcoming)
+STAT_MANUAL = {
+    'Øving 6': {'due_at': '2026-04-12T21:59:00Z', 'html_url': 'https://hiof.instructure.com/courses/10644/assignments'},
+}
+
+GITHUB_REPO = 'PDP2026/labs-Maxaubert'
+
+def get_github_submitted_labs():
+    """Check public GitHub repo for submitted lab folders."""
+    try:
+        url = 'https://api.github.com/repos/{}/contents'.format(GITHUB_REPO)
+        req = Request(url, headers={'User-Agent': HEADERS['User-Agent']})
+        items = json.loads(urlopen(req, timeout=10).read().decode('utf-8'))
+        submitted = set()
+        for item in items:
+            if item.get('type') == 'dir':
+                m = re.match(r'^lab(\d+)$', item['name'].lower())
+                if m:
+                    submitted.add('lab' + str(int(m.group(1))))
+        return submitted
+    except Exception:
+        return set()
+
+def _normalize(s):
+    """Lowercase and strip special chars for fuzzy file matching."""
+    s = s.lower()
+    s = s.replace('\u00f8', 'o').replace('\u00e6', 'ae').replace('\u00e5', 'a')
+    return re.sub(r'[^a-z0-9]', '', s)
+
+def _canvas_download(course_id, search_term, cache_path):
+    """List Canvas course files, find best PDF match for search_term, download+cache, return bytes."""
+    url = CANVAS_BASE + '/courses/{}/files?per_page=100'.format(course_id)
+    req = Request(url, headers={'Authorization': 'Bearer ' + CANVAS_TOKEN, 'User-Agent': HEADERS['User-Agent']})
+    files = json.loads(urlopen(req, timeout=15).read().decode('utf-8'))
+    needle = _normalize(search_term)
+    dl_url = None
+    # Priority 1: exact stem match
+    for f in files:
+        nm = f.get('display_name', '')
+        if not nm.lower().endswith('.pdf'):
+            continue
+        stem = nm.rsplit('.', 1)[0]
+        if stem == search_term or _normalize(stem) == needle:
+            dl_url = f.get('url', '')
+            break
+    # Priority 2: fuzzy contains
+    if not dl_url:
+        for f in files:
+            nm = f.get('display_name', '')
+            if not nm.lower().endswith('.pdf'):
+                continue
+            if needle in _normalize(nm):
+                dl_url = f.get('url', '')
+                break
+    if not dl_url:
+        return None
+    req2 = Request(dl_url, headers={'Authorization': 'Bearer ' + CANVAS_TOKEN, 'User-Agent': HEADERS['User-Agent']})
+    data = urlopen(req2, timeout=30).read()
+    with open(cache_path, 'wb') as f_out:
+        f_out.write(data)
+    return data
+
+def fetch_stat_pdf(stat_name):
+    """Fetch a Statistikk PDF from Canvas, cache on disk, return bytes."""
+    os.makedirs(PDF_CACHE_DIR, exist_ok=True)
+    cache_path = os.path.join(PDF_CACHE_DIR, 'stat_' + _normalize(stat_name) + '.pdf')
+    if os.path.exists(cache_path) and time.time() - os.path.getmtime(cache_path) < PDF_TTL:
+        with open(cache_path, 'rb') as f:
+            return f.read()
+    try:
+        return _canvas_download(10644, stat_name, cache_path)
+    except Exception:
+        if os.path.exists(cache_path):
+            with open(cache_path, 'rb') as f:
+                return f.read()
+        return None
+
+def fetch_lab_pdf(lab_num):
+    """Fetch a ParProg lab PDF from GitHub (PDP2026/labs), cache on disk, return bytes."""
+    os.makedirs(PDF_CACHE_DIR, exist_ok=True)
+    cache_path = os.path.join(PDF_CACHE_DIR, 'lab_{}.pdf'.format(lab_num))
+    if os.path.exists(cache_path) and time.time() - os.path.getmtime(cache_path) < PDF_TTL:
+        with open(cache_path, 'rb') as f:
+            return f.read()
+    # Lab PDFs live in the public GitHub course repo: PDP2026/labs/labN/labN.pdf
+    # Try both main branch and master branch
+    for branch in ('main', 'master'):
+        url = 'https://raw.githubusercontent.com/PDP2026/labs/{}/lab{}/lab{}.pdf'.format(
+            branch, lab_num, lab_num)
+        try:
+            req  = Request(url, headers={'User-Agent': HEADERS['User-Agent']})
+            data = urlopen(req, timeout=20).read()
+            if data[:4] == b'%PDF':   # sanity check it's actually a PDF
+                with open(cache_path, 'wb') as f:
+                    f.write(data)
+                return data
+        except Exception:
+            pass
+    # Stale cache is better than nothing
+    if os.path.exists(cache_path):
+        with open(cache_path, 'rb') as f:
+            return f.read()
+    return None
+
+def canvas_get(path, params=None):
+    url = CANVAS_BASE + path
+    if params:
+        url += '?' + '&'.join('{}={}'.format(k, v) for k, v in params.items())
+    req = Request(url, headers={'Authorization': 'Bearer ' + CANVAS_TOKEN, 'User-Agent': HEADERS['User-Agent']})
+    return json.loads(urlopen(req, timeout=15).read().decode('utf-8'))
+
+def fetch_skole():
+    if os.path.exists(SKOLE_CACHE):
+        try:
+            cached = json.load(open(SKOLE_CACHE))
+            if time.time() - cached.get('ts', 0) < SKOLE_TTL:
+                return cached['data']
+        except Exception:
+            pass
+
+    from datetime import datetime, timezone, timedelta
+    now_utc = datetime.now(timezone.utc)
+    result  = {'courses': [], 'announcements': []}
+
+    # Fetch GitHub-submitted ParProg labs once (public repo, no auth needed)
+    github_submitted = get_github_submitted_labs()
+
+    for cid, meta in CANVAS_COURSES.items():
+        try:
+            assignments = canvas_get('/courses/{}/assignments'.format(cid),
+                                     {'per_page': '100', 'order_by': 'due_at'})
+            subs_raw    = canvas_get('/courses/{}/students/submissions'.format(cid),
+                                     {'student_ids[]': 'self', 'per_page': '100'})
+            subs = {s['assignment_id']: s for s in subs_raw}
+
+            submitted_count = 0
+            course_assignments = []
+            canvas_titles = set()
+            for a in assignments:
+                sub       = subs.get(a['id'], {})
+                submitted = sub.get('workflow_state') in ('submitted', 'graded')
+                # For ParProg: use manual submitted set + GitHub as source of truth
+                if cid == 10666:
+                    key = a['name'].strip().lower()
+                    if key in PARPROG_SUBMITTED or key in github_submitted:
+                        submitted = True
+                if submitted:
+                    submitted_count += 1
+                due_at = a.get('due_at')
+                if cid == 10666:
+                    key = a['name'].strip().lower()
+                    if key in PARPROG_DEADLINES:
+                        due_at = PARPROG_DEADLINES[key]
+                canvas_titles.add(a['name'])
+                course_assignments.append({
+                    'id':        a['id'],
+                    'title':     a['name'],
+                    'due_at':    due_at,
+                    'submitted': submitted,
+                    'html_url':  a.get('html_url', '{}/courses/{}/assignments/{}'.format('https://hiof.instructure.com', cid, a['id'])),
+                })
+
+            # Inject manual assignments not yet on Canvas
+            if cid == 10644:
+                for title, info in STAT_MANUAL.items():
+                    if title not in canvas_titles:
+                        course_assignments.append({
+                            'id': None, 'title': title,
+                            'due_at': info['due_at'], 'submitted': False,
+                            'html_url': info['html_url'],
+                        })
+
+            total = max(len(course_assignments), meta.get('total_expected', 0))
+            result['courses'].append({
+                'id': cid, 'name': meta['name'], 'short': meta['short'],
+                'color': meta['color'], 'submitted': submitted_count,
+                'total': total, 'assignments': course_assignments,
+            })
+        except Exception:
+            pass
+
+        # Announcements (last 7 days)
+        try:
+            anns = canvas_get('/courses/{}/discussion_topics'.format(cid),
+                              {'only_announcements': 'true', 'per_page': '10', 'order_by': 'posted_at'})
+            cutoff = now_utc - timedelta(days=7)
+            for ann in anns:
+                posted_str = ann.get('posted_at', '')
+                if not posted_str:
+                    continue
+                try:
+                    posted_dt = datetime.fromisoformat(posted_str.replace('Z', '+00:00'))
+                    if posted_dt >= cutoff:
+                        result['announcements'].append({
+                            'title':        ann.get('title', ''),
+                            'posted_at':    posted_str,
+                            'html_url':     ann.get('html_url', ''),
+                            'course_name':  meta['name'],
+                            'course_short': meta['short'],
+                            'course_color': meta['color'],
+                        })
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+    try:
+        with open(SKOLE_CACHE, 'w') as f:
+            json.dump({'ts': time.time(), 'data': result}, f)
+    except Exception:
+        pass
+
+    return result
+
+def fetch_wishlist():
+    """Fetch Steam wishlist + live NOK prices. Returns cached data if fresh."""
+    # Return cache if still valid
+    if os.path.exists(WISH_CACHE):
+        try:
+            cached = json.load(open(WISH_CACHE))
+            if time.time() - cached.get('ts', 0) < WISH_TTL:
+                return cached['data']
+        except Exception:
+            pass
+
+    # Fetch wishlist via official Steam Web API
+    url = 'https://api.steampowered.com/IWishlistService/GetWishlist/v1/?key={}&steamid={}'.format(STEAM_API_KEY, STEAM_ID)
+    try:
+        req   = Request(url, headers=HEADERS)
+        data  = json.loads(urlopen(req, timeout=15).read().decode('utf-8'))
+        items = data.get('response', {}).get('items', [])
+    except Exception:
+        return []
+
+    if not items:
+        return []
+
+    # Build lookup map: appid -> wishlist metadata
+    item_map = {str(i['appid']): i for i in items}
+
+    # Fetch prices + genres in batches of 20 via appdetails
+    appids = list(item_map.keys())
+    prices = {}
+    for appid in appids:
+        url = 'https://store.steampowered.com/api/appdetails?appids={}&cc=no&filters=basic,price_overview,genres'.format(appid)
+        try:
+            req   = Request(url, headers=HEADERS)
+            pdata = json.loads(urlopen(req, timeout=10).read().decode('utf-8', errors='replace'))
+            info  = pdata.get(str(appid), {})
+            if info.get('success') and info.get('data'):
+                prices[str(appid)] = info['data']
+        except Exception:
+            pass
+
+    # Build game list
+    games = []
+    for appid, wdata in item_map.items():
+        pd       = prices.get(appid, {})
+        po       = pd.get('price_overview', {})
+        genres   = [g['description'] for g in pd.get('genres', [])]
+        discount = po.get('discount_percent', 0)
+        is_free  = pd.get('is_free', False)
+        on_sale  = discount > 0 and not is_free
+        price    = po.get('final_formatted') if not is_free else None
+        orig     = po.get('initial_formatted', '') if on_sale else ''
+        name     = pd.get('name') or wdata.get('name', '')
+        img      = pd.get('header_image') or 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/{}/header.jpg'.format(appid)
+        games.append({
+            'appid':     appid,
+            'name':      name,
+            'imgUrl':    img,
+            'imgFallback': 'https://cdn.akamai.steamstatic.com/steam/apps/{}/header.jpg'.format(appid),
+            'storeUrl':  'https://store.steampowered.com/app/{}/'.format(appid),
+            'isFree':    is_free,
+            'price':     price,
+            'origPrice': orig,
+            'discount':  discount,
+            'onSale':    on_sale,
+            'genres':    genres,
+            'priority':  wdata.get('priority', 0),
+            'dateAdded': wdata.get('date_added', 0),
+            'priceInt':  po.get('final', 0),
+            'currency':  po.get('currency', 'NOK'),
+            'priceTag':  None,
+            'itadId':    None,
+        })
+
+    # Fetch ITAD IDs so the price history chart works in the modal
+    for g in games:
+        try:
+            url  = 'https://api.isthereanydeal.com/games/lookup/v1?key={}&appid={}'.format(ITAD_API_KEY, g['appid'])
+            req  = Request(url, headers=HEADERS)
+            data = json.loads(urlopen(req, timeout=8).read().decode('utf-8'))
+            gid  = (data.get('game') or {}).get('id')
+            if gid:
+                g['itadId'] = gid
+        except Exception:
+            pass
+
+    # Tag on-sale games that are at their all-time low using the history endpoint
+    # (same endpoint the frontend uses for the price chart — known to work)
+    # Only runs for games currently on sale, so typically just a handful of calls.
+    ATL_SINCE = '2013-01-01T00:00:00Z'  # go far back to capture true all-time low
+    for g in games:
+        if not g['onSale'] or not g.get('itadId'):
+            continue
+        try:
+            url = 'https://api.isthereanydeal.com/games/history/v2?key={}&id={}&shops=61&since={}'.format(
+                ITAD_API_KEY, g['itadId'], ATL_SINCE)
+            req  = Request(url, headers=HEADERS)
+            raw  = json.loads(urlopen(req, timeout=8).read().decode('utf-8'))
+            # Each entry: {timestamp, deal: {price: {amount, cut, ...}, ...}}
+            cuts = [p['deal']['cut'] for p in raw if p.get('deal')]
+            if cuts:
+                best_cut = max(cuts)
+                # Within 5 percentage points of the all-time best discount → hot
+                if best_cut > 0 and g['discount'] >= best_cut - 5:
+                    g['priceTag'] = 'hot'
+        except Exception:
+            pass
+
+    games.sort(key=lambda g: (g['priority'], g['name'].lower()))
+
+    # Save cache
+    try:
+        with open(WISH_CACHE, 'w') as f:
+            json.dump({'ts': time.time(), 'data': games}, f)
+    except Exception:
+        pass
+
+    return games
+
+def _slug(url):
+    """Extract short article ID from VG URL, e.g. /i/aJJGp7/ -> aJJGp7"""
+    m = re.search(r'/i/([A-Za-z0-9]+)', url)
+    return m.group(1) if m else url
+
+def _og(url):
+    """Fetch OpenGraph title/desc/image — handles both attribute orderings."""
+    def og_val(html, prop):
+        # matches property before content OR content before property
+        m = re.search(r'<meta[^>]+property="' + prop + r'"[^>]+content="([^"]+)"', html)
+        if not m:
+            m = re.search(r'<meta[^>]+content="([^"]+)"[^>]+property="' + prop + r'"', html)
+        return m.group(1) if m else ''
+    try:
+        req = Request(url, headers=HEADERS)
+        html = urlopen(req, timeout=5).read().decode('utf-8', errors='replace')
+        return {
+            'title': og_val(html, 'og:title'),
+            'desc':  og_val(html, 'og:description')[:120],
+            'img':   og_val(html, 'og:image').replace('&amp;', '&'),
+        }
+    except Exception:
+        return {'title': '', 'desc': '', 'img': ''}
+
+def get_top_urls():
+    """Fetch VG front page and return ordered article URLs."""
+    req = Request(VG_HOME, headers=HEADERS)
+    html = urlopen(req, timeout=5).read().decode('utf-8', errors='replace')
+    ld_blocks = re.findall(r'<script type="application/ld\+json">(.*?)</script>', html, re.DOTALL)
+    for block in ld_blocks:
+        try:
+            data = json.loads(block)
+            items = data.get('mainEntity', {}).get('itemListElement', [])
+            if items:
+                return [it['url'] for it in items[:20] if 'url' in it]
+        except Exception:
+            pass
+    return []
+
+def get_rss_map():
+    """Build slug->article dict from VG RSS feed."""
+    rss_map = {}
+    try:
+        req = Request(VG_RSS, headers=HEADERS)
+        xml = urlopen(req, timeout=5).read().decode('utf-8', errors='replace')
+        for item in re.findall(r'<item>(.*?)</item>', xml, re.DOTALL):
+            link  = re.search(r'<link>(.*?)</link>', item, re.DOTALL)
+            title = re.search(r'<title><!\[CDATA\[(.*?)\]\]></title>|<title>(.*?)</title>', item, re.DOTALL)
+            desc  = re.search(r'<description><!\[CDATA\[(.*?)\]\]></description>|<description>(.*?)</description>', item, re.DOTALL)
+            img   = re.search(r'<vg:img>(.*?)</vg:img>|<enclosure url="([^"]+)"', item)
+            url   = (link.group(1) or '').strip() if link else ''
+            slug  = _slug(url)
+            if slug:
+                raw_img = (img.group(1) or img.group(2) or '').strip() if img else ''
+                rss_map[slug] = {
+                    'link':  url,
+                    'title': (title.group(1) or title.group(2) or '').strip() if title else '',
+                    'desc':  re.sub(r'<[^>]+>', '', (desc.group(1) or desc.group(2) or '').strip())[:120] if desc else '',
+                    'img':   raw_img.replace('&amp;', '&'),
+                }
+    except Exception:
+        pass
+    return rss_map
+
+NRK_RSS          = 'https://www.nrk.no/toppsaker.rss'
+AFTENPOSTEN_RSS  = 'https://www.aftenposten.no/rss'
+
+def _parse_generic_rss(url, limit=40):
+    """Parse a standard RSS feed into [{title, link, desc, img}, ...].
+    Handles the image variants used by NRK and Aftenposten: `media:thumbnail`,
+    `media:content medium="image"`, and plain `enclosure url=...`.
+    """
+    try:
+        req  = Request(url, headers=HEADERS)
+        xml  = urlopen(req, timeout=5).read().decode('utf-8', errors='replace')
+    except Exception:
+        return []
+    items = []
+    for block in re.findall(r'<item>(.*?)</item>', xml, re.DOTALL)[:limit]:
+        title_m = re.search(r'<title><!\[CDATA\[(.*?)\]\]></title>|<title>(.*?)</title>', block, re.DOTALL)
+        link_m  = re.search(r'<link>(.*?)</link>', block, re.DOTALL)
+        desc_m  = re.search(r'<description><!\[CDATA\[(.*?)\]\]></description>|<description>(.*?)</description>', block, re.DOTALL)
+        img_m   = (re.search(r'<media:thumbnail[^>]+url="([^"]+)"', block)
+                or re.search(r'<media:content[^>]+url="([^"]+)"[^>]*medium="image"', block)
+                or re.search(r'<media:content[^>]+medium="image"[^>]*url="([^"]+)"', block)
+                or re.search(r'<enclosure[^>]+url="([^"]+)"[^>]+type="image', block)
+                or re.search(r'<enclosure[^>]+type="image[^"]*"[^>]+url="([^"]+)"', block))
+        title = (title_m.group(1) or title_m.group(2) or '').strip() if title_m else ''
+        link  = (link_m.group(1) or '').strip() if link_m else ''
+        desc  = (desc_m.group(1) or desc_m.group(2) or '').strip() if desc_m else ''
+        img   = (img_m.group(1) or '').replace('&amp;', '&') if img_m else ''
+        # Strip inline HTML from descriptions that embed it.
+        desc  = re.sub(r'<[^>]+>', '', desc).strip()[:200]
+        if link and title:
+            items.append({'title': title, 'link': link, 'desc': desc, 'img': img})
+    return items
+
+def fetch_vg_news():
+    """VG: scrape homepage for ordered URLs, enrich via RSS map or OG tags.
+    Falls back to pure RSS if the homepage JSON-LD doesn't expose
+    `itemListElement` (April 2026 layout change)."""
+    top_urls = get_top_urls()
+    rss_map  = get_rss_map()
+    if not top_urls:
+        return list(rss_map.values())
+    results = []
+    for url in top_urls:
+        slug = _slug(url)
+        if slug in rss_map:
+            results.append(dict(rss_map[slug]))
+        else:
+            og = _og(url)
+            results.append({'link': url, 'title': og['title'], 'desc': og['desc'], 'img': og['img']})
+    return results
+
+def fetch_news(offset, count, source='vg'):
+    if source == 'nrk':
+        items = _parse_generic_rss(NRK_RSS)
+    elif source == 'aftenposten':
+        items = _parse_generic_rss(AFTENPOSTEN_RSS)
+    else:
+        items = fetch_vg_news()
+    return items[offset:offset + count]
+
+def _strip_control(s):
+    """Drop C0 control chars except tab/newline/CR — same rules the dev
+    plugin uses, so reports written through /api/report and through the
+    Vite dev middleware look identical."""
+    out = []
+    for ch in s:
+        c = ord(ch)
+        if c == 9 or c == 10 or c == 13:
+            out.append(ch)
+        elif c < 0x20 or c == 0x7f:
+            continue
+        else:
+            out.append(ch)
+    return ''.join(out)
+
+
+def _sanitize_field(value, max_len):
+    if not isinstance(value, str):
+        return ''
+    return _strip_control(value)[:max_len].strip()
+
+
+def _parse_report(raw):
+    try:
+        obj = json.loads(raw.decode('utf-8') if isinstance(raw, (bytes, bytearray)) else raw)
+    except Exception:
+        return None
+    if not isinstance(obj, dict):
+        return None
+    rtype = _sanitize_field(obj.get('type', ''), 16)
+    title = _sanitize_field(obj.get('title', ''), REPORT_MAX_TITLE)
+    body  = _sanitize_field(obj.get('body', ''), REPORT_MAX_BODY)
+    page  = _sanitize_field(obj.get('page', ''), 200)
+    if rtype not in REPORT_TYPES:
+        return None
+    if not title:
+        return None
+    return {'type': rtype, 'title': title, 'body': body, 'page': page or None}
+
+
+def _report_file_header(rtype):
+    noun = 'Bug reports' if rtype == 'bug' else 'Feature requests'
+    return (
+        '# {}\n\n'
+        '<!-- Append-only log. Newest entries at the bottom. '
+        'Edit `status:` by hand to mark items as resolved/done. -->\n'
+    ).format(noun)
+
+
+def _format_report_entry(report):
+    stamp = time.strftime('%Y-%m-%d %H:%M', time.localtime())
+    meta = []
+    if report.get('page'):
+        meta.append('- **page**: `{}`'.format(report['page']))
+    meta.append('- **status**: open')
+    body_block = '\n' + report['body'] + '\n' if report['body'] else ''
+    return '\n---\n\n### {} — {}\n\n{}\n{}'.format(
+        stamp, report['title'], '\n'.join(meta), body_block
+    )
+
+
+def _append_report(report):
+    """Append `report` to /opt/dashboard/reports/{type}s.md. Creates
+    the directory and seeds the file header on first write. Returns
+    a stable short path for the success response."""
+    if not os.path.isdir(REPORTS_DIR):
+        os.makedirs(REPORTS_DIR, exist_ok=True)
+    fname = '{}s.md'.format(report['type'])
+    fpath = os.path.join(REPORTS_DIR, fname)
+    if not os.path.exists(fpath):
+        with open(fpath, 'w', encoding='utf-8') as f:
+            f.write(_report_file_header(report['type']))
+    with open(fpath, 'a', encoding='utf-8') as f:
+        f.write(_format_report_entry(report))
+    return 'reports/' + fname
+
+
+class Handler(BaseHTTPRequestHandler):
+    def _cors(self):
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self._cors()
+        self.end_headers()
+
+    def do_GET(self):
+        if self.path == '/api/todos':
+            try:
+                data = json.load(open(DATA_FILE)) if os.path.exists(DATA_FILE) else []
+            except Exception:
+                data = []
+            body = json.dumps(data).encode()
+        elif self.path == '/api/plan':
+            try:
+                data = json.load(open(PLAN_FILE)) if os.path.exists(PLAN_FILE) else []
+            except Exception:
+                data = []
+            body = json.dumps(data).encode()
+        elif self.path == '/api/links':
+            try:
+                data = json.load(open(LINKS_FILE)) if os.path.exists(LINKS_FILE) else []
+            except Exception:
+                data = []
+            body = json.dumps(data).encode()
+        elif self.path == '/api/home':
+            try:
+                if os.path.exists(HOME_FILE):
+                    data = json.load(open(HOME_FILE))
+                else:
+                    data = {'version': 1, 'sections': [], 'widgets': [], 'habits': []}
+            except Exception:
+                data = {'version': 1, 'sections': [], 'widgets': [], 'habits': []}
+            body = json.dumps(data).encode()
+        elif self.path == '/api/skole':
+            try:
+                data = fetch_skole()
+            except Exception:
+                data = {'courses': [], 'announcements': []}
+            body = json.dumps(data).encode()
+        elif self.path == '/api/wishlist':
+            try:
+                data = fetch_wishlist()
+            except Exception:
+                data = []
+            body = json.dumps(data).encode()
+        elif self.path.startswith('/api/news'):
+            try:
+                qs = self.path.split('?', 1)[1] if '?' in self.path else ''
+                params = dict(p.split('=') for p in qs.split('&') if '=' in p)
+                offset = int(params.get('offset', 0))
+                count  = int(params.get('count', 4))
+                source = params.get('source', 'vg')
+                data = fetch_news(offset, count, source)
+            except Exception:
+                data = []
+            body = json.dumps(data).encode()
+        elif self.path.startswith('/api/pdf'):
+            try:
+                from urllib.parse import unquote_plus
+            except ImportError:
+                from urllib import unquote_plus
+            qs = self.path.split('?', 1)[1] if '?' in self.path else ''
+            params = dict(p.split('=', 1) for p in qs.split('&') if '=' in p)
+            stat_name = unquote_plus(params.get('stat', '')).strip()
+            lab_num   = unquote_plus(params.get('lab',  '')).strip()
+            pdf_bytes = None
+            if stat_name:
+                try:
+                    pdf_bytes = fetch_stat_pdf(stat_name)
+                except Exception:
+                    pdf_bytes = None
+            elif lab_num:
+                try:
+                    pdf_bytes = fetch_lab_pdf(lab_num)
+                except Exception:
+                    pdf_bytes = None
+            else:
+                self.send_response(400); self._cors(); self.end_headers(); return
+            if pdf_bytes is None:
+                self.send_response(404); self._cors(); self.end_headers(); return
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/pdf')
+            self.send_header('Content-Length', str(len(pdf_bytes)))
+            self.send_header('Cache-Control', 'public, max-age=3600')
+            self._cors()
+            self.end_headers()
+            self.wfile.write(pdf_bytes)
+            return
+        elif self.path.startswith('/api/favicon'):
+            # Proxy Google favicon so the browser can canvas-read it (CORS bypass)
+            try:
+                qs = self.path.split('?', 1)[1] if '?' in self.path else ''
+                params = dict(p.split('=', 1) for p in qs.split('&') if '=' in p)
+                domain = params.get('domain', '').strip()
+                if not domain:
+                    raise ValueError('no domain')
+                furl = 'https://www.google.com/s2/favicons?domain={}&sz=64'.format(domain)
+                req      = Request(furl, headers=HEADERS)
+                img_data = urlopen(req, timeout=6).read()
+                self.send_response(200)
+                self.send_header('Content-Type', 'image/png')
+                self.send_header('Content-Length', str(len(img_data)))
+                self.send_header('Cache-Control', 'public, max-age=86400')
+                self._cors()
+                self.end_headers()
+                self.wfile.write(img_data)
+            except Exception:
+                self.send_response(404); self._cors(); self.end_headers()
+            return
+        else:
+            self.send_response(404); self._cors(); self.end_headers(); return
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', str(len(body)))
+        self._cors()
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_POST(self):
+        # /api/report — appends a markdown entry to /opt/dashboard/reports/{type}s.md.
+        # Handled separately because it does NOT overwrite a JSON file.
+        if self.path == '/api/report':
+            try:
+                length = int(self.headers.get('Content-Length', 0))
+                if length <= 0 or length > REPORT_MAX_PAYLOAD:
+                    self.send_response(413); self._cors(); self.end_headers(); return
+                raw = self.rfile.read(length)
+                report = _parse_report(raw)
+                if report is None:
+                    body = b'{"error":"invalid payload"}'
+                    self.send_response(400)
+                else:
+                    rel = _append_report(report)
+                    body = json.dumps({'ok': True, 'file': rel}).encode()
+                    self.send_response(200)
+            except Exception as e:
+                body = json.dumps({'ok': False, 'error': str(e)}).encode()
+                self.send_response(500)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', str(len(body)))
+            self._cors()
+            self.end_headers()
+            self.wfile.write(body)
+            return
+
+        if self.path == '/api/todos':
+            file_path = DATA_FILE
+        elif self.path == '/api/plan':
+            file_path = PLAN_FILE
+        elif self.path == '/api/links':
+            file_path = LINKS_FILE
+        elif self.path == '/api/home':
+            file_path = HOME_FILE
+        else:
+            self.send_response(404); self._cors(); self.end_headers(); return
+        try:
+            length = int(self.headers.get('Content-Length', 0))
+            data = json.loads(self.rfile.read(length))
+            with open(file_path, 'w') as f:
+                json.dump(data, f, indent=2)
+            body = b'{"ok":true}'
+        except Exception as e:
+            body = json.dumps({'ok': False, 'error': str(e)}).encode()
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', str(len(body)))
+        self._cors()
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, fmt, *args):
+        pass  # silence request logs
+
+if __name__ == '__main__':
+    server = HTTPServer(('0.0.0.0', 3001), Handler)
+    print('Dashboard API running on port 3001')
+    server.serve_forever()
