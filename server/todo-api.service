@@ -1,0 +1,18 @@
+[Unit]
+Description=Dashboard Todo API
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/dashboard/www
+# Secrets (Steam / ITAD / Canvas API keys) are loaded from a separate
+# file kept out of /opt/dashboard/www so nginx can't accidentally serve
+# them. Mode 600, owned by root.
+EnvironmentFile=/etc/dashboard.env
+ExecStart=/usr/bin/python3 /opt/dashboard/www/api.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

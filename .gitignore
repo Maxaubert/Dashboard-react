@@ -15,10 +15,17 @@ dashboard.txt
 # Local discovery / deploy helpers (not part of the app)
 _discover.py
 _deploy.py
+_inspect_server.py
+_setup_env_secrets.py
+_i*.txt
+_deploy_out.txt
 
 # Bug/feature reports — personal notes, mirrored from /opt/dashboard/reports/
 # on the server via _pull_reports.py. Don't push these to the public repo.
 reports/
+
+# Local planning / audit notes (not part of the app)
+plans_md/
 
 # Editor
 .vscode/*

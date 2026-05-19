@@ -7,11 +7,25 @@ Runs on port 3001.
   GET  /api/news         → fetch NRK top stories RSS and return JSON
 """
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
-import json, os, re, time
+import fcntl, json, os, re, tempfile, time
 try:
     from urllib.request import urlopen, Request
 except ImportError:
     from urllib2 import urlopen, Request
+
+
+def _require_env(name):
+    """Server-side service credentials live in /etc/dashboard.env (loaded
+    by systemd via EnvironmentFile). Crashing on startup if one is missing
+    is better than silently 500-ing every request that needs it."""
+    val = os.environ.get(name)
+    if not val:
+        raise SystemExit(
+            'ERROR: required environment variable {} is missing. '
+            'Set it in /etc/dashboard.env (loaded by todo-api.service).'.format(name)
+        )
+    return val
+
 
 DATA_FILE    = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'todos.json')
 PLAN_FILE    = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'plan.json')
@@ -21,12 +35,12 @@ WISH_CACHE   = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'wishlis
 VG_HOME      = 'https://www.vg.no/'
 VG_RSS       = 'https://www.vg.no/rss/feed/'
 HEADERS      = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-STEAM_API_KEY  = '1C38BB7BFD6456B00945249B9160CAEF'
-ITAD_API_KEY   = 'bbb182d083a1e9a41190660669883e05d133cca2'
-STEAM_ID       = '76561198308660639'
+STEAM_API_KEY  = _require_env('STEAM_API_KEY')
+ITAD_API_KEY   = _require_env('ITAD_API_KEY')
+STEAM_ID       = _require_env('STEAM_ID')
 WISH_TTL       = 3600  # cache for 1 hour
 
-CANVAS_TOKEN   = '10900~CW8nBUFemJXYTrH8wCQ44LRcLPxUL7KJH8KUZGYNnYfzwzTBZYw6QuQzYJHe4rVh'
+CANVAS_TOKEN   = _require_env('CANVAS_TOKEN')
 CANVAS_BASE    = 'https://hiof.instructure.com/api/v1'
 SKOLE_CACHE    = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'skole_cache.json')
 SKOLE_TTL      = 1800  # 30 minutes
@@ -580,16 +594,24 @@ def _format_report_entry(report):
 def _append_report(report):
     """Append `report` to /opt/dashboard/reports/{type}s.md. Creates
     the directory and seeds the file header on first write. Returns
-    a stable short path for the success response."""
+    a stable short path for the success response.
+
+    Holds an exclusive fcntl lock around the entire read-check-write
+    sequence so two simultaneous reports (or a report racing the very
+    first write that seeds the header) can't interleave or clobber."""
     if not os.path.isdir(REPORTS_DIR):
         os.makedirs(REPORTS_DIR, exist_ok=True)
     fname = '{}s.md'.format(report['type'])
     fpath = os.path.join(REPORTS_DIR, fname)
-    if not os.path.exists(fpath):
-        with open(fpath, 'w', encoding='utf-8') as f:
-            f.write(_report_file_header(report['type']))
-    with open(fpath, 'a', encoding='utf-8') as f:
-        f.write(_format_report_entry(report))
+    with open(fpath, 'a+', encoding='utf-8') as f:
+        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+        try:
+            f.seek(0)
+            if not f.read(1):
+                f.write(_report_file_header(report['type']))
+            f.write(_format_report_entry(report))
+        finally:
+            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
     return 'reports/' + fname
 
 
@@ -757,8 +779,28 @@ class Handler(BaseHTTPRequestHandler):
         try:
             length = int(self.headers.get('Content-Length', 0))
             data = json.loads(self.rfile.read(length))
-            with open(file_path, 'w') as f:
-                json.dump(data, f, indent=2)
+            # Atomic write: serialize to a temp file in the same directory,
+            # fsync, then rename over the target. If the process dies mid-
+            # write the target keeps its previous (valid) contents instead
+            # of getting truncated. See: man 2 rename — same-FS rename is
+            # atomic on POSIX.
+            fd, tmp_path = tempfile.mkstemp(
+                prefix='.' + os.path.basename(file_path) + '.',
+                suffix='.tmp',
+                dir=os.path.dirname(file_path),
+            )
+            try:
+                with os.fdopen(fd, 'w') as f:
+                    json.dump(data, f, indent=2)
+                    f.flush()
+                    os.fsync(f.fileno())
+                os.replace(tmp_path, file_path)
+            except Exception:
+                try:
+                    os.unlink(tmp_path)
+                except OSError:
+                    pass
+                raise
             body = b'{"ok":true}'
         except Exception as e:
             body = json.dumps({'ok': False, 'error': str(e)}).encode()
