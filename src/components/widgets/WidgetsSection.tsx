@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import {
   DndContext,
@@ -56,7 +56,8 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
   const [popupKind, setPopupKind] = useState<TimerInstance['kind'] | null>(null);
 
   const hasWidgets = widgets.length > 0;
-  const habitMap = new Map(habits.map((h) => [h.id, h]));
+  // Cached lookup so renderWidget doesn't rebuild the Map on every render.
+  const habitMap = useMemo(() => new Map(habits.map((h) => [h.id, h])), [habits]);
 
   // 5px distance threshold so normal clicks on day cells / context menus aren't
   // mistaken for the start of a drag.
