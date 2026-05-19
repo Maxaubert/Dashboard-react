@@ -12,6 +12,8 @@ try:
     from urllib.request import urlopen, Request
 except ImportError:
     from urllib2 import urlopen, Request
+from server import db as server_db
+from server import auth as server_auth
 
 
 def _require_env(name):
@@ -616,6 +618,41 @@ def _append_report(report):
 
 
 class Handler(BaseHTTPRequestHandler):
+    @property
+    def current_user(self):
+        """Lazily resolve the current user from the session cookie.
+        Cached per-request via _current_user_cache."""
+        if hasattr(self, '_current_user_cache'):
+            return self._current_user_cache
+        cookie = self.headers.get('Cookie', '')
+        sid = server_auth.parse_session_cookie(cookie)
+        if sid is None:
+            self._current_user_cache = None
+        else:
+            try:
+                self._current_user_cache = server_auth.load_session(sid)
+            except Exception:
+                self._current_user_cache = None
+        return self._current_user_cache
+
+    def require_auth(self):
+        """Helper: return current_user or send 401 and return None.
+        Endpoints that need auth start with:
+            user = self.require_auth()
+            if user is None: return
+        """
+        user = self.current_user
+        if user is None:
+            self.send_response(401)
+            self._cors()
+            self.send_header('Content-Type', 'application/json')
+            body = b'{"error":"not authenticated"}'
+            self.send_header('Content-Length', str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return None
+        return user
+
     def _cors(self):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
@@ -815,10 +852,14 @@ class Handler(BaseHTTPRequestHandler):
         pass  # silence request logs
 
 if __name__ == '__main__':
+    db_url = os.environ.get('DASHBOARD_DB_URL')
+    if not db_url:
+        raise SystemExit('ERROR: DASHBOARD_DB_URL is missing from /etc/dashboard.env')
+    server_db.init_pool(db_url, min_size=2, max_size=10)
     # ThreadingHTTPServer (not HTTPServer): the single-threaded variant
     # could wedge if a handler blocked or a client disconnected mid-write,
     # leaving the process "active" but no longer accepting connections.
     server = ThreadingHTTPServer(('0.0.0.0', 3001), Handler)
     server.daemon_threads = True
-    print('Dashboard API running on port 3001')
+    print('Dashboard API running on port 3001 (DB pool active)')
     server.serve_forever()
