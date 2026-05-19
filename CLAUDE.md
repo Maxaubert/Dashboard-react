@@ -41,6 +41,17 @@ When a page passes ~400 lines, split it the way `TodoPage`, `LinksPage`, `HomePa
 
 **YOU MUST** run `npm run typecheck` before committing TS changes. **YOU MUST** run `npm test` before pushing.
 
+## Database (Phase 1 onward of multi-user-backend)
+
+- **Engine**: PostgreSQL 16 on the same VPS, bound to `localhost:5432` only. Installed via `_setup_postgres.py` (gitignored, one-shot).
+- **Connection string**: `DASHBOARD_DB_URL` in `/etc/dashboard.env` (mode 600). Format: `postgresql://dashboard:<pw>@localhost:5432/dashboard`.
+- **Python client**: `psycopg[binary,pool]` 3.x. Initialize once at startup via `server.db.init_pool(url)`. Borrow connections with `with get_pool().connection() as conn:`. Helpers in `server/db.py`: `query()` for dict-row reads, `execute()` for one-shot writes (commits + returns rowcount), `tx()` for multi-statement transactions (rollback on exception, commit on clean exit).
+- **Schema migrations**: yoyo-migrations 8.x. Files live in `server/migrations/NNN_<descriptive>.sql` (zero-padded sequence). Apply via `python _apply_migrations.py` (gitignored) — uploads the dir to the VPS via SFTP, installs yoyo on the VPS via pip if needed, then runs `yoyo apply --batch` server-side. yoyo tracks applied migrations in `_yoyo_log`.
+- **YOU MUST** add new migrations as a NEW numbered file. **Never edit an applied migration** — yoyo refuses to re-apply or skip a changed file.
+- **Backups**: daily `pg_dump` via `/usr/local/bin/dashboard-pg-backup.sh` (gzipped, retains 14 days). Cron entry: `5 4 * * *`. Set up once via `_setup_backup_cron.py` (gitignored).
+- **Tests**: `tests/server/` uses `pytest-postgresql`. On Linux it spawns its own postmaster; on Windows it connects to a pre-running Postgres on port 5433 (see `tests/server/conftest.py` for the platform split). Run with `npm run test:server` or `pytest tests/server -v`.
+- **Dep gotchas worth knowing**: `paramiko<5` is pinned because `sshtunnel 0.4.0` references `paramiko.DSSKey` (removed in 5.0). `setuptools<81` because yoyo 8.2.0 imports `pkg_resources` (removed in 81+). `psycopg2-binary` is a build-time-only dep for yoyo (app code uses psycopg3). On Windows the migration script runs yoyo on the VPS instead of locally because cp314 wheels for psycopg2-binary are flaky.
+
 ## Server-side conventions
 
 - **Secrets**: load via `_require_env('NAME')` at module top. Values live in `/etc/dashboard.env` on the server (mode 600, root). **Never hardcode keys in source — the repo is public.**
