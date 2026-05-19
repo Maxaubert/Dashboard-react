@@ -27,8 +27,11 @@ _deploy_out.txt
 # on the server via _pull_reports.py. Don't push these to the public repo.
 reports/
 
-# Local planning / audit notes (not part of the app)
-plans_md/
+# Local planning / audit notes (not part of the app).
+# Ignore contents but keep the directory tracked, and keep TEMPLATE.md tracked
+# so future-Claude can find the plan structure convention.
+plans_md/*
+!plans_md/TEMPLATE.md
 
 # Editor
 .vscode/*
