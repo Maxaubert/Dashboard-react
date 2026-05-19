@@ -28,7 +28,7 @@ import { useHome, useMutateHome } from '@/hooks/useHome';
 import { useHomeMigration } from '@/hooks/useHomeMigration';
 import { searchLocation, describeWeather } from '@/api/weather';
 import type { NewsSource } from '@/api/news';
-import { LinkIconRender } from './LinksPage';
+import { LinkIconRender } from '@/components/links/LinkCard';
 import type { LinkItem, NewsItem, PlanItem } from '@/api/types';
 import { cn } from '@/lib/cn';
 import { WidgetsSection } from '@/components/widgets/WidgetsSection';
