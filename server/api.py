@@ -6,7 +6,7 @@ Runs on port 3001.
   POST /api/todos        → write todos.json
   GET  /api/news         → fetch NRK top stories RSS and return JSON
 """
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 import json, os, re, time
 try:
     from urllib.request import urlopen, Request
@@ -773,6 +773,10 @@ class Handler(BaseHTTPRequestHandler):
         pass  # silence request logs
 
 if __name__ == '__main__':
-    server = HTTPServer(('0.0.0.0', 3001), Handler)
+    # ThreadingHTTPServer (not HTTPServer): the single-threaded variant
+    # could wedge if a handler blocked or a client disconnected mid-write,
+    # leaving the process "active" but no longer accepting connections.
+    server = ThreadingHTTPServer(('0.0.0.0', 3001), Handler)
+    server.daemon_threads = True
     print('Dashboard API running on port 3001')
     server.serve_forever()
