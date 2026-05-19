@@ -686,8 +686,8 @@ class Handler(BaseHTTPRequestHandler):
 
         if not (code and email and password and display_name):
             return self._json(400, {'error': 'missing fields'})
-        if len(password) < 8:
-            return self._json(400, {'error': 'password must be at least 8 characters'})
+        if len(password) < 10:
+            return self._json(400, {'error': 'password must be at least 10 characters'})
         if '@' not in email:
             return self._json(400, {'error': 'invalid email'})
 

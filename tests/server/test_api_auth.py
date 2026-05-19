@@ -90,12 +90,12 @@ def test_signup_consumed_invite_returns_401(api_server):
     # First signup consumes the code
     _post(api_server + '/api/auth/signup', {
         'code': 'one-shot', 'email': 'a@b.co',
-        'password': 'pw123long', 'display_name': 'A',
+        'password': 'pw1234567890', 'display_name': 'A',
     })
     # Second attempt with same code fails
     status, _, _ = _post(api_server + '/api/auth/signup', {
         'code': 'one-shot', 'email': 'b@b.co',
-        'password': 'pw123long', 'display_name': 'B',
+        'password': 'pw1234567890', 'display_name': 'B',
     })
     assert status == 401
 
@@ -105,11 +105,11 @@ def test_signup_duplicate_email_returns_409(api_server):
     _seed_invite('inv2')
     _post(api_server + '/api/auth/signup', {
         'code': 'inv1', 'email': 'dup@b.co',
-        'password': 'pw123long', 'display_name': 'A',
+        'password': 'pw1234567890', 'display_name': 'A',
     })
     status, _, _ = _post(api_server + '/api/auth/signup', {
         'code': 'inv2', 'email': 'dup@b.co',
-        'password': 'pw123long', 'display_name': 'B',
+        'password': 'pw1234567890', 'display_name': 'B',
     })
     assert status == 409
 
