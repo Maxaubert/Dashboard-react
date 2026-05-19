@@ -1,7 +1,18 @@
 psycopg[binary,pool]==3.3.4
 yoyo-migrations==8.2.0
+# yoyo 8.2.0 imports pkg_resources. setuptools 81+ removed pkg_resources,
+# and Python 3.12+ no longer bundles setuptools at all. Pin to the
+# last 80.x release which still ships pkg_resources.
+setuptools>=70,<81
+# yoyo defaults to psycopg2 for postgresql:// URIs. App code uses
+# psycopg3 (above); psycopg2-binary is a build-time-only dep for yoyo.
+psycopg2-binary==2.9.10
 argon2-cffi==23.1.0
 cryptography==42.0.8
 sshtunnel==0.4.0
+# Pin paramiko < 5.0: sshtunnel 0.4.0 references paramiko.DSSKey, which
+# was removed in paramiko 5.0. Until sshtunnel ships a release dropping
+# the DSSKey reference, hold paramiko at 3.x.
+paramiko==3.5.1
 pytest==8.3.4
 pytest-postgresql==6.1.1
