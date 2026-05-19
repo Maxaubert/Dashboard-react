@@ -27,8 +27,17 @@ _deploy_out.txt
 # on the server via _pull_reports.py. Don't push these to the public repo.
 reports/
 
-# Local planning / audit notes (not part of the app)
-plans_md/
+# Local planning / audit notes (not part of the app).
+# Ignore contents by default, but track files that follow a clear
+# convention so future sessions can find them:
+#   - TEMPLATE.md   — plan structure
+#   - *-design.md   — approved design specs (output of brainstorming)
+#   - *-spec.md     — any other shareable spec
+# Personal audit notes that don't match these patterns stay local.
+plans_md/*
+!plans_md/TEMPLATE.md
+!plans_md/*-design.md
+!plans_md/*-spec.md
 
 # Editor
 .vscode/*
