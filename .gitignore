@@ -21,6 +21,7 @@ _discover.py
 _deploy.py
 _inspect_server.py
 _setup_env_secrets.py
+_setup_postgres.py
 _i*.txt
 _deploy_out.txt
 
