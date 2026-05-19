@@ -20,6 +20,9 @@ _setup_env_secrets.py
 _i*.txt
 _deploy_out.txt
 
+# Playwright MCP captures (snapshots/screenshots)
+.playwright-mcp/
+
 # Bug/feature reports — personal notes, mirrored from /opt/dashboard/reports/
 # on the server via _pull_reports.py. Don't push these to the public repo.
 reports/
