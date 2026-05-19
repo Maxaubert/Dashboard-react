@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Pin, PinOff } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -13,7 +14,7 @@ export interface TodoItemProps {
   onTogglePin: () => void;
 }
 
-export function TodoItem({ todo, onEdit, onDelete, onToggleDone, onTogglePin }: TodoItemProps) {
+function TodoItemImpl({ todo, onEdit, onDelete, onToggleDone, onTogglePin }: TodoItemProps) {
   const deadlineInfo = todo.deadline ? formatDeadline(todo.deadline) : null;
 
   return (
@@ -92,6 +93,26 @@ export function TodoItem({ todo, onEdit, onDelete, onToggleDone, onTogglePin }: 
     </div>
   );
 }
+
+/**
+ * Memoized so drag-induced parent re-renders (every dnd-kit tick mirrors
+ * to local state in TodoListDnd / ColumnsDnd) don't cascade through every
+ * row. Handler props are intentionally ignored in the comparator: callers
+ * pass inline arrows that close over (id) and are equivalent for the same
+ * id — old and new handlers do the same thing.
+ */
+export const TodoItem = memo(TodoItemImpl, (prev, next) => {
+  const a = prev.todo;
+  const b = next.todo;
+  return (
+    a.id === b.id &&
+    a.text === b.text &&
+    a.priority === b.priority &&
+    a.done === b.done &&
+    (a.pinned ?? false) === (b.pinned ?? false) &&
+    (a.deadline ?? null) === (b.deadline ?? null)
+  );
+});
 
 /** Sortable wrapper used inside SortableContext. The DragOverlay copy
  *  uses TodoItem directly so the floating row isn't draggable itself. */
