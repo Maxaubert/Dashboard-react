@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { type PomodoroTimer } from '@/context/TimerContext';
-import { formatHMS } from '@/hooks/useTimer';
+import { formatHMS } from '@/lib/timerUtils';
 import { WidgetShell } from '../WidgetShell';
 import { TimerEditDialog } from './TimerEditDialog';
 

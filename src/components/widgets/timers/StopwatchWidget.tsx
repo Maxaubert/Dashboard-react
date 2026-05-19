@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { type StopwatchTimer } from '@/context/TimerContext';
-import { formatStopwatch } from '@/hooks/useTimer';
+import { formatStopwatch } from '@/lib/timerUtils';
 import { WidgetShell } from '../WidgetShell';
 import { TimerEditDialog } from './TimerEditDialog';
 

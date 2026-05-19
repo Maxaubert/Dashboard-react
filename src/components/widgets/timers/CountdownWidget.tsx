@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Timer } from 'lucide-react';
 import { type CountdownTimer } from '@/context/TimerContext';
-import { formatHMS } from '@/hooks/useTimer';
+import { formatHMS } from '@/lib/timerUtils';
 import { WidgetShell } from '../WidgetShell';
 import { TimerEditDialog } from './TimerEditDialog';
 
