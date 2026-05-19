@@ -1,37 +1,50 @@
 """Shared pytest fixtures for server-side tests.
 
-Uses pytest-postgresql to connect to an ephemeral Postgres for each test session.
-The fixture `db_url` returns a connection string; `db_conn` returns a live
-psycopg connection that's rolled back after each test.
+Uses pytest-postgresql to back tests with an ephemeral Postgres. The
+fixture `db_url` returns a connection string; `db_conn` returns a live
+psycopg connection scoped to the test.
 
---- Windows note ---
-pytest-postgresql's proc fixture (which spawns its own pg_ctl) strips the
-system PATH when calling initdb on Windows, so pg_ctl.exe cannot load its
-DLLs (exit 0xC0000005).  Instead we use the `noproc` fixture that connects
-to a pre-running Postgres.  Start one with:
+Platform-dependent fixture selection:
+- **Linux/macOS**: the `proc` fixture works fine — pytest-postgresql
+  spawns its own postmaster inheriting the system PATH, so initdb +
+  pg_ctl find their binaries naturally.
+- **Windows**: the `proc` fixture strips PATH when spawning initdb, so
+  pg_ctl.exe fails to load its DLLs (exit 0xC0000005). We fall back to
+  the `noproc` fixture which connects to a pre-running Postgres.
+
+For Windows, install Postgres 16 (`winget install PostgreSQL.PostgreSQL.16`)
+and start a test instance on the configured port:
 
     "C:\\Program Files\\PostgreSQL\\16\\bin\\pg_ctl.exe" \
-        -D C:\\Users\\Admin\\AppData\\Local\\Temp\\pg_test_data \
-        -l C:\\Users\\Admin\\AppData\\Local\\Temp\\pg_test_data\\logfile.log \
+        -D C:\\path\\to\\test\\data\\dir \
+        -l logfile.log \
         -o "-p 5433" start
 
-On Linux/CI the proc fixture works fine; switch back by reverting these two
-factory lines to postgresql_proc(port=None) + postgresql('postgresql_proc').
+Override the test-instance host/port via env vars: TEST_PG_HOST (default
+localhost), TEST_PG_PORT (default 5433), TEST_PG_USER (default postgres),
+TEST_PG_DBNAME (default tests).
 """
+import os
+import sys
+
 import pytest
 import psycopg
 from pytest_postgresql import factories
 
-# noproc: connect to a pre-running Postgres instead of spawning one.
-# On Windows Postgres 16 must already be running on 5433 (see note above).
-# On Linux/CI override PGPORT/PGHOST env vars or swap to the proc fixture.
-postgresql_noproc = factories.postgresql_noproc(
-    host="localhost",
-    port=5433,
-    user="postgres",
-    dbname="tests",
-)
-postgresql = factories.postgresql('postgresql_noproc')
+if sys.platform == 'win32':
+    # noproc: connect to a pre-running Postgres. Required on Windows
+    # because the proc fixture's PATH stripping breaks initdb.exe.
+    postgresql_noproc = factories.postgresql_noproc(
+        host=os.environ.get('TEST_PG_HOST', 'localhost'),
+        port=int(os.environ.get('TEST_PG_PORT', '5433')),
+        user=os.environ.get('TEST_PG_USER', 'postgres'),
+        dbname=os.environ.get('TEST_PG_DBNAME', 'tests'),
+    )
+    postgresql = factories.postgresql('postgresql_noproc')
+else:
+    # proc: spawn an ephemeral Postgres per session. Works on Linux/CI.
+    postgresql_proc = factories.postgresql_proc(port=None, unixsocketdir='/tmp')
+    postgresql = factories.postgresql('postgresql_proc')
 
 
 @pytest.fixture
