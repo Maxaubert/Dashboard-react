@@ -47,7 +47,6 @@ reports/
 plans_md/*
 !plans_md/TEMPLATE.md
 !plans_md/*-design.md
-!plans_md/*-plan.md
 !plans_md/*-spec.md
 !plans_md/*-plan.md
 
