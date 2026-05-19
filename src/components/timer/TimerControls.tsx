@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Play, Pause, RotateCcw, Flag } from 'lucide-react';
-import { formatHMS, parseTimeString } from '@/hooks/useTimer';
+import { formatHMS, parseTimeString } from '@/lib/timerUtils';
 
 /**
  * Live-format a duration input as the user types. Strips non-digits and

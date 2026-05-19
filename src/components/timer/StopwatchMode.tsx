@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTimers } from '@/context/TimerContext';
-import { formatStopwatch } from '@/hooks/useTimer';
+import { formatStopwatch } from '@/lib/timerUtils';
 import { TimerRing } from './TimerRing';
 import { StopwatchControls } from './TimerControls';
 

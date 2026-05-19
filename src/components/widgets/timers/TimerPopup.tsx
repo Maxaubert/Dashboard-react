@@ -5,7 +5,7 @@ import { X, Play, Pause, RotateCcw } from 'lucide-react';
 import { useTimers, type TimerInstance, type AlarmTimer } from '@/context/TimerContext';
 import { TimerRing } from '@/components/timer/TimerRing';
 import { CountdownControls, PomodoroControls, EditableTime } from '@/components/timer/TimerControls';
-import { formatStopwatch } from '@/hooks/useTimer';
+import { formatStopwatch } from '@/lib/timerUtils';
 
 interface TimerPopupProps {
   open: boolean;

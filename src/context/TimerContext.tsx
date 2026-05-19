@@ -11,7 +11,7 @@ import {
   playBreakEndAlarm,
   startLoopingAlarm,
   stopLoopingAlarm,
-} from '@/hooks/useTimer';
+} from '@/lib/timerUtils';
 
 /* ── Types ──────────────────────────────────────────────────────────── */
 

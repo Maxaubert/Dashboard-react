@@ -1,5 +1,5 @@
 import * as Dialog from '@radix-ui/react-dialog';
-import { LinksLibrary } from '@/pages/LinksPage';
+import { LinksLibrary } from '@/components/links/LinksLibrary';
 
 /**
  * Sidebar-triggered popup containing the full Lenker library.

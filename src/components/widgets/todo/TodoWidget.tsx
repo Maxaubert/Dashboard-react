@@ -5,7 +5,8 @@ import { Modal } from '@/components/ui';
 import { useSaveTodos, useTodos } from '@/hooks/useTodos';
 import { useWidgets } from '@/hooks/useWidgets';
 import { WidgetShell } from '../WidgetShell';
-import { TodoModal, formatDeadline } from '@/pages/TodoPage';
+import { TodoModal } from '@/components/todo/TodoModal';
+import { formatDeadline } from '@/lib/todo';
 import { playTodoCompleteSound } from '@/lib/sounds';
 import type { Priority, Todo } from '@/api/types';
 
