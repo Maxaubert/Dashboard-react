@@ -37,10 +37,18 @@ _setup_*_out.txt
 reports/
 
 # Local planning / audit notes (not part of the app).
-# Ignore contents but keep the directory tracked, and keep TEMPLATE.md tracked
-# so future-Claude can find the plan structure convention.
+# Ignore contents by default, but track files that follow a clear
+# convention so future sessions can find them:
+#   - TEMPLATE.md   — plan structure
+#   - *-design.md   — approved design specs (output of brainstorming)
+#   - *-spec.md     — any other shareable spec
+#   - *-plan.md     — approved implementation plans (output of writing-plans)
+# Personal audit notes that don't match these patterns stay local.
 plans_md/*
 !plans_md/TEMPLATE.md
+!plans_md/*-design.md
+!plans_md/*-plan.md
+!plans_md/*-spec.md
 
 # Editor
 .vscode/*
