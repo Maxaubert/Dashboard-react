@@ -33,11 +33,13 @@ reports/
 #   - TEMPLATE.md   — plan structure
 #   - *-design.md   — approved design specs (output of brainstorming)
 #   - *-spec.md     — any other shareable spec
+#   - *-plan.md     — approved implementation plans (output of writing-plans)
 # Personal audit notes that don't match these patterns stay local.
 plans_md/*
 !plans_md/TEMPLATE.md
 !plans_md/*-design.md
 !plans_md/*-spec.md
+!plans_md/*-plan.md
 
 # Editor
 .vscode/*
