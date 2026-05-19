@@ -196,3 +196,44 @@ def test_logout_clears_session(api_server):
     # /api/auth/me should now return 401 with the same cookie
     status, _, _ = _get(api_server + '/api/auth/me', cookies=cookie)
     assert status == 401
+
+
+# ---- Admin invite tests ----
+
+def test_admin_invites_creates_codes(api_server):
+    # First user is user_id = 1 -> admin
+    cookie = _signup_and_get_cookie(api_server, email='admin@b.co', code='inv-admin')
+    status, _, body = _post(
+        api_server + '/api/admin/invites',
+        {'count': 3},
+        cookies=cookie,
+    )
+    assert status == 200, body
+    payload = json.loads(body)
+    assert len(payload['codes']) == 3
+    # Each code should be a non-empty string
+    for code in payload['codes']:
+        assert isinstance(code, str) and len(code) >= 8
+
+
+def test_admin_invites_requires_admin(api_server):
+    # First user (admin) signup
+    _signup_and_get_cookie(api_server, email='admin2@b.co', code='inv-a2')
+    # Second user (regular) - user_id will be 2, not admin
+    _seed_invite('inv-reg')
+    _, headers, _ = _post(api_server + '/api/auth/signup', {
+        'code': 'inv-reg', 'email': 'regular@b.co',
+        'password': 'pw1234567890', 'display_name': 'R',
+    })
+    regular_cookie = headers['Set-Cookie'].split(';')[0]
+    status, _, _ = _post(
+        api_server + '/api/admin/invites',
+        {'count': 1},
+        cookies=regular_cookie,
+    )
+    assert status == 403
+
+
+def test_admin_invites_anonymous_returns_401(api_server):
+    status, _, _ = _post(api_server + '/api/admin/invites', {'count': 1})
+    assert status == 401

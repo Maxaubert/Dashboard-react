@@ -793,6 +793,33 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(401, {'error': 'not authenticated'})
         return self._json(200, {'user': user})
 
+    def _handle_admin_invites(self):
+        user = self.require_auth()
+        if user is None:
+            return
+        if user['id'] != 1:
+            return self._json(403, {'error': 'admin only'})
+
+        try:
+            length = int(self.headers.get('Content-Length', 0))
+            body = json.loads(self.rfile.read(length))
+        except Exception:
+            body = {}
+
+        count = max(1, min(50, int(body.get('count', 1))))
+        codes = []
+        with server_db.tx() as conn:
+            with conn.cursor() as cur:
+                for _ in range(count):
+                    code = server_auth.generate_invite_code()
+                    cur.execute(
+                        "INSERT INTO invite_codes (code, created_by_id) "
+                        "VALUES (%s, %s)",
+                        (code, user['id']),
+                    )
+                    codes.append(code)
+        return self._json(200, {'codes': codes})
+
     def _json(self, status, payload, *, extra_headers=()):
         """Send a JSON response. Used by all auth endpoints."""
         body = json.dumps(payload).encode()
@@ -937,6 +964,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._handle_login()
         if self.path == '/api/auth/logout':
             return self._handle_logout()
+        if self.path == '/api/admin/invites':
+            return self._handle_admin_invites()
 
         # /api/report — appends a markdown entry to /opt/dashboard/reports/{type}s.md.
         # Handled separately because it does NOT overwrite a JSON file.
