@@ -121,3 +121,78 @@ def test_signup_short_password_returns_400(api_server):
         'password': 'short', 'display_name': 'A',
     })
     assert status == 400
+
+
+def _signup_and_get_cookie(api_server, email='a@b.co', code='inv'):
+    """Helper: seed an invite, signup, return the session cookie value."""
+    _seed_invite(code)
+    _, headers, _ = _post(api_server + '/api/auth/signup', {
+        'code': code, 'email': email,
+        'password': 'pw1234567890', 'display_name': 'A',
+    })
+    raw = headers['Set-Cookie']
+    # 'session=abc; HttpOnly; ...' -> extract 'session=abc'
+    return raw.split(';')[0]
+
+
+def _get(url, cookies=None):
+    req = urllib.request.Request(url, method='GET')
+    if cookies:
+        req.add_header('Cookie', cookies)
+    try:
+        with urllib.request.urlopen(req, timeout=5) as r:
+            return r.status, dict(r.headers), r.read().decode()
+    except urllib.error.HTTPError as e:
+        return e.code, dict(e.headers), e.read().decode()
+
+
+# ---- Login tests ----
+
+def test_login_with_correct_password_returns_cookie(api_server):
+    _signup_and_get_cookie(api_server, email='login@b.co', code='inv-login')
+    status, headers, body = _post(api_server + '/api/auth/login', {
+        'email': 'login@b.co', 'password': 'pw1234567890',
+    })
+    assert status == 200, body
+    assert 'Set-Cookie' in headers
+
+
+def test_login_with_wrong_password_returns_401(api_server):
+    _signup_and_get_cookie(api_server, email='login2@b.co', code='inv-l2')
+    status, _, _ = _post(api_server + '/api/auth/login', {
+        'email': 'login2@b.co', 'password': 'wrong-password-here',
+    })
+    assert status == 401
+
+
+def test_login_with_unknown_email_returns_401(api_server):
+    status, _, _ = _post(api_server + '/api/auth/login', {
+        'email': 'nobody@nowhere.co', 'password': 'pw1234567890',
+    })
+    assert status == 401
+
+
+# ---- Me tests ----
+
+def test_me_returns_current_user_when_logged_in(api_server):
+    cookie = _signup_and_get_cookie(api_server, email='me@b.co', code='inv-me')
+    status, _, body = _get(api_server + '/api/auth/me', cookies=cookie)
+    assert status == 200
+    payload = json.loads(body)
+    assert payload['user']['email'] == 'me@b.co'
+
+
+def test_me_returns_401_when_anonymous(api_server):
+    status, _, _ = _get(api_server + '/api/auth/me')
+    assert status == 401
+
+
+# ---- Logout tests ----
+
+def test_logout_clears_session(api_server):
+    cookie = _signup_and_get_cookie(api_server, email='lo@b.co', code='inv-lo')
+    status, _, _ = _post(api_server + '/api/auth/logout', {}, cookies=cookie)
+    assert status == 204
+    # /api/auth/me should now return 401 with the same cookie
+    status, _, _ = _get(api_server + '/api/auth/me', cookies=cookie)
+    assert status == 401

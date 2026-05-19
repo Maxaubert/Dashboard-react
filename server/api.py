@@ -737,6 +737,62 @@ class Handler(BaseHTTPRequestHandler):
             ('Set-Cookie', server_auth.set_session_cookie_header(sid, ttl_seconds=30 * 24 * 3600))
         ])
 
+    def _handle_login(self):
+        client_ip = self.client_address[0]
+        try:
+            length = int(self.headers.get('Content-Length', 0))
+            body = json.loads(self.rfile.read(length))
+        except Exception:
+            return self._json(400, {'error': 'invalid JSON'})
+
+        email = (body.get('email') or '').strip().lower()
+        password = body.get('password') or ''
+        if not (email and password):
+            return self._json(400, {'error': 'missing fields'})
+
+        rows = server_db.query(
+            "SELECT id, password_hash, email, display_name "
+            "FROM users WHERE email = %s",
+            (email,),
+        )
+        if not rows or not server_auth.verify_password(rows[0]['password_hash'], password):
+            # Only burn a rate-limit slot on actual failure so successful
+            # logins don't penalize the user.
+            if not rate_limit.check('login', client_ip, max_count=5, window_seconds=900):
+                return self._json(429, {'error': 'too many failed login attempts'})
+            return self._json(401, {'error': 'invalid credentials'})
+
+        user = rows[0]
+        sid = server_auth.create_session(
+            user['id'], ttl_seconds=30 * 24 * 3600,
+            user_agent=self.headers.get('User-Agent'),
+        )
+        self._json(200, {
+            'user': {'id': user['id'], 'email': user['email'],
+                     'display_name': user['display_name']}
+        }, extra_headers=[
+            ('Set-Cookie', server_auth.set_session_cookie_header(sid, ttl_seconds=30 * 24 * 3600))
+        ])
+
+    def _handle_logout(self):
+        cookie = self.headers.get('Cookie', '')
+        sid = server_auth.parse_session_cookie(cookie)
+        if sid:
+            try:
+                server_auth.delete_session(sid)
+            except Exception:
+                pass
+        self.send_response(204)
+        self._cors()
+        self.send_header('Set-Cookie', server_auth.clear_session_cookie_header())
+        self.end_headers()
+
+    def _handle_me(self):
+        user = self.current_user
+        if user is None:
+            return self._json(401, {'error': 'not authenticated'})
+        return self._json(200, {'user': user})
+
     def _json(self, status, payload, *, extra_headers=()):
         """Send a JSON response. Used by all auth endpoints."""
         body = json.dumps(payload).encode()
@@ -760,6 +816,8 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
+        if self.path == '/api/auth/me':
+            return self._handle_me()
         if self.path == '/api/todos':
             try:
                 data = json.load(open(DATA_FILE)) if os.path.exists(DATA_FILE) else []
@@ -875,6 +933,10 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if self.path == '/api/auth/signup':
             return self._handle_signup()
+        if self.path == '/api/auth/login':
+            return self._handle_login()
+        if self.path == '/api/auth/logout':
+            return self._handle_logout()
 
         # /api/report — appends a markdown entry to /opt/dashboard/reports/{type}s.md.
         # Handled separately because it does NOT overwrite a JSON file.
