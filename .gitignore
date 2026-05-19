@@ -44,3 +44,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+_dev.log
+
+# TypeScript incremental build cache (regenerated on every build)
+*.tsbuildinfo
