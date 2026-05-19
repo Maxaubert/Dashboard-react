@@ -3,6 +3,10 @@ dist
 dist-ssr
 *.local
 .vite
+.venv/
+__pycache__/
+*.pyc
+*.pyo
 .superpowers/
 .worktrees/
 
