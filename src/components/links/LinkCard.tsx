@@ -9,7 +9,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { getDomain } from '@/lib/linkUtils';
 
 /* ── Link card ───────────────────────────────────────────────────────────── */
-export interface LinkCardProps {
+interface LinkCardProps {
   link: LinkItem;
   onEdit: () => void;
   onDelete: () => void;

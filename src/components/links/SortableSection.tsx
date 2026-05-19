@@ -1,6 +1,6 @@
 import type { LinkItem } from '@/api/types';
 import { cn } from '@/lib/cn';
-import { groupLinks } from '@/lib/groupLinks';
+import type { groupLinks } from '@/lib/groupLinks';
 import { SectionHeader } from '@/components/links/SectionHeader';
 import { SortableLinkCard } from '@/components/links/LinkCard';
 import {
