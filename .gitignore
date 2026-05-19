@@ -3,6 +3,10 @@ dist
 dist-ssr
 *.local
 .vite
+.venv/
+__pycache__/
+*.pyc
+*.pyo
 .superpowers/
 .worktrees/
 
@@ -17,8 +21,13 @@ _discover.py
 _deploy.py
 _inspect_server.py
 _setup_env_secrets.py
+_setup_postgres.py
+_apply_migrations.py
+_setup_backup_cron.py
 _i*.txt
+_apply_out.txt
 _deploy_out.txt
+_setup_*_out.txt
 
 # Playwright MCP captures (snapshots/screenshots)
 .playwright-mcp/
