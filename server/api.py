@@ -1172,6 +1172,132 @@ class Handler(BaseHTTPRequestHandler):
                     )
         return self._json(200, {'ok': True})
 
+    def _handle_notes_get(self):
+        """GET /api/notes: list the current user's notes, newest first."""
+        user = self.require_auth()
+        if user is None:
+            return
+        rows = server_db.query(
+            "SELECT id, title, body, "
+            "EXTRACT(EPOCH FROM updated_at) * 1000 AS updated_ms "
+            "FROM notes WHERE user_id = %s "
+            "ORDER BY updated_at DESC, position",
+            (user['id'],),
+        )
+        notes = [
+            {
+                'id': r['id'],
+                'title': r['title'],
+                'body': r['body'],
+                'updatedAt': int(r['updated_ms']) if r['updated_ms'] is not None else None,
+            }
+            for r in rows
+        ]
+        return self._json(200, notes)
+
+    def _handle_notes_post(self):
+        """POST /api/notes: create a single note. Body is a Note object;
+        server assigns id if missing. Matches the original Flask sidecar
+        contract used by src/api/notes.ts."""
+        user = self.require_auth()
+        if user is None:
+            return
+        try:
+            length = int(self.headers.get('Content-Length', 0))
+            payload = json.loads(self.rfile.read(length))
+        except Exception:
+            return self._json(400, {'error': 'invalid JSON'})
+        if not isinstance(payload, dict):
+            return self._json(400, {'error': 'expected an object'})
+        note_id = payload.get('id') or 'note_' + str(int(time.time() * 1000))
+        title = payload.get('title') or ''
+        body = payload.get('body') or ''
+        # The frontend lets the user create empty notes via the "+" button;
+        # don't refuse them. updatedAt is stamped server-side so two clients
+        # creating notes in the same second can't collide on the ordering.
+        rows = server_db.query(
+            "INSERT INTO notes (id, user_id, title, body) "
+            "VALUES (%s, %s, %s, %s) "
+            "ON CONFLICT (id) DO NOTHING "
+            "RETURNING id, title, body, "
+            "EXTRACT(EPOCH FROM updated_at) * 1000 AS updated_ms",
+            (note_id, user['id'], title, body),
+        )
+        if not rows:
+            # id collision; treat as no-op success (legacy Flask
+            # sidecar did the same)
+            existing = server_db.query(
+                "SELECT id, title, body, "
+                "EXTRACT(EPOCH FROM updated_at) * 1000 AS updated_ms "
+                "FROM notes WHERE id = %s AND user_id = %s",
+                (note_id, user['id']),
+            )
+            if existing:
+                r = existing[0]
+                return self._json(201, {
+                    'id': r['id'], 'title': r['title'], 'body': r['body'],
+                    'updatedAt': int(r['updated_ms']) if r['updated_ms'] is not None else None,
+                })
+            return self._json(409, {'error': 'id already exists on another user'})
+        r = rows[0]
+        return self._json(201, {
+            'id': r['id'], 'title': r['title'], 'body': r['body'],
+            'updatedAt': int(r['updated_ms']) if r['updated_ms'] is not None else None,
+        })
+
+    def _handle_notes_put(self, note_id):
+        """PUT /api/notes/<id>: patch fields on a single note. Only the
+        keys present in the request body are updated; id is immutable."""
+        user = self.require_auth()
+        if user is None:
+            return
+        try:
+            length = int(self.headers.get('Content-Length', 0))
+            payload = json.loads(self.rfile.read(length))
+        except Exception:
+            return self._json(400, {'error': 'invalid JSON'})
+        if not isinstance(payload, dict):
+            return self._json(400, {'error': 'expected an object'})
+        # Build the SET clause from whichever subset of fields is patched.
+        # Always bump updated_at on any change.
+        sets = ['updated_at = now()']
+        params = []
+        if 'title' in payload:
+            sets.append('title = %s')
+            params.append(payload['title'] or '')
+        if 'body' in payload:
+            sets.append('body = %s')
+            params.append(payload['body'] or '')
+        params.extend([note_id, user['id']])
+        rows = server_db.query(
+            f"UPDATE notes SET {', '.join(sets)} "
+            "WHERE id = %s AND user_id = %s "
+            "RETURNING id, title, body, "
+            "EXTRACT(EPOCH FROM updated_at) * 1000 AS updated_ms",
+            tuple(params),
+        )
+        if not rows:
+            return self._json(404, {'error': 'not found'})
+        r = rows[0]
+        return self._json(200, {
+            'id': r['id'], 'title': r['title'], 'body': r['body'],
+            'updatedAt': int(r['updated_ms']) if r['updated_ms'] is not None else None,
+        })
+
+    def _handle_notes_delete(self, note_id):
+        """DELETE /api/notes/<id>: remove a single note. Idempotent;
+        404 only if the row exists for someone else."""
+        user = self.require_auth()
+        if user is None:
+            return
+        server_db.execute(
+            "DELETE FROM notes WHERE id = %s AND user_id = %s",
+            (note_id, user['id']),
+        )
+        # Match Flask sidecar contract: always 200 {ok:true} even if
+        # the id wasn't present (frontend often deletes optimistically).
+        return self._json(200, {'ok': True})
+
     def _handle_home_get(self):
         """GET /api/home: returns the current user's home_layout payload
         (a single JSONB blob; the frontend treats it opaquely).
@@ -1228,7 +1354,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _cors(self):
         self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
 
     def do_OPTIONS(self):
@@ -1247,6 +1373,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._handle_links_get()
         if self.path == '/api/home':
             return self._handle_home_get()
+        if self.path == '/api/notes':
+            return self._handle_notes_get()
         if self.path == '/api/skole':
             try:
                 data = fetch_skole()
@@ -1376,6 +1504,24 @@ class Handler(BaseHTTPRequestHandler):
             return self._handle_links_post()
         if self.path == '/api/home':
             return self._handle_home_post()
+        if self.path == '/api/notes':
+            return self._handle_notes_post()
+        self.send_response(404); self._cors(); self.end_headers()
+
+    def do_PUT(self):
+        if self.path.startswith('/api/notes/'):
+            note_id = self.path[len('/api/notes/'):]
+            if not note_id or '/' in note_id:
+                return self._json(404, {'error': 'not found'})
+            return self._handle_notes_put(note_id)
+        self.send_response(404); self._cors(); self.end_headers()
+
+    def do_DELETE(self):
+        if self.path.startswith('/api/notes/'):
+            note_id = self.path[len('/api/notes/'):]
+            if not note_id or '/' in note_id:
+                return self._json(404, {'error': 'not found'})
+            return self._handle_notes_delete(note_id)
         self.send_response(404); self._cors(); self.end_headers()
 
     def log_message(self, fmt, *args):

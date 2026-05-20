@@ -122,6 +122,7 @@ def main():
         ('/api/plan',           401),   # anon, expect 401 (Phase 4)
         ('/api/links',          401),   # anon, expect 401 (Phase 4)
         ('/api/home',           401),   # anon, expect 401 (Phase 4)
+        ('/api/notes',          401),   # anon, expect 401 (Phase 4)
     ]
     for path, want in checks:
         _, sout, _ = client.exec_command(
