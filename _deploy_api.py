@@ -113,24 +113,21 @@ def main():
     print('\nSmoke testing endpoints (direct to api.py on 127.0.0.1:3001):')
     smoke_ok = True
 
-    # Existing endpoints
-    for path in ['/api/todos', '/api/news?source=vg']:
+    # Each tuple: (path, expected HTTP code). Phase 3+ endpoints behind
+    # auth return 401 to anonymous — that's a passing test, not a failure.
+    checks = [
+        ('/api/news?source=vg', 200),
+        ('/api/auth/me',        401),   # anon — expect 401 (Phase 2)
+        ('/api/todos',          401),   # anon — expect 401 (Phase 3)
+    ]
+    for path, want in checks:
         _, sout, _ = client.exec_command(
             f"curl -s -o /dev/null -w '%{{http_code}}' http://127.0.0.1:3001{path}"
         )
         code = sout.read().decode().strip()
-        ok = code == '200'
+        ok = code == str(want)
         smoke_ok = smoke_ok and ok
-        print(f'  {path} -> HTTP {code} {"OK" if ok else "FAIL"}')
-
-    # New Phase 2 auth endpoint: /api/auth/me with no cookie should 401
-    _, sout, _ = client.exec_command(
-        "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3001/api/auth/me"
-    )
-    code = sout.read().decode().strip()
-    ok = code == '401'
-    smoke_ok = smoke_ok and ok
-    print(f'  /api/auth/me (anon) -> HTTP {code} {"OK (expected 401)" if ok else "FAIL"}')
+        print(f'  {path} -> HTTP {code} {"OK" if ok else f"FAIL (expected {want})"}')
 
     client.close()
     print('\nDone.' if smoke_ok else '\nDone with failures — check above.')
