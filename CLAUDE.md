@@ -69,6 +69,15 @@ When a page passes ~400 lines, split it the way `TodoPage`, `LinksPage`, `HomePa
 - **VPS server-side Python deps** (`/usr/lib/python3/...` via `pip install --break-system-packages`): `psycopg[binary,pool]==3.3.4`, `argon2-cffi==23.1.0`, `cryptography==42.0.8`. `_deploy_api.py` uploads source modules but does NOT install Python deps — if a new dep gets added, install it on the VPS manually before deploy.
 - **SSH key auth**: paramiko uses `~/.ssh/dashboard_ed25519` (added to `/root/.ssh/authorized_keys` on the VPS). Password fallback still works if the key is missing.
 
+## Data migration (Phase 3 onward)
+
+- **`/api/todos` is Postgres-backed and requires auth.** GET returns the current user's todos (scoped by `user_id = current_user.id`); POST bulk-upserts the whole list + deletes omitted rows. The JSON file at `/opt/dashboard/www/todos.json` is left in place but no longer read or written by the running service. Phase 7 cleans it up.
+- **Other data endpoints** (`/api/plan`, `/api/links`, `/api/home`, `/api/notes`) **still read/write JSON files** until Phase 4 migrates them.
+- **Frontend cookie**: `src/api/client.ts` uses `credentials: 'include'` so browsers send the session cookie on every `/api/*` call. Without it, every authenticated endpoint would 401.
+- **Pre-Phase-6 cookie workaround** (no login page yet): to use the site authenticated, install your session cookie via DevTools — Application → Cookies → `http://37.27.210.14` → add `session = <value-from-login-response>`. Phase 6 replaces this with a real login page.
+- **Migration script pattern**: `_migrate_to_postgres.py` (gitignored) reads `todos.json` via SFTP, generates a multi-row `INSERT ... ON CONFLICT (id) DO NOTHING`, runs it via stdin-piped `psql` on the VPS. Phase 4 will follow the same shape for plan/links/notes/home. The `_yoyo_log` table is for schema migrations; this is data migration — separate concern, separate scripts.
+- **Client-generated IDs**: `todos.id` is `BIGSERIAL` but the migration preserves the existing JSON-era string IDs (millisecond timestamps) cast to BIGINT. The serial sequence is bumped past `MAX(id)` after the bulk insert so future server-generated IDs don't collide.
+
 ## Server-side conventions
 
 - **Secrets**: load via `_require_env('NAME')` at module top. Values live in `/etc/dashboard.env` on the server (mode 600, root). **Never hardcode keys in source — the repo is public.**
