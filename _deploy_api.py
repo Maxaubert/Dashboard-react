@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
-"""Upload api.py to the VPS and restart the todo-api systemd service."""
+"""Upload server/api.py + the server-module dependencies to the VPS
+and restart todo-api.
+
+Phase 2 of multi-user-backend introduced `server/db.py`, `server/auth.py`,
+`server/crypto.py`, `server/rate_limit.py`, and `server/__init__.py`
+that api.py imports. Previously this script only uploaded api.py, which
+crashed the service on import. The fix: upload the whole module dir.
+
+Auth: SSH key at ~/.ssh/dashboard_ed25519 (preferred). Falls back to
+password from dashboard.txt if the key is missing.
+"""
 import io
 import os
 import sys
@@ -8,23 +18,27 @@ import paramiko
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-# api.py lives in this repo at server/api.py — the React app and the
-# Python API are deployed from the same source tree.
 LOCAL_API = os.path.join(HERE, 'server', 'api.py')
 REMOTE_API = '/opt/dashboard/www/api.py'
 
+# Server-side Python modules api.py imports. Uploaded into
+# /opt/dashboard/www/server/ so `from server import db` etc. resolve.
+SERVER_MODULES = ['__init__.py', 'db.py', 'auth.py', 'crypto.py', 'rate_limit.py']
+LOCAL_SERVER_DIR = os.path.join(HERE, 'server')
+REMOTE_SERVER_DIR = '/opt/dashboard/www/server'
+
+SSH_KEY_PATH = os.path.expanduser('~/.ssh/dashboard_ed25519')
+
 
 def _creds_path():
-    """`dashboard.txt` is gitignored, so it only exists in the main checkout.
-    When this script is run from a worktree, walk up two levels (.worktrees/<branch>/)
-    to reach the main repo's copy; otherwise fall back to next-to-script."""
+    """`dashboard.txt` is gitignored, so it only exists in the main checkout."""
     local = os.path.join(HERE, 'dashboard.txt')
     if os.path.isfile(local):
         return local
     parent = os.path.normpath(os.path.join(HERE, '..', '..', 'dashboard.txt'))
     if os.path.isfile(parent):
         return parent
-    return local  # let load_creds raise the clear FileNotFoundError
+    return local
 
 
 def load_creds():
@@ -38,84 +52,89 @@ def load_creds():
     return creds
 
 
+def connect():
+    """SSH connect — prefer key, fall back to password."""
+    creds = load_creds()
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    if os.path.isfile(SSH_KEY_PATH):
+        client.connect(creds['HOST'], username=creds['USER'],
+                       key_filename=SSH_KEY_PATH, look_for_keys=False,
+                       allow_agent=False, timeout=15)
+    else:
+        client.connect(creds['HOST'], username=creds['USER'],
+                       password=creds['PASS'], timeout=15)
+    return client
+
+
 def main():
     if not os.path.isfile(LOCAL_API):
         print(f'ERROR: {LOCAL_API} not found', file=sys.stderr)
         sys.exit(1)
 
-    creds = load_creds()
-    client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(creds['HOST'], username=creds['USER'], password=creds['PASS'], timeout=15)
-
-    print(f'Uploading {LOCAL_API} -> {REMOTE_API}...')
+    client = connect()
     sftp = client.open_sftp()
+
+    print(f'Uploading server modules to {REMOTE_SERVER_DIR}/...')
+    # Ensure remote server dir exists (probably already does — it has
+    # other unrelated files from previous deploys).
+    _, sout, _ = client.exec_command(f'mkdir -p {REMOTE_SERVER_DIR}')
+    sout.channel.recv_exit_status()
+    for mod in SERVER_MODULES:
+        local = os.path.join(LOCAL_SERVER_DIR, mod)
+        if not os.path.isfile(local):
+            print(f'  WARNING: {local} not present locally, skipping')
+            continue
+        remote = REMOTE_SERVER_DIR + '/' + mod
+        sftp.put(local, remote)
+        print(f'  uploaded server/{mod}')
+
+    print(f'\nUploading {LOCAL_API} -> {REMOTE_API}...')
     sftp.put(LOCAL_API, REMOTE_API)
     sftp.close()
 
-    print('Restarting todo-api service...')
-    _, stdout, stderr = client.exec_command('systemctl restart todo-api && sleep 1 && systemctl is-active todo-api')
+    print('\nRestarting todo-api service...')
+    _, stdout, stderr = client.exec_command(
+        'systemctl restart todo-api && sleep 2 && systemctl is-active todo-api'
+    )
     out = stdout.read().decode().strip()
     err = stderr.read().decode().strip()
     print(f'  service status: {out or "(no output)"}')
     if err:
         print(f'  stderr: {err}')
 
-    print('\nSmoke testing endpoints (direct to api.py on 127.0.0.1:3001 — bypasses nginx basic auth):')
+    if 'active' not in out.lower():
+        print('\nService failed to start. Last 20 journal lines:')
+        _, sout, _ = client.exec_command('journalctl -u todo-api -n 20 --no-pager')
+        print(sout.read().decode('utf-8', errors='replace'))
+        client.close()
+        sys.exit(1)
 
-    # /api/news still works
-    for source in ('vg',):
+    print('\nSmoke testing endpoints (direct to api.py on 127.0.0.1:3001):')
+    smoke_ok = True
+
+    # Existing endpoints
+    for path in ['/api/todos', '/api/news?source=vg']:
         _, sout, _ = client.exec_command(
-            f"curl -s -o /dev/null -w '%{{http_code}}' http://127.0.0.1:3001/api/news?source={source}"
+            f"curl -s -o /dev/null -w '%{{http_code}}' http://127.0.0.1:3001{path}"
         )
         code = sout.read().decode().strip()
-        print(f'  /api/news?source={source} -> HTTP {code}')
+        ok = code == '200'
+        smoke_ok = smoke_ok and ok
+        print(f'  {path} -> HTTP {code} {"OK" if ok else "FAIL"}')
 
-    # New /api/report — POST a sentinel entry, verify it lands in the markdown file.
-    sentinel = '__deploy_smoke_' + os.urandom(4).hex()
-    payload = (
-        '{"type":"bug","title":"' + sentinel + '","body":"deploy smoke",'
-        '"page":"/__deploy"}'
-    )
-    cmd = (
-        "curl -s -o /dev/null -w '%{http_code}' "
-        "-X POST -H 'Content-Type: application/json' "
-        f"--data '{payload}' http://127.0.0.1:3001/api/report"
-    )
-    _, sout, _ = client.exec_command(cmd)
-    code = sout.read().decode().strip()
-    print(f'  POST /api/report (sentinel) -> HTTP {code}')
-
-    # Verify the entry actually hit the file, then strip it back out so
-    # production logs aren't polluted with deploy-smoke noise.
+    # New Phase 2 auth endpoint: /api/auth/me with no cookie should 401
     _, sout, _ = client.exec_command(
-        f"grep -c '{sentinel}' /opt/dashboard/reports/bugs.md 2>/dev/null || echo 0"
+        "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3001/api/auth/me"
     )
-    count = sout.read().decode().strip()
-    print(f'  bugs.md contains sentinel: {count} occurrence(s)')
-
-    if count.isdigit() and int(count) > 0:
-        # Remove the smoke entry — match the heading line and drop until
-        # the next "---" or EOF. Keep this idempotent and bounded.
-        _, sout, serr = client.exec_command(
-            "python3 -c \""
-            "import re; "
-            "p = '/opt/dashboard/reports/bugs.md'; "
-            "s = open(p, encoding='utf-8').read(); "
-            f"pat = re.compile(r'\\n---\\n\\n### [^\\n]*{sentinel}.*?(?=\\n---\\n|$)', re.S); "
-            "out, n = pat.subn('', s); "
-            "open(p, 'w', encoding='utf-8').write(out); "
-            "print(f'cleaned {n} smoke entries')\""
-        )
-        out = sout.read().decode().strip()
-        err = serr.read().decode().strip()
-        if out:
-            print(f'  {out}')
-        if err:
-            print(f'  cleanup stderr: {err}')
+    code = sout.read().decode().strip()
+    ok = code == '401'
+    smoke_ok = smoke_ok and ok
+    print(f'  /api/auth/me (anon) -> HTTP {code} {"OK (expected 401)" if ok else "FAIL"}')
 
     client.close()
-    print('\nDone.')
+    print('\nDone.' if smoke_ok else '\nDone with failures — check above.')
+    sys.exit(0 if smoke_ok else 1)
 
 
 if __name__ == '__main__':

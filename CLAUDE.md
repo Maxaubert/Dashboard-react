@@ -52,6 +52,23 @@ When a page passes ~400 lines, split it the way `TodoPage`, `LinksPage`, `HomePa
 - **Tests**: `tests/server/` uses `pytest-postgresql`. On Linux it spawns its own postmaster; on Windows it connects to a pre-running Postgres on port 5433 (see `tests/server/conftest.py` for the platform split). Run with `npm run test:server` or `pytest tests/server -v`.
 - **Dep gotchas worth knowing**: `paramiko<5` is pinned because `sshtunnel 0.4.0` references `paramiko.DSSKey` (removed in 5.0). `setuptools<81` because yoyo 8.2.0 imports `pkg_resources` (removed in 81+). `psycopg2-binary` is a build-time-only dep for yoyo (app code uses psycopg3). On Windows the migration script runs yoyo on the VPS instead of locally because cp314 wheels for psycopg2-binary are flaky.
 
+## Auth (Phase 2 onward of multi-user-backend)
+
+- **Password hashing**: argon2id via `argon2-cffi`. `server.auth.hash_password` / `server.auth.verify_password`. verify never raises — returns False on any failure (wrong password, malformed hash, etc.).
+- **Sessions**: server-side. `sessions` table maps cookie token → user_id. 30-day TTL. Cookie is `HttpOnly`, `Secure`, `SameSite=Lax`. Expired rows are NOT auto-deleted yet — add a sweep cron when traffic warrants it.
+- **Session middleware**: `Handler.current_user` lazily resolves from the Cookie header (cached per request). `Handler.require_auth()` returns the user or sends 401 + returns None — endpoints needing auth start with `user = self.require_auth(); if user is None: return`.
+- **Admin**: gated by `user_id == 1` (no role column yet). **IMPORTANT**: the very first signup gets id=1 and becomes admin. Don't burn id=1 on test data — if you do, run `ALTER SEQUENCE users_id_seq RESTART WITH 1` after cleanup.
+- **Rate limiting**: in-memory per-IP-per-route (`server/rate_limit.py`). Login: 5 failures / 15 min, increments only on failure so success doesn't penalize you. Signup: 10 / hour. State resets on process restart.
+- **AES-GCM at rest**: `server.crypto.encrypt(plaintext, key)` returns `(iv, ciphertext)`. Key in `/etc/dashboard.env` as `DASHBOARD_ENCRYPTION_KEY` (32 bytes, base64-urlsafe-encoded). Phase 3 uses this for per-user integration tokens.
+- **Endpoints** (Phase 2):
+  - `POST /api/auth/signup` — `{code, email, password, display_name}` → user + Set-Cookie
+  - `POST /api/auth/login` — `{email, password}` → user + Set-Cookie
+  - `POST /api/auth/logout` — clears session, 204
+  - `GET /api/auth/me` — current user, or 401
+  - `POST /api/admin/invites` — admin only, `{count}` → `{codes: [...]}`
+- **VPS server-side Python deps** (`/usr/lib/python3/...` via `pip install --break-system-packages`): `psycopg[binary,pool]==3.3.4`, `argon2-cffi==23.1.0`, `cryptography==42.0.8`. `_deploy_api.py` uploads source modules but does NOT install Python deps — if a new dep gets added, install it on the VPS manually before deploy.
+- **SSH key auth**: paramiko uses `~/.ssh/dashboard_ed25519` (added to `/root/.ssh/authorized_keys` on the VPS). Password fallback still works if the key is missing.
+
 ## Server-side conventions
 
 - **Secrets**: load via `_require_env('NAME')` at module top. Values live in `/etc/dashboard.env` on the server (mode 600, root). **Never hardcode keys in source — the repo is public.**

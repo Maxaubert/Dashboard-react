@@ -7,19 +7,33 @@ Runs on port 3001.
   GET  /api/news         → fetch NRK top stories RSS and return JSON
 """
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
-import fcntl, json, os, re, tempfile, time
+import json, os, re, tempfile, time
+try:
+    import fcntl as _fcntl  # POSIX only; not available on Windows
+except ImportError:
+    _fcntl = None  # type: ignore[assignment]
 try:
     from urllib.request import urlopen, Request
 except ImportError:
     from urllib2 import urlopen, Request
+from server import db as server_db
+from server import auth as server_auth
+from server import rate_limit
 
 
 def _require_env(name):
     """Server-side service credentials live in /etc/dashboard.env (loaded
     by systemd via EnvironmentFile). Crashing on startup if one is missing
-    is better than silently 500-ing every request that needs it."""
+    is better than silently 500-ing every request that needs it.
+
+    During pytest runs ('pytest' in sys.modules) we return an empty string
+    rather than raising SystemExit, so the module can be imported for
+    auth-endpoint tests without needing production API keys."""
+    import sys
     val = os.environ.get(name)
     if not val:
+        if 'pytest' in sys.modules:
+            return ''
         raise SystemExit(
             'ERROR: required environment variable {} is missing. '
             'Set it in /etc/dashboard.env (loaded by todo-api.service).'.format(name)
@@ -604,18 +618,220 @@ def _append_report(report):
     fname = '{}s.md'.format(report['type'])
     fpath = os.path.join(REPORTS_DIR, fname)
     with open(fpath, 'a+', encoding='utf-8') as f:
-        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+        if _fcntl is not None:
+            _fcntl.flock(f.fileno(), _fcntl.LOCK_EX)
         try:
             f.seek(0)
             if not f.read(1):
                 f.write(_report_file_header(report['type']))
             f.write(_format_report_entry(report))
         finally:
-            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+            if _fcntl is not None:
+                _fcntl.flock(f.fileno(), _fcntl.LOCK_UN)
     return 'reports/' + fname
 
 
 class Handler(BaseHTTPRequestHandler):
+    @property
+    def current_user(self):
+        """Lazily resolve the current user from the session cookie.
+        Cached per-request via _current_user_cache."""
+        if hasattr(self, '_current_user_cache'):
+            return self._current_user_cache
+        cookie = self.headers.get('Cookie', '')
+        sid = server_auth.parse_session_cookie(cookie)
+        if sid is None:
+            self._current_user_cache = None
+        else:
+            try:
+                self._current_user_cache = server_auth.load_session(sid)
+            except Exception:
+                self._current_user_cache = None
+        return self._current_user_cache
+
+    def require_auth(self):
+        """Helper: return current_user or send 401 and return None.
+        Endpoints that need auth start with:
+            user = self.require_auth()
+            if user is None: return
+        """
+        user = self.current_user
+        if user is None:
+            self.send_response(401)
+            self._cors()
+            self.send_header('Content-Type', 'application/json')
+            body = b'{"error":"not authenticated"}'
+            self.send_header('Content-Length', str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return None
+        return user
+
+    def _handle_signup(self):
+        """POST /api/auth/signup: { code, email, password, display_name }"""
+        client_ip = self.client_address[0]
+        if not rate_limit.check('signup', client_ip, max_count=10, window_seconds=3600):
+            return self._json(429, {'error': 'too many signup attempts'})
+
+        try:
+            length = int(self.headers.get('Content-Length', 0))
+            body = json.loads(self.rfile.read(length))
+        except Exception:
+            return self._json(400, {'error': 'invalid JSON'})
+
+        code = (body.get('code') or '').strip()
+        email = (body.get('email') or '').strip().lower()
+        password = body.get('password') or ''
+        display_name = (body.get('display_name') or '').strip()
+
+        if not (code and email and password and display_name):
+            return self._json(400, {'error': 'missing fields'})
+        if len(password) < 10:
+            return self._json(400, {'error': 'password must be at least 10 characters'})
+        if '@' not in email:
+            return self._json(400, {'error': 'invalid email'})
+
+        # Validate + consume invite atomically. UPDATE returning 1 row =
+        # we won the race; 0 rows = code was already used or doesn't exist.
+        with server_db.tx() as conn:
+            with conn.cursor() as cur:
+                # Check email isn't taken first (separate query so we can
+                # report 409 vs 401 cleanly)
+                cur.execute("SELECT 1 FROM users WHERE email = %s", (email,))
+                if cur.fetchone() is not None:
+                    return self._json(409, {'error': 'email already registered'})
+
+                # Try to claim the invite
+                cur.execute(
+                    "UPDATE invite_codes SET used_at = now() "
+                    "WHERE code = %s AND used_at IS NULL "
+                    "RETURNING code",
+                    (code,),
+                )
+                if cur.fetchone() is None:
+                    return self._json(401, {'error': 'invalid or used invite code'})
+
+                # Create the user
+                cur.execute(
+                    "INSERT INTO users (email, password_hash, display_name) "
+                    "VALUES (%s, %s, %s) RETURNING id",
+                    (email, server_auth.hash_password(password), display_name),
+                )
+                user_id = cur.fetchone()['id']
+
+                # Stamp the invite with who used it
+                cur.execute(
+                    "UPDATE invite_codes SET used_by_id = %s WHERE code = %s",
+                    (user_id, code),
+                )
+
+        # Create session, set cookie, return user payload.
+        sid = server_auth.create_session(
+            user_id,
+            ttl_seconds=30 * 24 * 3600,
+            user_agent=self.headers.get('User-Agent'),
+        )
+        self._json(200, {
+            'user': {'id': user_id, 'email': email, 'display_name': display_name}
+        }, extra_headers=[
+            ('Set-Cookie', server_auth.set_session_cookie_header(sid, ttl_seconds=30 * 24 * 3600))
+        ])
+
+    def _handle_login(self):
+        client_ip = self.client_address[0]
+        try:
+            length = int(self.headers.get('Content-Length', 0))
+            body = json.loads(self.rfile.read(length))
+        except Exception:
+            return self._json(400, {'error': 'invalid JSON'})
+
+        email = (body.get('email') or '').strip().lower()
+        password = body.get('password') or ''
+        if not (email and password):
+            return self._json(400, {'error': 'missing fields'})
+
+        rows = server_db.query(
+            "SELECT id, password_hash, email, display_name "
+            "FROM users WHERE email = %s",
+            (email,),
+        )
+        if not rows or not server_auth.verify_password(rows[0]['password_hash'], password):
+            # Only burn a rate-limit slot on actual failure so successful
+            # logins don't penalize the user.
+            if not rate_limit.check('login', client_ip, max_count=5, window_seconds=900):
+                return self._json(429, {'error': 'too many failed login attempts'})
+            return self._json(401, {'error': 'invalid credentials'})
+
+        user = rows[0]
+        sid = server_auth.create_session(
+            user['id'], ttl_seconds=30 * 24 * 3600,
+            user_agent=self.headers.get('User-Agent'),
+        )
+        self._json(200, {
+            'user': {'id': user['id'], 'email': user['email'],
+                     'display_name': user['display_name']}
+        }, extra_headers=[
+            ('Set-Cookie', server_auth.set_session_cookie_header(sid, ttl_seconds=30 * 24 * 3600))
+        ])
+
+    def _handle_logout(self):
+        cookie = self.headers.get('Cookie', '')
+        sid = server_auth.parse_session_cookie(cookie)
+        if sid:
+            try:
+                server_auth.delete_session(sid)
+            except Exception:
+                pass
+        self.send_response(204)
+        self._cors()
+        self.send_header('Set-Cookie', server_auth.clear_session_cookie_header())
+        self.end_headers()
+
+    def _handle_me(self):
+        user = self.current_user
+        if user is None:
+            return self._json(401, {'error': 'not authenticated'})
+        return self._json(200, {'user': user})
+
+    def _handle_admin_invites(self):
+        user = self.require_auth()
+        if user is None:
+            return
+        if user['id'] != 1:
+            return self._json(403, {'error': 'admin only'})
+
+        try:
+            length = int(self.headers.get('Content-Length', 0))
+            body = json.loads(self.rfile.read(length))
+        except Exception:
+            body = {}
+
+        count = max(1, min(50, int(body.get('count', 1))))
+        codes = []
+        with server_db.tx() as conn:
+            with conn.cursor() as cur:
+                for _ in range(count):
+                    code = server_auth.generate_invite_code()
+                    cur.execute(
+                        "INSERT INTO invite_codes (code, created_by_id) "
+                        "VALUES (%s, %s)",
+                        (code, user['id']),
+                    )
+                    codes.append(code)
+        return self._json(200, {'codes': codes})
+
+    def _json(self, status, payload, *, extra_headers=()):
+        """Send a JSON response. Used by all auth endpoints."""
+        body = json.dumps(payload).encode()
+        self.send_response(status)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', str(len(body)))
+        for k, v in extra_headers:
+            self.send_header(k, v)
+        self._cors()
+        self.end_headers()
+        self.wfile.write(body)
+
     def _cors(self):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
@@ -627,6 +843,8 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
+        if self.path == '/api/auth/me':
+            return self._handle_me()
         if self.path == '/api/todos':
             try:
                 data = json.load(open(DATA_FILE)) if os.path.exists(DATA_FILE) else []
@@ -740,6 +958,15 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_POST(self):
+        if self.path == '/api/auth/signup':
+            return self._handle_signup()
+        if self.path == '/api/auth/login':
+            return self._handle_login()
+        if self.path == '/api/auth/logout':
+            return self._handle_logout()
+        if self.path == '/api/admin/invites':
+            return self._handle_admin_invites()
+
         # /api/report — appends a markdown entry to /opt/dashboard/reports/{type}s.md.
         # Handled separately because it does NOT overwrite a JSON file.
         if self.path == '/api/report':
@@ -815,10 +1042,14 @@ class Handler(BaseHTTPRequestHandler):
         pass  # silence request logs
 
 if __name__ == '__main__':
+    db_url = os.environ.get('DASHBOARD_DB_URL')
+    if not db_url:
+        raise SystemExit('ERROR: DASHBOARD_DB_URL is missing from /etc/dashboard.env')
+    server_db.init_pool(db_url, min_size=2, max_size=10)
     # ThreadingHTTPServer (not HTTPServer): the single-threaded variant
     # could wedge if a handler blocked or a client disconnected mid-write,
     # leaving the process "active" but no longer accepting connections.
     server = ThreadingHTTPServer(('0.0.0.0', 3001), Handler)
     server.daemon_threads = True
-    print('Dashboard API running on port 3001')
+    print('Dashboard API running on port 3001 (DB pool active)')
     server.serve_forever()
