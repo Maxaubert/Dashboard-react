@@ -79,6 +79,11 @@ async function request<T>(
         ...options.headers,
       },
       body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      // Send the session cookie on every request so endpoints that
+      // require auth (Phase 3 onward) get it. The cookie is HttpOnly +
+      // Secure + SameSite=Lax, so same-origin requests (which the
+      // frontend always is, via the /api/* proxy) include it cleanly.
+      credentials: 'include',
       signal: controller.signal,
     });
 

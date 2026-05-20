@@ -25,9 +25,16 @@ _setup_postgres.py
 _apply_migrations.py
 _setup_backup_cron.py
 _setup_encryption_key.py
+_migrate_to_postgres.py
+_headless_test.py
+_pull_reports.py
+_signup_via_api.ps1
+_install_ssh_key.ps1
+_rollback.ps1
 _i*.txt
 _apply_out.txt
 _deploy_out.txt
+_headless_out.txt
 _setup_*_out.txt
 
 # Playwright MCP captures (snapshots/screenshots)
