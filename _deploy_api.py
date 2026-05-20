@@ -116,13 +116,16 @@ def main():
     # Each tuple: (path, expected HTTP code). Phase 3+ endpoints behind
     # auth return 401 to anonymous — that's a passing test, not a failure.
     checks = [
-        ('/api/news?source=vg', 200),
-        ('/api/auth/me',        401),   # anon, expect 401 (Phase 2)
-        ('/api/todos',          401),   # anon, expect 401 (Phase 3)
-        ('/api/plan',           401),   # anon, expect 401 (Phase 4)
-        ('/api/links',          401),   # anon, expect 401 (Phase 4)
-        ('/api/home',           401),   # anon, expect 401 (Phase 4)
-        ('/api/notes',          401),   # anon, expect 401 (Phase 4)
+        ('/api/news?source=vg',     200),
+        ('/api/auth/me',            401),   # anon, expect 401 (Phase 2)
+        ('/api/todos',              401),   # anon, expect 401 (Phase 3)
+        ('/api/plan',               401),   # anon, expect 401 (Phase 4)
+        ('/api/links',              401),   # anon, expect 401 (Phase 4)
+        ('/api/home',               401),   # anon, expect 401 (Phase 4)
+        ('/api/notes',              401),   # anon, expect 401 (Phase 4)
+        ('/api/skole',              401),   # anon, expect 401 (Phase 5)
+        ('/api/wishlist',           401),   # anon, expect 401 (Phase 5)
+        ('/api/pdf?stat=foo',       401),   # anon, expect 401 (Phase 5)
     ]
     for path, want in checks:
         _, sout, _ = client.exec_command(

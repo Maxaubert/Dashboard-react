@@ -1376,12 +1376,21 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == '/api/notes':
             return self._handle_notes_get()
         if self.path == '/api/skole':
+            # Auth-gate: /api/skole pulls Canvas LMS data using the global
+            # CANVAS_TOKEN env var. Without auth, anyone could read grades
+            # + announcements. Per-user Canvas tokens are Phase 5-full's
+            # job; this is the quick fence.
+            if self.require_auth() is None: return
             try:
                 data = fetch_skole()
             except Exception:
                 data = {'courses': [], 'announcements': []}
             body = json.dumps(data).encode()
         elif self.path == '/api/wishlist':
+            # Auth-gate: /api/wishlist talks to Steam + ITAD with global
+            # API keys. Anonymous callers shouldn't get a personal
+            # wishlist back, even if it's just the admin's.
+            if self.require_auth() is None: return
             try:
                 data = fetch_wishlist()
             except Exception:
@@ -1399,6 +1408,10 @@ class Handler(BaseHTTPRequestHandler):
                 data = []
             body = json.dumps(data).encode()
         elif self.path.startswith('/api/pdf'):
+            # Auth-gate: /api/pdf fetches Canvas course PDFs through the
+            # global CANVAS_TOKEN. Anonymous access would let strangers
+            # download lecture materials the user paid tuition to see.
+            if self.require_auth() is None: return
             try:
                 from urllib.parse import unquote_plus
             except ImportError:
@@ -1473,6 +1486,9 @@ class Handler(BaseHTTPRequestHandler):
         # /api/report — appends a markdown entry to /opt/dashboard/reports/{type}s.md.
         # Handled separately because it does NOT overwrite a JSON file.
         if self.path == '/api/report':
+            # Auth-gate: reports get archived to disk for the admin to
+            # read. Without auth, anyone could spam the file.
+            if self.require_auth() is None: return
             try:
                 length = int(self.headers.get('Content-Length', 0))
                 if length <= 0 or length > REPORT_MAX_PAYLOAD:
