@@ -7,7 +7,6 @@ import threading
 import urllib.error
 import urllib.request
 from http.server import ThreadingHTTPServer
-from pathlib import Path
 
 import pytest
 
@@ -17,11 +16,10 @@ from server import rate_limit
 
 
 @pytest.fixture
-def api_server(db_url, monkeypatch):
+def api_server(db_url, monkeypatch, apply_migrations):
     monkeypatch.setattr(server_db, '_pool', None, raising=False)
     server_db.init_pool(db_url, min_size=1, max_size=2)
-    sql = (Path(__file__).resolve().parents[2] / 'server' / 'migrations' / '001_initial.sql').read_text(encoding='utf-8')
-    server_db.execute(sql)
+    apply_migrations(server_db.execute)
     rate_limit._buckets.clear()
 
     srv = ThreadingHTTPServer(('127.0.0.1', 0), server_api.Handler)

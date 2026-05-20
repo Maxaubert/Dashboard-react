@@ -26,10 +26,13 @@ TEST_PG_DBNAME (default tests).
 """
 import os
 import sys
+from pathlib import Path
 
 import pytest
 import psycopg
 from pytest_postgresql import factories
+
+MIGRATIONS_DIR = Path(__file__).resolve().parents[2] / 'server' / 'migrations'
 
 if sys.platform == 'win32':
     # noproc: connect to a pre-running Postgres. Required on Windows
@@ -59,3 +62,19 @@ def db_conn(db_url):
     """A live connection that's closed after the test."""
     with psycopg.connect(db_url) as conn:
         yield conn
+
+
+@pytest.fixture
+def apply_migrations():
+    """Return a function that applies every server/migrations/*.sql in
+    numeric order against the given execute function (typically
+    `server.db.execute`).
+
+    Splitting on '-- ::' is yoyo's batching hint; psycopg3 handles
+    multi-statement SQL in a single execute() call, so we just run each
+    file as one block. Order matters: later migrations may depend on
+    earlier ones (e.g. 002 drops a table that 001 created)."""
+    def _apply(execute_fn):
+        for sql_file in sorted(MIGRATIONS_DIR.glob('*.sql')):
+            execute_fn(sql_file.read_text(encoding='utf-8'))
+    return _apply

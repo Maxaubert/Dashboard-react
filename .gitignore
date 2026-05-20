@@ -26,6 +26,7 @@ _apply_migrations.py
 _setup_backup_cron.py
 _setup_encryption_key.py
 _migrate_to_postgres.py
+_migrate_plan_to_postgres.py
 _headless_test.py
 _pull_reports.py
 _signup_via_api.ps1

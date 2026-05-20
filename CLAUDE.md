@@ -71,12 +71,16 @@ When a page passes ~400 lines, split it the way `TodoPage`, `LinksPage`, `HomePa
 
 ## Data migration (Phase 3 onward)
 
-- **`/api/todos` is Postgres-backed and requires auth.** GET returns the current user's todos (scoped by `user_id = current_user.id`); POST bulk-upserts the whole list + deletes omitted rows. The JSON file at `/opt/dashboard/www/todos.json` is left in place but no longer read or written by the running service. Phase 7 cleans it up.
-- **Other data endpoints** (`/api/plan`, `/api/links`, `/api/home`, `/api/notes`) **still read/write JSON files** until Phase 4 migrates them.
+- **Postgres-backed, auth-gated endpoints**:
+  - `/api/todos` (Phase 3) — scoped by `user_id`, bulk upsert + omitted-row delete.
+  - `/api/plan` (Phase 4) — same pattern; rows are calendar events. `plan_events.id` is `TEXT` (UUID strings, client-generated) per migration `002_plan_events_text_id.sql`. Ordered by `(date, start_time NULLS FIRST, position)` so the calendar renders chronologically without client-side sorting.
+- **Still file-backed** (Phase 4 work in progress): `/api/links`, `/api/home`, `/api/notes` (notes lives in the separate `notes_api.py` Flask sidecar on port 5001; it folds into `api.py` when migrated).
 - **Frontend cookie**: `src/api/client.ts` uses `credentials: 'include'` so browsers send the session cookie on every `/api/*` call. Without it, every authenticated endpoint would 401.
-- **Pre-Phase-6 cookie workaround** (no login page yet): to use the site authenticated, install your session cookie via DevTools — Application → Cookies → `http://37.27.210.14` → add `session = <value-from-login-response>`. Phase 6 replaces this with a real login page.
-- **Migration script pattern**: `_migrate_to_postgres.py` (gitignored) reads `todos.json` via SFTP, generates a multi-row `INSERT ... ON CONFLICT (id) DO NOTHING`, runs it via stdin-piped `psql` on the VPS. Phase 4 will follow the same shape for plan/links/notes/home. The `_yoyo_log` table is for schema migrations; this is data migration — separate concern, separate scripts.
-- **Client-generated IDs**: `todos.id` is `BIGSERIAL` but the migration preserves the existing JSON-era string IDs (millisecond timestamps) cast to BIGINT. The serial sequence is bumped past `MAX(id)` after the bulk insert so future server-generated IDs don't collide.
+- **Pre-Phase-6 cookie workaround** (no login page yet): to use the site authenticated, install your session cookie via DevTools, Application → Cookies → `http://37.27.210.14` → add `session = <value-from-login-response>`. Phase 6 replaces this with a real login page.
+- **Migration script pattern**: `_migrate_to_postgres.py` (todos) and `_migrate_plan_to_postgres.py` (plan) both read the JSON via SFTP, generate a multi-row `INSERT ... ON CONFLICT (id) DO NOTHING`, run it via stdin-piped `psql` on the VPS. Future Phase-4 scripts (links/home/notes) follow the same shape. Both are gitignored. The `_yoyo_log` table is for schema migrations; data migration is a separate concern with separate scripts.
+- **Client-generated IDs**: `todos.id` was kept as the original JSON-era millisecond timestamps cast to BIGINT (sequence bumped past `MAX(id)` after the bulk insert). `plan_events.id` is a TEXT column holding the original client UUIDs verbatim.
+- **`apply_migrations` test fixture** (in `tests/server/conftest.py`): every server test pulls the fixture and runs every `server/migrations/*.sql` in numeric order before the test body. Adding a new migration is picked up automatically; no per-test-file changes needed.
+- **Headless production smoke test**: `python _headless_test.py` (gitignored). SSHes to the VPS, hits `127.0.0.1:3001` directly (bypassing nginx Basic Auth), exercises anon-401 → login → /me → /todos round-trip → /plan round-trip → logout → 401-after-logout for both endpoints. Run after every deploy.
 
 ## Server-side conventions
 

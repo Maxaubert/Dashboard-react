@@ -910,6 +910,105 @@ class Handler(BaseHTTPRequestHandler):
                     )
         return self._json(200, {'ok': True})
 
+    def _handle_plan_get(self):
+        """GET /api/plan: returns the current user's plan events.
+
+        Ordered by (date, start_time) so the calendar/list views render
+        in chronological order without client-side sorting. start_time /
+        end_time come back as 'HH:MM' strings (matching the JSON-era
+        format) instead of psycopg's full 'HH:MM:SS'."""
+        user = self.require_auth()
+        if user is None:
+            return
+        rows = server_db.query(
+            "SELECT id, title, date, start_time, end_time, tag, location, "
+            "color, recurring "
+            "FROM plan_events WHERE user_id = %s "
+            "ORDER BY date, start_time NULLS FIRST, position",
+            (user['id'],),
+        )
+        events = []
+        for r in rows:
+            events.append({
+                'id': r['id'],
+                'title': r['title'],
+                'date': r['date'].isoformat(),
+                'startTime': r['start_time'].strftime('%H:%M') if r['start_time'] else '',
+                'endTime': r['end_time'].strftime('%H:%M') if r['end_time'] else '',
+                'tag': r['tag'] or '',
+                'location': r['location'] or '',
+                'color': r['color'] or '',
+                'recurring': r['recurring'],
+            })
+        return self._json(200, events)
+
+    def _handle_plan_post(self):
+        """POST /api/plan: bulk upsert the entire plan-events list for
+        the current user, then delete any not present. Same single-
+        transaction pattern as /api/todos."""
+        user = self.require_auth()
+        if user is None:
+            return
+        try:
+            length = int(self.headers.get('Content-Length', 0))
+            payload = json.loads(self.rfile.read(length))
+        except Exception:
+            return self._json(400, {'error': 'invalid JSON'})
+        if not isinstance(payload, list):
+            return self._json(400, {'error': 'expected a list'})
+
+        kept_ids = []
+        with server_db.tx() as conn:
+            with conn.cursor() as cur:
+                for position, ev in enumerate(payload):
+                    ev_id = ev.get('id')
+                    if not ev_id or not isinstance(ev_id, str):
+                        continue
+                    title = ev.get('title') or ''
+                    date = ev.get('date') or None
+                    if not date:
+                        # date-less rows are nonsensical for a calendar;
+                        # skip rather than insert junk.
+                        continue
+                    start_time = ev.get('startTime') or None
+                    end_time = ev.get('endTime') or None
+                    kept_ids.append(ev_id)
+                    cur.execute(
+                        "INSERT INTO plan_events (id, user_id, title, date, "
+                        "start_time, end_time, tag, location, color, "
+                        "recurring, position) "
+                        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) "
+                        "ON CONFLICT (id) DO UPDATE SET "
+                        "title = EXCLUDED.title, date = EXCLUDED.date, "
+                        "start_time = EXCLUDED.start_time, "
+                        "end_time = EXCLUDED.end_time, "
+                        "tag = EXCLUDED.tag, location = EXCLUDED.location, "
+                        "color = EXCLUDED.color, "
+                        "recurring = EXCLUDED.recurring, "
+                        "position = EXCLUDED.position",
+                        (
+                            ev_id, user['id'], title, date,
+                            start_time, end_time,
+                            ev.get('tag') or '',
+                            ev.get('location') or '',
+                            ev.get('color') or '',
+                            bool(ev.get('recurring', False)),
+                            position,
+                        ),
+                    )
+                if kept_ids:
+                    cur.execute(
+                        "DELETE FROM plan_events "
+                        "WHERE user_id = %s AND id != ALL(%s)",
+                        (user['id'], kept_ids),
+                    )
+                else:
+                    cur.execute(
+                        "DELETE FROM plan_events WHERE user_id = %s",
+                        (user['id'],),
+                    )
+        return self._json(200, {'ok': True})
+
     def _json(self, status, payload, *, extra_headers=()):
         """Send a JSON response. Used by all auth endpoints."""
         body = json.dumps(payload).encode()
@@ -938,12 +1037,8 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == '/api/todos':
             return self._handle_todos_get()
         if self.path == '/api/plan':
-            try:
-                data = json.load(open(PLAN_FILE)) if os.path.exists(PLAN_FILE) else []
-            except Exception:
-                data = []
-            body = json.dumps(data).encode()
-        elif self.path == '/api/links':
+            return self._handle_plan_get()
+        if self.path == '/api/links':
             try:
                 data = json.load(open(LINKS_FILE)) if os.path.exists(LINKS_FILE) else []
             except Exception:
@@ -1082,8 +1177,8 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == '/api/todos':
             return self._handle_todos_post()
         if self.path == '/api/plan':
-            file_path = PLAN_FILE
-        elif self.path == '/api/links':
+            return self._handle_plan_post()
+        if self.path == '/api/links':
             file_path = LINKS_FILE
         elif self.path == '/api/home':
             file_path = HOME_FILE
