@@ -820,6 +820,96 @@ class Handler(BaseHTTPRequestHandler):
                     codes.append(code)
         return self._json(200, {'codes': codes})
 
+    def _handle_todos_get(self):
+        """GET /api/todos: returns the current user's todos as a JSON list.
+
+        Schema mapping: DB BIGINT id is returned as a string to match the
+        existing frontend's expectation (Todo.id is a string in the JSON
+        envelope and React keys). camelCase: completed_at -> completedAt."""
+        user = self.require_auth()
+        if user is None:
+            return
+        rows = server_db.query(
+            "SELECT id, text, priority, deadline, done, pinned, "
+            "completed_at, position "
+            "FROM todos WHERE user_id = %s ORDER BY position",
+            (user['id'],),
+        )
+        todos = []
+        for r in rows:
+            todos.append({
+                'id': str(r['id']),
+                'text': r['text'],
+                'priority': r['priority'],
+                'deadline': r['deadline'].isoformat() if r['deadline'] else None,
+                'done': r['done'],
+                'pinned': r['pinned'],
+                'completedAt': r['completed_at'].isoformat() if r['completed_at'] else None,
+            })
+        return self._json(200, todos)
+
+    def _handle_todos_post(self):
+        """POST /api/todos: bulk upsert the entire todos list for the
+        current user, then delete any not present (frontend always sends
+        the whole list — same shape as the JSON-file era).
+
+        Wrapped in a single transaction so a partial failure can't leave
+        the user with half-written state."""
+        user = self.require_auth()
+        if user is None:
+            return
+        try:
+            length = int(self.headers.get('Content-Length', 0))
+            payload = json.loads(self.rfile.read(length))
+        except Exception:
+            return self._json(400, {'error': 'invalid JSON'})
+        if not isinstance(payload, list):
+            return self._json(400, {'error': 'expected a list'})
+
+        kept_ids = []
+        with server_db.tx() as conn:
+            with conn.cursor() as cur:
+                for position, t in enumerate(payload):
+                    try:
+                        id_int = int(t['id'])
+                    except (KeyError, ValueError, TypeError):
+                        continue
+                    kept_ids.append(id_int)
+                    cur.execute(
+                        "INSERT INTO todos (id, user_id, text, priority, "
+                        "deadline, done, pinned, completed_at, position) "
+                        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) "
+                        "ON CONFLICT (id) DO UPDATE SET "
+                        "text = EXCLUDED.text, priority = EXCLUDED.priority, "
+                        "deadline = EXCLUDED.deadline, done = EXCLUDED.done, "
+                        "pinned = EXCLUDED.pinned, "
+                        "completed_at = EXCLUDED.completed_at, "
+                        "position = EXCLUDED.position",
+                        (
+                            id_int, user['id'], t.get('text', ''),
+                            t.get('priority', 'medium') if t.get('priority') in ('high', 'medium', 'low') else 'medium',
+                            t.get('deadline') or None,
+                            bool(t.get('done', False)),
+                            bool(t.get('pinned', False)),
+                            t.get('completedAt') or None,
+                            position,
+                        ),
+                    )
+                # Delete rows for this user that are no longer in the
+                # payload. Use AND id NOT IN (kept_ids) — empty list means
+                # delete everything for this user.
+                if kept_ids:
+                    cur.execute(
+                        "DELETE FROM todos WHERE user_id = %s AND id != ALL(%s)",
+                        (user['id'], kept_ids),
+                    )
+                else:
+                    cur.execute(
+                        "DELETE FROM todos WHERE user_id = %s",
+                        (user['id'],),
+                    )
+        return self._json(200, {'ok': True})
+
     def _json(self, status, payload, *, extra_headers=()):
         """Send a JSON response. Used by all auth endpoints."""
         body = json.dumps(payload).encode()
@@ -846,12 +936,8 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == '/api/auth/me':
             return self._handle_me()
         if self.path == '/api/todos':
-            try:
-                data = json.load(open(DATA_FILE)) if os.path.exists(DATA_FILE) else []
-            except Exception:
-                data = []
-            body = json.dumps(data).encode()
-        elif self.path == '/api/plan':
+            return self._handle_todos_get()
+        if self.path == '/api/plan':
             try:
                 data = json.load(open(PLAN_FILE)) if os.path.exists(PLAN_FILE) else []
             except Exception:
@@ -994,8 +1080,8 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if self.path == '/api/todos':
-            file_path = DATA_FILE
-        elif self.path == '/api/plan':
+            return self._handle_todos_post()
+        if self.path == '/api/plan':
             file_path = PLAN_FILE
         elif self.path == '/api/links':
             file_path = LINKS_FILE
