@@ -1009,6 +1009,169 @@ class Handler(BaseHTTPRequestHandler):
                     )
         return self._json(200, {'ok': True})
 
+    def _handle_links_get(self):
+        """GET /api/links: returns the v2 envelope shape
+        {version: 2, categories: [...], links: [...]} that the frontend's
+        normaliseEnvelope expects. Order is positional in the array, set
+        by the position column."""
+        user = self.require_auth()
+        if user is None:
+            return
+        cat_rows = server_db.query(
+            "SELECT id, name, position, "
+            "EXTRACT(EPOCH FROM created_at) * 1000 AS created_ms, "
+            "EXTRACT(EPOCH FROM updated_at) * 1000 AS updated_ms "
+            "FROM categories WHERE user_id = %s ORDER BY position",
+            (user['id'],),
+        )
+        link_rows = server_db.query(
+            "SELECT id, category_id, url, name, sub, color, icon_type, "
+            "icon_value, favorite, position, "
+            "EXTRACT(EPOCH FROM created_at) * 1000 AS created_ms, "
+            "EXTRACT(EPOCH FROM updated_at) * 1000 AS updated_ms "
+            "FROM links WHERE user_id = %s ORDER BY position",
+            (user['id'],),
+        )
+        envelope = {
+            'version': 2,
+            'categories': [
+                {
+                    'id': c['id'],
+                    'name': c['name'],
+                    'order': c['position'],
+                    'createdAt': int(c['created_ms']) if c['created_ms'] is not None else None,
+                    'updatedAt': int(c['updated_ms']) if c['updated_ms'] is not None else None,
+                }
+                for c in cat_rows
+            ],
+            'links': [
+                {
+                    'id': r['id'],
+                    'url': r['url'],
+                    'name': r['name'],
+                    'sub': r['sub'] or '',
+                    'color': r['color'] or '',
+                    'iconType': r['icon_type'] or '',
+                    'iconValue': r['icon_value'] or '',
+                    'favorite': r['favorite'],
+                    'category': r['category_id'] or '',
+                    'createdAt': int(r['created_ms']) if r['created_ms'] is not None else None,
+                    'updatedAt': int(r['updated_ms']) if r['updated_ms'] is not None else None,
+                }
+                for r in link_rows
+            ],
+        }
+        return self._json(200, envelope)
+
+    def _handle_links_post(self):
+        """POST /api/links: bulk upsert the entire categories + links
+        envelope for the current user, then delete any not present.
+
+        Single transaction with categories upserted FIRST so the links
+        FK can reference them in the same transaction. Then links upsert.
+        Then delete omitted links (must come before category deletes so
+        the ON DELETE SET NULL doesn't fire for rows we're about to drop
+        anyway). Then delete omitted categories."""
+        user = self.require_auth()
+        if user is None:
+            return
+        try:
+            length = int(self.headers.get('Content-Length', 0))
+            payload = json.loads(self.rfile.read(length))
+        except Exception:
+            return self._json(400, {'error': 'invalid JSON'})
+        # Accept both the v2 envelope and a bare list (legacy frontend
+        # versions); the frontend normaliseEnvelope reshapes our reply
+        # either way, but the persistence side has always been a v2 dict.
+        if isinstance(payload, list):
+            payload = {'version': 2, 'links': payload, 'categories': []}
+        if not isinstance(payload, dict):
+            return self._json(400, {'error': 'expected v2 envelope'})
+
+        categories = payload.get('categories') or []
+        links = payload.get('links') or []
+        if not isinstance(categories, list) or not isinstance(links, list):
+            return self._json(400, {'error': 'expected categories + links to be lists'})
+
+        kept_cat_ids = []
+        kept_link_ids = []
+        with server_db.tx() as conn:
+            with conn.cursor() as cur:
+                for position, c in enumerate(categories):
+                    cat_id = c.get('id')
+                    if not cat_id or not isinstance(cat_id, str):
+                        continue
+                    kept_cat_ids.append(cat_id)
+                    cur.execute(
+                        "INSERT INTO categories (id, user_id, name, position) "
+                        "VALUES (%s, %s, %s, %s) "
+                        "ON CONFLICT (id) DO UPDATE SET "
+                        "name = EXCLUDED.name, position = EXCLUDED.position, "
+                        "updated_at = now()",
+                        (cat_id, user['id'], c.get('name') or '',
+                         int(c.get('order', position) or 0)),
+                    )
+                for position, ln in enumerate(links):
+                    ln_id = ln.get('id')
+                    if not ln_id or not isinstance(ln_id, str):
+                        continue
+                    url = ln.get('url')
+                    name = ln.get('name')
+                    if not url or not name:
+                        # Without url or name there's nothing to render.
+                        continue
+                    category = ln.get('category') or None
+                    # If category id isn't in the kept set, drop it so
+                    # the FK doesn't blow up. The ON DELETE SET NULL
+                    # would catch this later but better to be explicit.
+                    if category and category not in kept_cat_ids:
+                        category = None
+                    kept_link_ids.append(ln_id)
+                    cur.execute(
+                        "INSERT INTO links (id, user_id, category_id, url, "
+                        "name, sub, color, icon_type, icon_value, favorite, "
+                        "position) "
+                        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) "
+                        "ON CONFLICT (id) DO UPDATE SET "
+                        "category_id = EXCLUDED.category_id, "
+                        "url = EXCLUDED.url, name = EXCLUDED.name, "
+                        "sub = EXCLUDED.sub, color = EXCLUDED.color, "
+                        "icon_type = EXCLUDED.icon_type, "
+                        "icon_value = EXCLUDED.icon_value, "
+                        "favorite = EXCLUDED.favorite, "
+                        "position = EXCLUDED.position, "
+                        "updated_at = now()",
+                        (
+                            ln_id, user['id'], category, url, name,
+                            ln.get('sub') or '', ln.get('color') or '',
+                            ln.get('iconType') or '',
+                            ln.get('iconValue') or '',
+                            bool(ln.get('favorite', False)),
+                            position,
+                        ),
+                    )
+                if kept_link_ids:
+                    cur.execute(
+                        "DELETE FROM links WHERE user_id = %s AND id != ALL(%s)",
+                        (user['id'], kept_link_ids),
+                    )
+                else:
+                    cur.execute(
+                        "DELETE FROM links WHERE user_id = %s",
+                        (user['id'],),
+                    )
+                if kept_cat_ids:
+                    cur.execute(
+                        "DELETE FROM categories WHERE user_id = %s AND id != ALL(%s)",
+                        (user['id'], kept_cat_ids),
+                    )
+                else:
+                    cur.execute(
+                        "DELETE FROM categories WHERE user_id = %s",
+                        (user['id'],),
+                    )
+        return self._json(200, {'ok': True})
+
     def _json(self, status, payload, *, extra_headers=()):
         """Send a JSON response. Used by all auth endpoints."""
         body = json.dumps(payload).encode()
@@ -1039,12 +1202,8 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == '/api/plan':
             return self._handle_plan_get()
         if self.path == '/api/links':
-            try:
-                data = json.load(open(LINKS_FILE)) if os.path.exists(LINKS_FILE) else []
-            except Exception:
-                data = []
-            body = json.dumps(data).encode()
-        elif self.path == '/api/home':
+            return self._handle_links_get()
+        if self.path == '/api/home':
             try:
                 if os.path.exists(HOME_FILE):
                     data = json.load(open(HOME_FILE))
@@ -1179,8 +1338,8 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == '/api/plan':
             return self._handle_plan_post()
         if self.path == '/api/links':
-            file_path = LINKS_FILE
-        elif self.path == '/api/home':
+            return self._handle_links_post()
+        if self.path == '/api/home':
             file_path = HOME_FILE
         else:
             self.send_response(404); self._cors(); self.end_headers(); return
