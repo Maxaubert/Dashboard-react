@@ -1172,6 +1172,48 @@ class Handler(BaseHTTPRequestHandler):
                     )
         return self._json(200, {'ok': True})
 
+    def _handle_home_get(self):
+        """GET /api/home: returns the current user's home_layout payload
+        (a single JSONB blob; the frontend treats it opaquely).
+
+        First-time users with no row get a v1 empty layout so the page
+        can render without a 404."""
+        user = self.require_auth()
+        if user is None:
+            return
+        rows = server_db.query(
+            "SELECT payload FROM home_layout WHERE user_id = %s",
+            (user['id'],),
+        )
+        if rows:
+            return self._json(200, rows[0]['payload'])
+        return self._json(200, {
+            'version': 1, 'sections': [], 'widgets': [], 'habits': [],
+        })
+
+    def _handle_home_post(self):
+        """POST /api/home: replace the user's home_layout in one
+        statement. No omitted-row sweep since home is a single row
+        per user."""
+        user = self.require_auth()
+        if user is None:
+            return
+        try:
+            length = int(self.headers.get('Content-Length', 0))
+            payload = json.loads(self.rfile.read(length))
+        except Exception:
+            return self._json(400, {'error': 'invalid JSON'})
+        if not isinstance(payload, dict):
+            return self._json(400, {'error': 'expected an object'})
+        server_db.execute(
+            "INSERT INTO home_layout (user_id, payload, updated_at) "
+            "VALUES (%s, %s::jsonb, now()) "
+            "ON CONFLICT (user_id) DO UPDATE SET "
+            "payload = EXCLUDED.payload, updated_at = now()",
+            (user['id'], json.dumps(payload)),
+        )
+        return self._json(200, {'ok': True})
+
     def _json(self, status, payload, *, extra_headers=()):
         """Send a JSON response. Used by all auth endpoints."""
         body = json.dumps(payload).encode()
@@ -1204,15 +1246,8 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == '/api/links':
             return self._handle_links_get()
         if self.path == '/api/home':
-            try:
-                if os.path.exists(HOME_FILE):
-                    data = json.load(open(HOME_FILE))
-                else:
-                    data = {'version': 1, 'sections': [], 'widgets': [], 'habits': []}
-            except Exception:
-                data = {'version': 1, 'sections': [], 'widgets': [], 'habits': []}
-            body = json.dumps(data).encode()
-        elif self.path == '/api/skole':
+            return self._handle_home_get()
+        if self.path == '/api/skole':
             try:
                 data = fetch_skole()
             except Exception:
@@ -1340,43 +1375,8 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == '/api/links':
             return self._handle_links_post()
         if self.path == '/api/home':
-            file_path = HOME_FILE
-        else:
-            self.send_response(404); self._cors(); self.end_headers(); return
-        try:
-            length = int(self.headers.get('Content-Length', 0))
-            data = json.loads(self.rfile.read(length))
-            # Atomic write: serialize to a temp file in the same directory,
-            # fsync, then rename over the target. If the process dies mid-
-            # write the target keeps its previous (valid) contents instead
-            # of getting truncated. See: man 2 rename — same-FS rename is
-            # atomic on POSIX.
-            fd, tmp_path = tempfile.mkstemp(
-                prefix='.' + os.path.basename(file_path) + '.',
-                suffix='.tmp',
-                dir=os.path.dirname(file_path),
-            )
-            try:
-                with os.fdopen(fd, 'w') as f:
-                    json.dump(data, f, indent=2)
-                    f.flush()
-                    os.fsync(f.fileno())
-                os.replace(tmp_path, file_path)
-            except Exception:
-                try:
-                    os.unlink(tmp_path)
-                except OSError:
-                    pass
-                raise
-            body = b'{"ok":true}'
-        except Exception as e:
-            body = json.dumps({'ok': False, 'error': str(e)}).encode()
-        self.send_response(200)
-        self.send_header('Content-Type', 'application/json')
-        self.send_header('Content-Length', str(len(body)))
-        self._cors()
-        self.end_headers()
-        self.wfile.write(body)
+            return self._handle_home_post()
+        self.send_response(404); self._cors(); self.end_headers()
 
     def log_message(self, fmt, *args):
         pass  # silence request logs
