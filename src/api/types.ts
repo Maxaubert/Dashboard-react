@@ -7,6 +7,15 @@
  * caught only when a page actually consumes the field.
  */
 
+// ─── Auth ────────────────────────────────────────────────────────────────
+
+/** The current user, as returned by /api/auth/{me,login,signup}. */
+export interface User {
+  id: number;
+  email: string;
+  display_name: string;
+}
+
 // ─── Todos ───────────────────────────────────────────────────────────────
 
 export type Priority = 'high' | 'medium' | 'low';

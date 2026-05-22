@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { Link2, MessageSquarePlus } from 'lucide-react';
+import { Link2, LogOut, MessageSquarePlus } from 'lucide-react';
 import { NAV_ITEMS } from './navConfig';
 import { LinksLibraryPopup } from './LinksLibraryPopup';
 import { useReport } from '@/components/report/ReportProvider';
+import { useCurrentUser, useLogout } from '@/hooks/useCurrentUser';
 import { cn } from '@/lib/cn';
 
 interface SidebarProps {
@@ -37,6 +38,8 @@ export function Sidebar({
   const dragStartWidthRef = useRef(0);
   const [linksOpen, setLinksOpen] = useState(false);
   const { openReport } = useReport();
+  const { data: user } = useCurrentUser();
+  const logout = useLogout();
 
   function handleResizeStart(e: React.PointerEvent) {
     e.preventDefault();
@@ -124,6 +127,42 @@ export function Sidebar({
       </button>
 
       <LinksLibraryPopup open={linksOpen} onOpenChange={setLinksOpen} />
+
+      {/* Account row: display name + logout. Plain styling for the MVP. */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: collapsed ? 'center' : 'space-between',
+          gap: 8,
+          padding: collapsed ? '8px 0' : '8px 4px',
+        }}
+      >
+        {!collapsed && user && (
+          <span
+            title={user.email}
+            style={{
+              fontSize: '0.78rem',
+              color: '#a1a1aa',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {user.display_name}
+          </span>
+        )}
+        <button
+          type="button"
+          className="sidebar-links-icon"
+          onClick={() => logout.mutate()}
+          disabled={logout.isPending}
+          title="Logg ut"
+          aria-label="Logg ut"
+        >
+          <LogOut size={18} strokeWidth={1.75} />
+        </button>
+      </div>
 
       {/* Drag handle on the right edge — invisible by default, fades
        *  in on hover so it doesn't add visual noise. */}

@@ -113,16 +113,31 @@ def delete_session(sid: str) -> None:
 _COOKIE_NAME = 'session'
 
 
+def _secure_attr() -> str:
+    """Return 'Secure; ' unless DASHBOARD_COOKIE_INSECURE is set.
+
+    The production VPS is served over plain HTTP (bare IP, no TLS), and
+    browsers refuse to store a Secure cookie over HTTP -- which is why
+    the pre-login-page workaround was to install the cookie by hand in
+    DevTools. To make the real login form work over HTTP we let the
+    deployment opt out of Secure. REMOVE the env var (restoring Secure)
+    the moment the site gets HTTPS."""
+    import os
+    if os.environ.get('DASHBOARD_COOKIE_INSECURE') in ('1', 'true', 'True'):
+        return ''
+    return 'Secure; '
+
+
 def set_session_cookie_header(sid: str, *, ttl_seconds: int) -> str:
     """Return a Set-Cookie header value for the session cookie."""
     return (
         f'{_COOKIE_NAME}={sid}; '
-        f'HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age={ttl_seconds}'
+        f'HttpOnly; {_secure_attr()}SameSite=Lax; Path=/; Max-Age={ttl_seconds}'
     )
 
 
 def clear_session_cookie_header() -> str:
-    return f'{_COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0'
+    return f'{_COOKIE_NAME}=; HttpOnly; {_secure_attr()}SameSite=Lax; Path=/; Max-Age=0'
 
 
 def parse_session_cookie(raw_cookie_header: str | None) -> str | None:

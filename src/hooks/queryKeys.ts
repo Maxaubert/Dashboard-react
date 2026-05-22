@@ -3,6 +3,7 @@
  * across files always uses the same shape.
  */
 export const queryKeys = {
+  currentUser: ['currentUser'] as const,
   todos: ['todos'] as const,
   plan: ['plan'] as const,
   links: ['links'] as const,

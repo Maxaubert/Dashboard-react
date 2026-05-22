@@ -133,6 +133,24 @@ def test_clear_session_cookie_header():
     assert 'Max-Age=0' in header
 
 
+def test_cookie_drops_secure_when_insecure_env_set(monkeypatch):
+    """Over plain HTTP the deployment opts out of Secure so the browser
+    will actually store the session cookie."""
+    monkeypatch.setenv('DASHBOARD_COOKIE_INSECURE', '1')
+    seth = server_auth.set_session_cookie_header('abc123', ttl_seconds=3600)
+    clrh = server_auth.clear_session_cookie_header()
+    assert 'Secure' not in seth
+    assert 'Secure' not in clrh
+    # The other hardening attributes must remain.
+    assert 'HttpOnly' in seth
+    assert 'SameSite=Lax' in seth
+
+
+def test_cookie_keeps_secure_by_default(monkeypatch):
+    monkeypatch.delenv('DASHBOARD_COOKIE_INSECURE', raising=False)
+    assert 'Secure' in server_auth.set_session_cookie_header('abc', ttl_seconds=60)
+
+
 def test_parse_session_cookie_finds_value():
     raw = 'foo=bar; session=abc123; baz=qux'
     assert server_auth.parse_session_cookie(raw) == 'abc123'
