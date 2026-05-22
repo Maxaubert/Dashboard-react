@@ -5,6 +5,7 @@ import { NAV_ITEMS } from './navConfig';
 import { LinksLibraryPopup } from './LinksLibraryPopup';
 import { useReport } from '@/components/report/ReportProvider';
 import { useCurrentUser, useLogout } from '@/hooks/useCurrentUser';
+import { Modal } from '@/components/ui';
 import { cn } from '@/lib/cn';
 
 interface SidebarProps {
@@ -37,6 +38,7 @@ export function Sidebar({
   const dragStartXRef = useRef(0);
   const dragStartWidthRef = useRef(0);
   const [linksOpen, setLinksOpen] = useState(false);
+  const [confirmLogout, setConfirmLogout] = useState(false);
   const { openReport } = useReport();
   const { data: user } = useCurrentUser();
   const logout = useLogout();
@@ -129,16 +131,36 @@ export function Sidebar({
 
       <LinksLibraryPopup open={linksOpen} onOpenChange={setLinksOpen} />
 
-      {/* Account row: display name + logout. Plain styling for the MVP. */}
+      {/* Divider separates the quick-action icons above from the account
+       *  row, so logout doesn't read as part of the icon stack. */}
+      <div
+        aria-hidden="true"
+        style={{
+          borderTop: '1px solid rgba(255,255,255,0.06)',
+          margin: collapsed ? '6px 8px' : '6px 4px',
+        }}
+      />
+
+      {/* Account row: logout on the LEFT, then the display name. Logout
+       *  opens a confirm dialog so it can't fire on an accidental click. */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: collapsed ? 'center' : 'space-between',
-          gap: 8,
-          padding: collapsed ? '8px 0' : '8px 4px',
+          justifyContent: collapsed ? 'center' : 'flex-start',
+          gap: 10,
+          padding: collapsed ? '4px 0' : '4px 4px',
         }}
       >
+        <button
+          type="button"
+          className="sidebar-links-icon"
+          onClick={() => setConfirmLogout(true)}
+          title="Logg ut"
+          aria-label="Logg ut"
+        >
+          <LogOut size={18} strokeWidth={1.75} />
+        </button>
         {!collapsed && user && (
           <span
             title={user.email}
@@ -153,21 +175,43 @@ export function Sidebar({
             {user.display_name}
           </span>
         )}
-        <button
-          type="button"
-          className="sidebar-links-icon"
-          onClick={() =>
-            logout.mutate(undefined, {
-              onSuccess: () => navigate('/login', { replace: true }),
-            })
-          }
-          disabled={logout.isPending}
-          title="Logg ut"
-          aria-label="Logg ut"
-        >
-          <LogOut size={18} strokeWidth={1.75} />
-        </button>
       </div>
+
+      <Modal
+        open={confirmLogout}
+        onOpenChange={setConfirmLogout}
+        title="Logg ut?"
+        description="Er du sikker på at du vil logge ut?"
+        size="sm"
+        footer={
+          <>
+            <button
+              type="button"
+              className="modal-btn-cancel"
+              onClick={() => setConfirmLogout(false)}
+            >
+              Avbryt
+            </button>
+            <button
+              type="button"
+              className="modal-btn-primary"
+              disabled={logout.isPending}
+              onClick={() =>
+                logout.mutate(undefined, {
+                  onSuccess: () => {
+                    setConfirmLogout(false);
+                    navigate('/login', { replace: true });
+                  },
+                })
+              }
+            >
+              {logout.isPending ? 'Logger ut…' : 'Logg ut'}
+            </button>
+          </>
+        }
+      >
+        {null}
+      </Modal>
 
       {/* Drag handle on the right edge — invisible by default, fades
        *  in on hover so it doesn't add visual noise. */}
