@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { Link2, LogOut, MessageSquarePlus } from 'lucide-react';
 import { NAV_ITEMS } from './navConfig';
 import { LinksLibraryPopup } from './LinksLibraryPopup';
@@ -40,6 +40,7 @@ export function Sidebar({
   const { openReport } = useReport();
   const { data: user } = useCurrentUser();
   const logout = useLogout();
+  const navigate = useNavigate();
 
   function handleResizeStart(e: React.PointerEvent) {
     e.preventDefault();
@@ -155,7 +156,11 @@ export function Sidebar({
         <button
           type="button"
           className="sidebar-links-icon"
-          onClick={() => logout.mutate()}
+          onClick={() =>
+            logout.mutate(undefined, {
+              onSuccess: () => navigate('/login', { replace: true }),
+            })
+          }
           disabled={logout.isPending}
           title="Logg ut"
           aria-label="Logg ut"
