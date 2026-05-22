@@ -117,7 +117,7 @@ def main():
         sys.exit(1)
 
     client.close()
-    print('\nDone. Visit http://37.27.210.14 to verify.')
+    print('\nDone. Visit https://37-27-210-14.sslip.io to verify.')
 
 
 if __name__ == '__main__':

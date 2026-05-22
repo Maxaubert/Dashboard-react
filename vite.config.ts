@@ -22,32 +22,22 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // /api/notes, /api/cart and /api/tools live on separate Flask
-      // services (notes_api.py on 5001, tools_api.py on 5002). In
-      // production nginx routes them through; in dev we hit the
-      // production nginx directly on port 80 so we don't need to run
-      // a local Flask process. If your nginx requires basic auth, set
-      // the VITE_DEV_BASIC_AUTH env var to "user:pass".
-      '/api/notes': {
-        target: 'http://37.27.210.14',
-        changeOrigin: true,
-        auth: process.env.VITE_DEV_BASIC_AUTH,
-      },
-      '/api/cart': {
-        target: 'http://37.27.210.14',
-        changeOrigin: true,
-        auth: process.env.VITE_DEV_BASIC_AUTH,
-      },
+      // /api/tools still lives on the tools_api.py Flask sidecar (port
+      // 5002), reached through the production nginx. The site is HTTPS
+      // now (Let's Encrypt on the sslip.io host) and port 80 redirects,
+      // so dev must target the https origin directly. /api/notes used to
+      // be a sidecar route too, but Phase 4 folded it into api.py — it
+      // now falls through to the /api catch-all below.
       '/api/tools': {
-        target: 'http://37.27.210.14',
+        target: 'https://37-27-210-14.sslip.io',
         changeOrigin: true,
-        auth: process.env.VITE_DEV_BASIC_AUTH,
         // Long-running ops (yt-dlp, rembg, ffmpeg) need a generous
-        // timeout — match the production nginx 600s.
-        timeout: 600_000,
-        proxyTimeout: 600_000,
+        // timeout — match the production nginx 1800s.
+        timeout: 1_800_000,
+        proxyTimeout: 1_800_000,
       },
-      // Everything else goes straight to api.py on its dedicated port.
+      // Everything else goes straight to api.py on its dedicated port
+      // (HTTP, behind nginx in prod but reachable directly in dev).
       '/api': {
         target: 'http://37.27.210.14:3001',
         changeOrigin: true,
