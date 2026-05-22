@@ -1009,6 +1009,337 @@ class Handler(BaseHTTPRequestHandler):
                     )
         return self._json(200, {'ok': True})
 
+    def _handle_links_get(self):
+        """GET /api/links: returns the v2 envelope shape
+        {version: 2, categories: [...], links: [...]} that the frontend's
+        normaliseEnvelope expects. Order is positional in the array, set
+        by the position column."""
+        user = self.require_auth()
+        if user is None:
+            return
+        cat_rows = server_db.query(
+            "SELECT id, name, position, "
+            "EXTRACT(EPOCH FROM created_at) * 1000 AS created_ms, "
+            "EXTRACT(EPOCH FROM updated_at) * 1000 AS updated_ms "
+            "FROM categories WHERE user_id = %s ORDER BY position",
+            (user['id'],),
+        )
+        link_rows = server_db.query(
+            "SELECT id, category_id, url, name, sub, color, icon_type, "
+            "icon_value, favorite, position, "
+            "EXTRACT(EPOCH FROM created_at) * 1000 AS created_ms, "
+            "EXTRACT(EPOCH FROM updated_at) * 1000 AS updated_ms "
+            "FROM links WHERE user_id = %s ORDER BY position",
+            (user['id'],),
+        )
+        envelope = {
+            'version': 2,
+            'categories': [
+                {
+                    'id': c['id'],
+                    'name': c['name'],
+                    'order': c['position'],
+                    'createdAt': int(c['created_ms']) if c['created_ms'] is not None else None,
+                    'updatedAt': int(c['updated_ms']) if c['updated_ms'] is not None else None,
+                }
+                for c in cat_rows
+            ],
+            'links': [
+                {
+                    'id': r['id'],
+                    'url': r['url'],
+                    'name': r['name'],
+                    'sub': r['sub'] or '',
+                    'color': r['color'] or '',
+                    'iconType': r['icon_type'] or '',
+                    'iconValue': r['icon_value'] or '',
+                    'favorite': r['favorite'],
+                    'category': r['category_id'] or '',
+                    'createdAt': int(r['created_ms']) if r['created_ms'] is not None else None,
+                    'updatedAt': int(r['updated_ms']) if r['updated_ms'] is not None else None,
+                }
+                for r in link_rows
+            ],
+        }
+        return self._json(200, envelope)
+
+    def _handle_links_post(self):
+        """POST /api/links: bulk upsert the entire categories + links
+        envelope for the current user, then delete any not present.
+
+        Single transaction with categories upserted FIRST so the links
+        FK can reference them in the same transaction. Then links upsert.
+        Then delete omitted links (must come before category deletes so
+        the ON DELETE SET NULL doesn't fire for rows we're about to drop
+        anyway). Then delete omitted categories."""
+        user = self.require_auth()
+        if user is None:
+            return
+        try:
+            length = int(self.headers.get('Content-Length', 0))
+            payload = json.loads(self.rfile.read(length))
+        except Exception:
+            return self._json(400, {'error': 'invalid JSON'})
+        # Accept both the v2 envelope and a bare list (legacy frontend
+        # versions); the frontend normaliseEnvelope reshapes our reply
+        # either way, but the persistence side has always been a v2 dict.
+        if isinstance(payload, list):
+            payload = {'version': 2, 'links': payload, 'categories': []}
+        if not isinstance(payload, dict):
+            return self._json(400, {'error': 'expected v2 envelope'})
+
+        categories = payload.get('categories') or []
+        links = payload.get('links') or []
+        if not isinstance(categories, list) or not isinstance(links, list):
+            return self._json(400, {'error': 'expected categories + links to be lists'})
+
+        kept_cat_ids = []
+        kept_link_ids = []
+        with server_db.tx() as conn:
+            with conn.cursor() as cur:
+                for position, c in enumerate(categories):
+                    cat_id = c.get('id')
+                    if not cat_id or not isinstance(cat_id, str):
+                        continue
+                    kept_cat_ids.append(cat_id)
+                    cur.execute(
+                        "INSERT INTO categories (id, user_id, name, position) "
+                        "VALUES (%s, %s, %s, %s) "
+                        "ON CONFLICT (id) DO UPDATE SET "
+                        "name = EXCLUDED.name, position = EXCLUDED.position, "
+                        "updated_at = now()",
+                        (cat_id, user['id'], c.get('name') or '',
+                         int(c.get('order', position) or 0)),
+                    )
+                for position, ln in enumerate(links):
+                    ln_id = ln.get('id')
+                    if not ln_id or not isinstance(ln_id, str):
+                        continue
+                    url = ln.get('url')
+                    name = ln.get('name')
+                    if not url or not name:
+                        # Without url or name there's nothing to render.
+                        continue
+                    category = ln.get('category') or None
+                    # If category id isn't in the kept set, drop it so
+                    # the FK doesn't blow up. The ON DELETE SET NULL
+                    # would catch this later but better to be explicit.
+                    if category and category not in kept_cat_ids:
+                        category = None
+                    kept_link_ids.append(ln_id)
+                    cur.execute(
+                        "INSERT INTO links (id, user_id, category_id, url, "
+                        "name, sub, color, icon_type, icon_value, favorite, "
+                        "position) "
+                        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) "
+                        "ON CONFLICT (id) DO UPDATE SET "
+                        "category_id = EXCLUDED.category_id, "
+                        "url = EXCLUDED.url, name = EXCLUDED.name, "
+                        "sub = EXCLUDED.sub, color = EXCLUDED.color, "
+                        "icon_type = EXCLUDED.icon_type, "
+                        "icon_value = EXCLUDED.icon_value, "
+                        "favorite = EXCLUDED.favorite, "
+                        "position = EXCLUDED.position, "
+                        "updated_at = now()",
+                        (
+                            ln_id, user['id'], category, url, name,
+                            ln.get('sub') or '', ln.get('color') or '',
+                            ln.get('iconType') or '',
+                            ln.get('iconValue') or '',
+                            bool(ln.get('favorite', False)),
+                            position,
+                        ),
+                    )
+                if kept_link_ids:
+                    cur.execute(
+                        "DELETE FROM links WHERE user_id = %s AND id != ALL(%s)",
+                        (user['id'], kept_link_ids),
+                    )
+                else:
+                    cur.execute(
+                        "DELETE FROM links WHERE user_id = %s",
+                        (user['id'],),
+                    )
+                if kept_cat_ids:
+                    cur.execute(
+                        "DELETE FROM categories WHERE user_id = %s AND id != ALL(%s)",
+                        (user['id'], kept_cat_ids),
+                    )
+                else:
+                    cur.execute(
+                        "DELETE FROM categories WHERE user_id = %s",
+                        (user['id'],),
+                    )
+        return self._json(200, {'ok': True})
+
+    def _handle_notes_get(self):
+        """GET /api/notes: list the current user's notes, newest first."""
+        user = self.require_auth()
+        if user is None:
+            return
+        rows = server_db.query(
+            "SELECT id, title, body, "
+            "EXTRACT(EPOCH FROM updated_at) * 1000 AS updated_ms "
+            "FROM notes WHERE user_id = %s "
+            "ORDER BY updated_at DESC, position",
+            (user['id'],),
+        )
+        notes = [
+            {
+                'id': r['id'],
+                'title': r['title'],
+                'body': r['body'],
+                'updatedAt': int(r['updated_ms']) if r['updated_ms'] is not None else None,
+            }
+            for r in rows
+        ]
+        return self._json(200, notes)
+
+    def _handle_notes_post(self):
+        """POST /api/notes: create a single note. Body is a Note object;
+        server assigns id if missing. Matches the original Flask sidecar
+        contract used by src/api/notes.ts."""
+        user = self.require_auth()
+        if user is None:
+            return
+        try:
+            length = int(self.headers.get('Content-Length', 0))
+            payload = json.loads(self.rfile.read(length))
+        except Exception:
+            return self._json(400, {'error': 'invalid JSON'})
+        if not isinstance(payload, dict):
+            return self._json(400, {'error': 'expected an object'})
+        note_id = payload.get('id') or 'note_' + str(int(time.time() * 1000))
+        title = payload.get('title') or ''
+        body = payload.get('body') or ''
+        # The frontend lets the user create empty notes via the "+" button;
+        # don't refuse them. updatedAt is stamped server-side so two clients
+        # creating notes in the same second can't collide on the ordering.
+        rows = server_db.query(
+            "INSERT INTO notes (id, user_id, title, body) "
+            "VALUES (%s, %s, %s, %s) "
+            "ON CONFLICT (id) DO NOTHING "
+            "RETURNING id, title, body, "
+            "EXTRACT(EPOCH FROM updated_at) * 1000 AS updated_ms",
+            (note_id, user['id'], title, body),
+        )
+        if not rows:
+            # id collision; treat as no-op success (legacy Flask
+            # sidecar did the same)
+            existing = server_db.query(
+                "SELECT id, title, body, "
+                "EXTRACT(EPOCH FROM updated_at) * 1000 AS updated_ms "
+                "FROM notes WHERE id = %s AND user_id = %s",
+                (note_id, user['id']),
+            )
+            if existing:
+                r = existing[0]
+                return self._json(201, {
+                    'id': r['id'], 'title': r['title'], 'body': r['body'],
+                    'updatedAt': int(r['updated_ms']) if r['updated_ms'] is not None else None,
+                })
+            return self._json(409, {'error': 'id already exists on another user'})
+        r = rows[0]
+        return self._json(201, {
+            'id': r['id'], 'title': r['title'], 'body': r['body'],
+            'updatedAt': int(r['updated_ms']) if r['updated_ms'] is not None else None,
+        })
+
+    def _handle_notes_put(self, note_id):
+        """PUT /api/notes/<id>: patch fields on a single note. Only the
+        keys present in the request body are updated; id is immutable."""
+        user = self.require_auth()
+        if user is None:
+            return
+        try:
+            length = int(self.headers.get('Content-Length', 0))
+            payload = json.loads(self.rfile.read(length))
+        except Exception:
+            return self._json(400, {'error': 'invalid JSON'})
+        if not isinstance(payload, dict):
+            return self._json(400, {'error': 'expected an object'})
+        # Build the SET clause from whichever subset of fields is patched.
+        # Always bump updated_at on any change.
+        sets = ['updated_at = now()']
+        params = []
+        if 'title' in payload:
+            sets.append('title = %s')
+            params.append(payload['title'] or '')
+        if 'body' in payload:
+            sets.append('body = %s')
+            params.append(payload['body'] or '')
+        params.extend([note_id, user['id']])
+        rows = server_db.query(
+            f"UPDATE notes SET {', '.join(sets)} "
+            "WHERE id = %s AND user_id = %s "
+            "RETURNING id, title, body, "
+            "EXTRACT(EPOCH FROM updated_at) * 1000 AS updated_ms",
+            tuple(params),
+        )
+        if not rows:
+            return self._json(404, {'error': 'not found'})
+        r = rows[0]
+        return self._json(200, {
+            'id': r['id'], 'title': r['title'], 'body': r['body'],
+            'updatedAt': int(r['updated_ms']) if r['updated_ms'] is not None else None,
+        })
+
+    def _handle_notes_delete(self, note_id):
+        """DELETE /api/notes/<id>: remove a single note. Idempotent;
+        404 only if the row exists for someone else."""
+        user = self.require_auth()
+        if user is None:
+            return
+        server_db.execute(
+            "DELETE FROM notes WHERE id = %s AND user_id = %s",
+            (note_id, user['id']),
+        )
+        # Match Flask sidecar contract: always 200 {ok:true} even if
+        # the id wasn't present (frontend often deletes optimistically).
+        return self._json(200, {'ok': True})
+
+    def _handle_home_get(self):
+        """GET /api/home: returns the current user's home_layout payload
+        (a single JSONB blob; the frontend treats it opaquely).
+
+        First-time users with no row get a v1 empty layout so the page
+        can render without a 404."""
+        user = self.require_auth()
+        if user is None:
+            return
+        rows = server_db.query(
+            "SELECT payload FROM home_layout WHERE user_id = %s",
+            (user['id'],),
+        )
+        if rows:
+            return self._json(200, rows[0]['payload'])
+        return self._json(200, {
+            'version': 1, 'sections': [], 'widgets': [], 'habits': [],
+        })
+
+    def _handle_home_post(self):
+        """POST /api/home: replace the user's home_layout in one
+        statement. No omitted-row sweep since home is a single row
+        per user."""
+        user = self.require_auth()
+        if user is None:
+            return
+        try:
+            length = int(self.headers.get('Content-Length', 0))
+            payload = json.loads(self.rfile.read(length))
+        except Exception:
+            return self._json(400, {'error': 'invalid JSON'})
+        if not isinstance(payload, dict):
+            return self._json(400, {'error': 'expected an object'})
+        server_db.execute(
+            "INSERT INTO home_layout (user_id, payload, updated_at) "
+            "VALUES (%s, %s::jsonb, now()) "
+            "ON CONFLICT (user_id) DO UPDATE SET "
+            "payload = EXCLUDED.payload, updated_at = now()",
+            (user['id'], json.dumps(payload)),
+        )
+        return self._json(200, {'ok': True})
+
     def _json(self, status, payload, *, extra_headers=()):
         """Send a JSON response. Used by all auth endpoints."""
         body = json.dumps(payload).encode()
@@ -1023,7 +1354,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _cors(self):
         self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
 
     def do_OPTIONS(self):
@@ -1039,21 +1370,12 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == '/api/plan':
             return self._handle_plan_get()
         if self.path == '/api/links':
-            try:
-                data = json.load(open(LINKS_FILE)) if os.path.exists(LINKS_FILE) else []
-            except Exception:
-                data = []
-            body = json.dumps(data).encode()
-        elif self.path == '/api/home':
-            try:
-                if os.path.exists(HOME_FILE):
-                    data = json.load(open(HOME_FILE))
-                else:
-                    data = {'version': 1, 'sections': [], 'widgets': [], 'habits': []}
-            except Exception:
-                data = {'version': 1, 'sections': [], 'widgets': [], 'habits': []}
-            body = json.dumps(data).encode()
-        elif self.path == '/api/skole':
+            return self._handle_links_get()
+        if self.path == '/api/home':
+            return self._handle_home_get()
+        if self.path == '/api/notes':
+            return self._handle_notes_get()
+        if self.path == '/api/skole':
             try:
                 data = fetch_skole()
             except Exception:
@@ -1179,45 +1501,28 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == '/api/plan':
             return self._handle_plan_post()
         if self.path == '/api/links':
-            file_path = LINKS_FILE
-        elif self.path == '/api/home':
-            file_path = HOME_FILE
-        else:
-            self.send_response(404); self._cors(); self.end_headers(); return
-        try:
-            length = int(self.headers.get('Content-Length', 0))
-            data = json.loads(self.rfile.read(length))
-            # Atomic write: serialize to a temp file in the same directory,
-            # fsync, then rename over the target. If the process dies mid-
-            # write the target keeps its previous (valid) contents instead
-            # of getting truncated. See: man 2 rename — same-FS rename is
-            # atomic on POSIX.
-            fd, tmp_path = tempfile.mkstemp(
-                prefix='.' + os.path.basename(file_path) + '.',
-                suffix='.tmp',
-                dir=os.path.dirname(file_path),
-            )
-            try:
-                with os.fdopen(fd, 'w') as f:
-                    json.dump(data, f, indent=2)
-                    f.flush()
-                    os.fsync(f.fileno())
-                os.replace(tmp_path, file_path)
-            except Exception:
-                try:
-                    os.unlink(tmp_path)
-                except OSError:
-                    pass
-                raise
-            body = b'{"ok":true}'
-        except Exception as e:
-            body = json.dumps({'ok': False, 'error': str(e)}).encode()
-        self.send_response(200)
-        self.send_header('Content-Type', 'application/json')
-        self.send_header('Content-Length', str(len(body)))
-        self._cors()
-        self.end_headers()
-        self.wfile.write(body)
+            return self._handle_links_post()
+        if self.path == '/api/home':
+            return self._handle_home_post()
+        if self.path == '/api/notes':
+            return self._handle_notes_post()
+        self.send_response(404); self._cors(); self.end_headers()
+
+    def do_PUT(self):
+        if self.path.startswith('/api/notes/'):
+            note_id = self.path[len('/api/notes/'):]
+            if not note_id or '/' in note_id:
+                return self._json(404, {'error': 'not found'})
+            return self._handle_notes_put(note_id)
+        self.send_response(404); self._cors(); self.end_headers()
+
+    def do_DELETE(self):
+        if self.path.startswith('/api/notes/'):
+            note_id = self.path[len('/api/notes/'):]
+            if not note_id or '/' in note_id:
+                return self._json(404, {'error': 'not found'})
+            return self._handle_notes_delete(note_id)
+        self.send_response(404); self._cors(); self.end_headers()
 
     def log_message(self, fmt, *args):
         pass  # silence request logs
