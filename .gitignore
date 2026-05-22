@@ -44,6 +44,9 @@ _setup_*_out.txt
 # Playwright MCP captures (snapshots/screenshots)
 .playwright-mcp/
 
+# Throwaway design mockups (standalone HTML + large local video sources)
+_mockups/
+
 # Bug/feature reports — personal notes, mirrored from /opt/dashboard/reports/
 # on the server via _pull_reports.py. Don't push these to the public repo.
 reports/
