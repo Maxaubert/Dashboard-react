@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { authApi } from '@/api/auth';
 import { ApiError } from '@/api/client';
@@ -69,6 +69,9 @@ export function LoginPage() {
           {submitting ? 'Logger inn…' : 'Logg inn'}
         </button>
       </form>
+      <p className="auth-footer">
+        Har du ikke konto? <Link to="/signup">Registrer deg</Link>
+      </p>
     </AuthCard>
   );
 }
