@@ -6,6 +6,8 @@
 
 <p align="center"><b>A unified personal dashboard for daily routines, study, and quick tools.</b><br><i>One React SPA replacing a folder of standalone HTML pages.</i></p>
 
+<p align="center"><a href="https://37-27-210-14.sslip.io"><b>Live site</b></a> &middot; login required</p>
+
 <table>
 <tr>
 <th align="center" width="25%">Hub</th>
