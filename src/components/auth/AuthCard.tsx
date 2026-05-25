@@ -1,106 +1,40 @@
-import type { CSSProperties, ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import { motion } from 'framer-motion';
 
 /**
- * Minimal centered card wrapper shared by the login + signup pages.
- * Intentionally plain: this is the MVP shell, a proper visual pass
- * comes later. Styling lives inline here (and in `authStyles`) so it's
- * trivial to rip out and replace with the design-system version.
+ * Shared shell for the login + signup screens: a full-bleed blurred
+ * galaxy video background, a dark readability scrim, and a dark
+ * frosted-glass card that fades + scales in on mount (framer-motion).
+ *
+ * The card is a flex column with a uniform gap; children passed in
+ * (inputs, button, footer) line up under the brand. Wrap form fields in
+ * a `<form style={{ display: 'contents' }}>` so they join this flex flow
+ * directly while keeping native submit behavior.
+ *
+ * Styles live under `.auth-*` in globals.css. The video is the compressed
+ * `public/galaxy.mp4` (720p, ~700KB, fine because it's blurred).
  */
-export function AuthCard({ title, children }: { title: string; children: ReactNode }) {
+export function AuthCard({ children }: { children: ReactNode }) {
   return (
-    <div style={authStyles.screen}>
-      <div style={authStyles.card}>
-        <div style={authStyles.brand}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <div className="auth-screen">
+      <video className="auth-bg" autoPlay muted loop playsInline>
+        <source src="/galaxy.mp4" type="video/mp4" />
+      </video>
+      <div className="auth-scrim" />
+      <motion.div
+        className="auth-card"
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <div className="auth-brand">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
             <path d="M3 3h7v7H3V3m0 11h7v7H3v-7m11-11h7v7h-7V3m0 11h7v7h-7v-7" />
           </svg>
           <span>Dashboard</span>
         </div>
-        <h1 style={authStyles.title}>{title}</h1>
         {children}
-      </div>
+      </motion.div>
     </div>
   );
 }
-
-export const authStyles: Record<string, CSSProperties> = {
-  screen: {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '24px',
-    background: '#050505',
-    color: '#e7e7ea',
-  },
-  card: {
-    width: '100%',
-    maxWidth: 360,
-    background: '#0b0b0f',
-    border: '1px solid rgba(255,255,255,0.06)',
-    borderRadius: 16,
-    padding: '32px 28px',
-    boxShadow: '0 8px 40px rgba(0,0,0,0.6)',
-  },
-  brand: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    color: '#6366f1',
-    fontWeight: 700,
-    fontSize: '0.95rem',
-    marginBottom: 18,
-  },
-  title: {
-    fontSize: '1.4rem',
-    fontWeight: 700,
-    margin: '0 0 20px',
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 14,
-  },
-  label: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 6,
-    fontSize: '0.8rem',
-    color: '#a1a1aa',
-  },
-  input: {
-    background: '#040406',
-    border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: 10,
-    padding: '10px 12px',
-    color: '#e7e7ea',
-    fontSize: '0.95rem',
-    outline: 'none',
-  },
-  button: {
-    marginTop: 6,
-    background: '#6366f1',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 10,
-    padding: '11px 14px',
-    fontSize: '0.95rem',
-    fontWeight: 600,
-    cursor: 'pointer',
-  },
-  error: {
-    color: '#f87171',
-    fontSize: '0.82rem',
-    margin: 0,
-  },
-  footer: {
-    marginTop: 20,
-    fontSize: '0.82rem',
-    color: '#a1a1aa',
-    textAlign: 'center',
-  },
-  link: {
-    color: '#818cf8',
-    textDecoration: 'none',
-  },
-};

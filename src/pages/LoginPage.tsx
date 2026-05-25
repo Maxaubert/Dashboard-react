@@ -4,12 +4,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import { authApi } from '@/api/auth';
 import { ApiError } from '@/api/client';
 import { queryKeys } from '@/hooks/queryKeys';
-import { AuthCard, authStyles } from '@/components/auth/AuthCard';
+import { AuthCard } from '@/components/auth/AuthCard';
 
 /**
- * MVP login form. Plain styling on purpose, visuals come later. On success
- * it seeds the currentUser cache and navigates back to wherever the guard
- * bounced the user from (or `/`).
+ * Minimalist login: brand + two placeholder fields + button on a blurred
+ * galaxy video background. On success it seeds the currentUser cache and
+ * navigates back to wherever the guard bounced from (or `/`).
  */
 export function LoginPage() {
   const navigate = useNavigate();
@@ -44,37 +44,33 @@ export function LoginPage() {
   }
 
   return (
-    <AuthCard title="Logg inn">
-      <form onSubmit={onSubmit} style={authStyles.form}>
-        <label style={authStyles.label}>
-          E-post
-          <input
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={authStyles.input}
-          />
-        </label>
-        <label style={authStyles.label}>
-          Passord
-          <input
-            type="password"
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={authStyles.input}
-          />
-        </label>
-        {error && <p style={authStyles.error}>{error}</p>}
-        <button type="submit" disabled={submitting} style={authStyles.button}>
+    <AuthCard>
+      <form onSubmit={onSubmit} style={{ display: 'contents' }}>
+        <input
+          className="auth-input"
+          type="email"
+          placeholder="E-post"
+          autoComplete="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <input
+          className="auth-input"
+          type="password"
+          placeholder="Passord"
+          autoComplete="current-password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        {error && <p className="auth-error">{error}</p>}
+        <button className="auth-btn" type="submit" disabled={submitting}>
           {submitting ? 'Logger inn…' : 'Logg inn'}
         </button>
       </form>
-      <p style={authStyles.footer}>
-        Har du ikke konto? <Link to="/signup" style={authStyles.link}>Registrer deg</Link>
+      <p className="auth-footer">
+        Har du ikke konto? <Link to="/signup">Registrer deg</Link>
       </p>
     </AuthCard>
   );
