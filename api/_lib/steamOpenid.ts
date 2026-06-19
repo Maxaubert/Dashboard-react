@@ -53,6 +53,7 @@ export async function verifyWithSteam(
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: body.toString(),
   });
+  if (!res.ok) return false;
   const text = await res.text();
-  return /is_valid\s*:\s*true/.test(text);
+  return /^is_valid:true\s*$/m.test(text);
 }

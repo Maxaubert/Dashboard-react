@@ -54,4 +54,8 @@ describe('verifyWithSteam', () => {
     const stub = (async () => ({ ok: true, text: async () => 'is_valid:false\n' })) as unknown as typeof fetch;
     expect(await verifyWithSteam(new URLSearchParams(), stub)).toBe(false);
   });
+  it('returns false on a non-ok response', async () => {
+    const stub = (async () => ({ ok: false, text: async () => 'is_valid:true\n' })) as unknown as typeof fetch;
+    expect(await verifyWithSteam(new URLSearchParams(), stub)).toBe(false);
+  });
 });
