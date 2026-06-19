@@ -4,6 +4,7 @@ import { cn } from '@/lib/cn';
 import type { SectionId } from '@/lib/home';
 import { type HandleProps } from '@/components/home/GripHandle';
 import { KategorierSection } from '@/components/home/SectionKategorier';
+import { WishlistSection } from '@/components/home/SectionWishlist';
 import { EksterneLenkerSection } from '@/components/home/SectionEksterneLenker';
 import { DagensPlanSection } from '@/components/home/SectionDagensPlan';
 import { VaerSection } from '@/components/home/SectionVaer';
@@ -35,6 +36,7 @@ export function SortableHomeSection({ id }: { id: SectionId }) {
     <div ref={setNodeRef} style={style} className={cn(isDragging && 'db-section-dragging')}>
       {id === 'prompt-launcher' && <PromptLauncher handleProps={handleProps} />}
       {id === 'kategorier' && <KategorierSection handleProps={handleProps} />}
+      {id === 'wishlist' && <WishlistSection handleProps={handleProps} />}
       {id === 'widgets' && <WidgetsSection handleProps={handleProps} />}
       {id === 'ext-lenker' && <EksterneLenkerSection handleProps={handleProps} />}
       {id === 'dagens-plan' && <DagensPlanSection handleProps={handleProps} />}
