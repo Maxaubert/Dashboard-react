@@ -2983,19 +2983,8 @@
    * Plan page — full-height week calendar
    *
    * The calendar needs a fixed-viewport shell so it can scroll
-   * independently from the body. AppShell adds `.app-shell-full` and
-   * `.main-content-full` when the route is /plan.
+   * independently from the body.
    * ──────────────────────────────────────────────────────────────────── */
-  .app-shell-full {
-    height: 100vh;
-    overflow: hidden;
-  }
-  .main-content-full {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
-  }
 
   .week-toolbar {
     display: flex;
@@ -5908,10 +5897,6 @@
   .todo-item:hover .todo-action-btn { opacity: 0.7; }
   .todo-action-btn:hover { opacity: 1; background: rgba(255, 255, 255, 0.05); color: var(--color-text); }
   .todo-action-btn.delete:hover { color: var(--color-danger); }
-  .todo-action-btn.pin.pinned {
-    opacity: 1;
-    color: var(--color-page-todo);
-  }
 
   .todo-empty-state {
     text-align: center;
@@ -6070,23 +6055,6 @@
     color: var(--color-danger);
   }
 
-  .todo-pin-toggle {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 0.82rem;
-    font-weight: 500;
-    letter-spacing: 0;
-    text-transform: none;
-    color: var(--color-text-dim);
-    cursor: pointer;
-  }
-  .todo-pin-toggle input[type='checkbox'] {
-    width: 16px;
-    height: 16px;
-    accent-color: var(--color-page-todo);
-    cursor: pointer;
-  }
 
   .priority-row {
     display: flex;
@@ -6167,237 +6135,6 @@
     background: rgba(248, 113, 113, 0.10);
   }
 
-  /* Pinned-todo widget (A2: pink gradient tile on home page).
-   * Must stay exactly 164×156 no matter the content — match the size
-   * of every other widget tile. Title is clamped and ellipsized; pills
-   * are pinned to the bottom; nothing can grow the shell. */
-  .todo-widget {
-    background: linear-gradient(135deg, rgba(96, 165, 250, 0.22) 0%, var(--color-surface) 70%);
-    border-color: rgba(96, 165, 250, 0.35);
-    height: 156px;
-    overflow: hidden;
-    gap: 4px;
-  }
-  .todo-widget-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 0.62rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--color-page-todo);
-    flex-shrink: 0;
-  }
-  .todo-widget-check {
-    width: 20px;
-    height: 20px;
-    border-radius: 6px;
-    border: 1.5px solid rgba(96, 165, 250, 0.55);
-    background: transparent;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin-top: 4px;
-    color: var(--color-page-todo);
-    padding: 0;
-    flex-shrink: 0;
-    transition: background 0.15s, border-color 0.15s;
-  }
-  .todo-widget-check:hover { border-color: rgba(96, 165, 250, 0.85); }
-  .todo-widget.done .todo-widget-check {
-    background: rgba(96, 165, 250, 0.35);
-    border-color: rgba(96, 165, 250, 0.8);
-  }
-  .todo-widget-title {
-    font-size: 0.82rem;
-    font-weight: 600;
-    line-height: 1.25;
-    color: var(--color-text);
-    margin-top: 4px;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    word-break: break-word;
-    min-height: 0;
-  }
-  .todo-widget.done .todo-widget-title {
-    text-decoration: line-through;
-    color: var(--color-text-muted);
-  }
-  .todo-widget.done { opacity: 0.55; }
-  .todo-widget-pills {
-    margin-top: auto;
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    font-size: 0.64rem;
-    flex-wrap: nowrap;
-    overflow: hidden;
-    flex-shrink: 0;
-  }
-  .todo-widget-pill {
-    padding: 2px 8px;
-    border-radius: 999px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--color-border);
-    color: var(--color-text-dim);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-    flex-shrink: 1;
-    min-width: 0;
-  }
-  .todo-widget-pill.overdue { color: var(--color-danger); border-color: rgba(248, 113, 113, 0.35); }
-
-  /* View popup for pinned-todo widget (click tile → full-text + actions) */
-  .todo-view {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    padding: 4px 2px 2px;
-  }
-  .todo-view-text {
-    font-size: 1rem;
-    line-height: 1.45;
-    color: var(--color-text);
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-  .todo-view-meta {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-  .todo-view-badge {
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 3px 10px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid var(--color-border);
-  }
-  .todo-view-badge.pri-high   { color: var(--color-danger);  border-color: rgba(248, 113, 113, 0.35); }
-  .todo-view-badge.pri-medium { color: var(--color-warning); border-color: rgba(245, 158, 11, 0.35); }
-  .todo-view-badge.pri-low    { color: var(--color-info);    border-color: rgba(96, 165, 250, 0.35); }
-  .todo-view-deadline {
-    font-size: 0.78rem;
-    color: var(--color-text-dim);
-  }
-  .todo-view-deadline.overdue { color: var(--color-danger); }
-  .todo-view-done {
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 3px 10px;
-    border-radius: 999px;
-    background: rgba(96, 165, 250, 0.12);
-    color: var(--color-page-todo);
-    border: 1px solid rgba(96, 165, 250, 0.3);
-  }
-  /* V5 footer action bar — primary pink + ghost edit + ghost delete */
-  .todo-view-btn {
-    flex: 1;
-    padding: 9px 10px;
-    border-radius: 8px;
-    border: 1px solid var(--color-border);
-    background: rgba(255, 255, 255, 0.03);
-    color: var(--color-text);
-    font-size: 0.78rem;
-    font-weight: 600;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    white-space: nowrap;
-    transition: background 0.15s, border-color 0.15s, color 0.15s, filter 0.15s;
-  }
-  .todo-view-btn:hover { background: rgba(255, 255, 255, 0.07); border-color: rgba(255, 255, 255, 0.16); }
-  .todo-view-btn.primary {
-    background: var(--color-page-todo);
-    border-color: var(--color-page-todo);
-    color: #1a0e14;
-    flex: 1.4;
-  }
-  .todo-view-btn.primary:hover { filter: brightness(1.08); background: var(--color-page-todo); border-color: var(--color-page-todo); }
-  .todo-view-btn.undo {
-    background: rgba(255, 255, 255, 0.04);
-    color: var(--color-text-dim);
-  }
-  .todo-view-btn.ghost { color: var(--color-text); }
-  .todo-view-btn.delete {
-    color: var(--color-danger);
-    border-color: rgba(248, 113, 113, 0.28);
-  }
-  .todo-view-btn.delete:hover { background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.5); }
-
-  /* Override lm-footer alignment so buttons span the full width */
-  .lm-content:has(.todo-view) .lm-footer {
-    justify-content: stretch;
-    gap: 6px;
-  }
-  .lm-content:has(.todo-view) .lm-title-standard {
-    color: var(--color-page-todo);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    font-size: 0.72rem;
-  }
-  /* The corner pin-off icon replaces the built-in X close. */
-  .lm-content:has(.todo-view) .lm-close { display: none; }
-
-  /* The view popup's parent .lm-content already has position: relative,
-   * so we anchor the pin-off button to the modal's top-right corner —
-   * roughly where the X close used to sit. */
-  .lm-content:has(.todo-view) .todo-view-pin {
-    position: absolute;
-    top: 14px;
-    right: 14px;
-    width: 28px;
-    height: 28px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    color: var(--color-page-todo);
-    cursor: pointer;
-    transition: background 0.15s, border-color 0.15s, color 0.15s;
-  }
-  .todo-view-pin:hover {
-    background: rgba(96, 165, 250, 0.1);
-    border-color: rgba(96, 165, 250, 0.4);
-  }
-  /* Pending-unpin state: icon flips to Pin and the button takes an
-   * amber tint to warn "this will drop from dashboard on close". */
-  .todo-view-pin.unpinned {
-    color: var(--color-warning);
-    border-color: rgba(245, 158, 11, 0.4);
-    background: rgba(245, 158, 11, 0.06);
-  }
-  .todo-view-pin.unpinned:hover {
-    background: rgba(245, 158, 11, 0.12);
-    border-color: rgba(245, 158, 11, 0.55);
-  }
-
-  /* Brief "completed" flash when the check is ticked (before the 1s auto-unpin) */
-  .todo-widget.done {
-    animation: todo-widget-done-flash 0.5s ease-out;
-  }
-  @keyframes todo-widget-done-flash {
-    0%   { box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.5); }
-    60%  { box-shadow: 0 0 0 8px rgba(96, 165, 250, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(96, 165, 250, 0); }
-  }
 
   /* Category section headers */
   .links-section-header {

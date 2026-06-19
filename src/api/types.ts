@@ -28,7 +28,7 @@ export interface Todo {
   /** ISO 8601 date string (YYYY-MM-DD). Optional. */
   deadline?: string | null;
   done: boolean;
-  /** True when the user has pinned this todo to the home page as a widget. */
+  /** Legacy field -- kept for data-compat. The widget feature was removed; this field is no longer written or read by the UI. */
   pinned?: boolean;
   /** ISO timestamp the todo was marked done. Used to auto-purge after 7 days. */
   completedAt?: string | null;
