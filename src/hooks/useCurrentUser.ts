@@ -1,9 +1,11 @@
+import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { authApi } from '@/api/auth';
+import { supabase } from '@/lib/supabase';
 import { queryKeys } from './queryKeys';
 
 /**
- * Resolves the logged-in user from the session cookie via /api/auth/me.
+ * Resolves the current user via Supabase Auth (`supabase.auth.getUser()`).
  * Returns `null` (not an error) when logged out, so callers can branch on
  * `data === null` to mean "anonymous". The whole app is guarded by
  * RequireAuth, so most pages can assume `data` is a User once rendered.
@@ -18,7 +20,7 @@ export function useCurrentUser() {
   });
 }
 
-/** Logout mutation: clears the server session, then resets the cache so
+/** Logout mutation: clears the Supabase session, then resets the cache so
  *  the guard immediately bounces to /login. */
 export function useLogout() {
   const qc = useQueryClient();
@@ -33,4 +35,24 @@ export function useLogout() {
       qc.setQueryData(queryKeys.currentUser, null);
     },
   });
+}
+
+/** Subscribe React Query to Supabase auth changes (call once, in App). */
+export function useAuthSync() {
+  const qc = useQueryClient();
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      qc.setQueryData(
+        queryKeys.currentUser,
+        session?.user
+          ? {
+              id: session.user.id,
+              email: session.user.email ?? '',
+              display_name: (session.user.user_metadata?.display_name as string) ?? '',
+            }
+          : null
+      );
+    });
+    return () => data.subscription.unsubscribe();
+  }, [qc]);
 }

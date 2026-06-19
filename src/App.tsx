@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Outlet, Route, Routes } from 'react-router-dom';
+import { useAuthSync } from './hooks/useCurrentUser';
 import { AppShell } from './components/layout/AppShell';
 import { ToastProvider } from './components/ui';
 import { ReportProvider } from './components/report/ReportProvider';
@@ -26,6 +27,8 @@ import { ToolPdfPage } from './pages/tools/ToolPdfPage';
 import { ToolConvertPage } from './pages/tools/ToolConvertPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
+function AuthSync() { useAuthSync(); return null; }
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -43,6 +46,7 @@ export function App() {
       <ToastProvider>
         <TimerProvider>
           <BrowserRouter>
+            <AuthSync />
             <Routes>
               {/* Public auth routes — no sidebar, no guard. */}
               <Route path="/login" element={<LoginPage />} />

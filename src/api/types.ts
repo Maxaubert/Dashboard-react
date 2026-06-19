@@ -11,7 +11,7 @@
 
 /** The current user, as returned by /api/auth/{me,login,signup}. */
 export interface User {
-  id: number;
+  id: string;
   email: string;
   display_name: string;
 }

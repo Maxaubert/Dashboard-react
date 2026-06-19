@@ -2,7 +2,6 @@ import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { authApi } from '@/api/auth';
-import { ApiError } from '@/api/client';
 import { queryKeys } from '@/hooks/queryKeys';
 import { AuthCard, authStyles } from '@/components/auth/AuthCard';
 
@@ -31,12 +30,13 @@ export function LoginPage() {
       qc.setQueryData(queryKeys.currentUser, user);
       navigate(from, { replace: true });
     } catch (err) {
-      if (err instanceof ApiError && err.status === 401) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('credentials')) {
         setError('Feil e-post eller passord.');
-      } else if (err instanceof ApiError && err.status === 429) {
+      } else if (msg.toLowerCase().includes('rate') || msg.toLowerCase().includes('too many')) {
         setError('For mange forsøk. Vent litt og prøv igjen.');
       } else {
-        setError('Noe gikk galt. Prøv igjen.');
+        setError(msg || 'Noe gikk galt. Prøv igjen.');
       }
     } finally {
       setSubmitting(false);

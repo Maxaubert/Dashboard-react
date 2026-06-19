@@ -1,37 +1,38 @@
-import { api, ApiError } from './client';
+import { supabase } from '@/lib/supabase';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 import type { User } from './types';
 
-/**
- * Auth client for the Phase 2 backend endpoints. The session lives in an
- * HttpOnly cookie set by the server, so there's no token to store here;
- * `client.ts` already sends `credentials: 'include'` on every request.
- */
+export function mapUser(u: SupabaseUser): User {
+  return {
+    id: u.id,
+    email: u.email ?? '',
+    display_name: (u.user_metadata?.display_name as string | undefined) ?? '',
+  };
+}
+
 export const authApi = {
-  /** Resolve the current user, or null if not logged in (401). */
   me: async (): Promise<User | null> => {
-    try {
-      const { user } = await api.get<{ user: User }>('/auth/me');
-      return user;
-    } catch (e) {
-      if (e instanceof ApiError && e.status === 401) return null;
-      throw e;
-    }
+    const { data } = await supabase.auth.getUser();
+    return data.user ? mapUser(data.user) : null;
   },
 
   login: async (email: string, password: string): Promise<User> => {
-    const { user } = await api.post<{ user: User }>('/auth/login', { email, password });
-    return user;
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error || !data.user) throw new Error(error?.message ?? 'Innlogging feilet');
+    return mapUser(data.user);
   },
 
-  signup: async (input: {
-    code: string;
-    email: string;
-    password: string;
-    display_name: string;
-  }): Promise<User> => {
-    const { user } = await api.post<{ user: User }>('/auth/signup', input);
-    return user;
+  signup: async (input: { email: string; password: string; display_name: string }): Promise<User> => {
+    const { data, error } = await supabase.auth.signUp({
+      email: input.email,
+      password: input.password,
+      options: { data: { display_name: input.display_name } },
+    });
+    if (error || !data.user) throw new Error(error?.message ?? 'Registrering feilet');
+    return mapUser(data.user);
   },
 
-  logout: (): Promise<void> => api.post<void>('/auth/logout'),
+  logout: async (): Promise<void> => {
+    await supabase.auth.signOut();
+  },
 };
