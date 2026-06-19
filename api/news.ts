@@ -3,7 +3,9 @@ import { fetchNews } from './_lib/news';
 import { getCached } from './_lib/cache';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const source = (String(req.query.source ?? 'vg')) as 'vg' | 'nrk' | 'aftenposten';
+  const raw = String(req.query.source ?? 'vg');
+  const source: 'vg' | 'nrk' | 'aftenposten' =
+    raw === 'nrk' || raw === 'aftenposten' ? raw : 'vg';
   const count = Number(req.query.count ?? 8);
   const offset = Number(req.query.offset ?? 0);
   try {

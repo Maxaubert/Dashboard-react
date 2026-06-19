@@ -2,8 +2,11 @@
  * IsThereAnyDeal price history fetch + chart builder.
  *
  * Ported verbatim from gaming.html so the price chart looks identical.
- * The ITAD API key is read from the VITE_ITAD_KEY build-time env var
- * (client-visible but not a source literal so it can be rotated without a code change).
+ * The ITAD API key is a low-value PUBLIC ITAD key that is intentionally
+ * bundled into the client at build time. Rotating it requires a rebuild
+ * and redeploy. The value is publicly readable from the bundle. If this
+ * key ever needs to be confidential, proxy ITAD calls through a
+ * server-side endpoint.
  */
 
 const ITAD_KEY = import.meta.env.VITE_ITAD_KEY as string;
