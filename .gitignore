@@ -84,3 +84,7 @@ _dev.log
 
 # TypeScript incremental build cache (regenerated on every build)
 *.tsbuildinfo
+
+# Playwright
+playwright-report/
+test-results/
