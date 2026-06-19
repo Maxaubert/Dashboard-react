@@ -66,11 +66,13 @@ export function GameModal({ game, onClose }: { game: WishlistGame; onClose: () =
           </Dialog.Close>
           <div className="gaming-modal-hero">
             <img
-              src={game.imgUrl}
+              src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/library_hero.jpg`}
               alt={game.name}
               onError={(e) => {
+                // Fall back high-res library_hero -> header -> cdn header -> hide.
                 const img = e.target as HTMLImageElement;
-                if (game.imgFallback && img.src !== game.imgFallback) img.src = game.imgFallback;
+                if (game.imgUrl && img.src !== game.imgUrl) img.src = game.imgUrl;
+                else if (game.imgFallback && img.src !== game.imgFallback) img.src = game.imgFallback;
                 else img.style.display = 'none';
               }}
             />
