@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useWishlist, useSteamConnection } from '@/hooks/useWishlist';
+import { usePageOverlay } from '@/context/PageOverlayContext';
 import { useDragScroll } from '@/hooks/useDragScroll';
 import { orderForCarousel } from '@/lib/wishlistOrder';
 import { steamApi } from '@/api/steam';
@@ -9,6 +9,7 @@ import { GripHandle, type HandleProps } from '@/components/home/GripHandle';
 import type { WishlistGame } from '@/api/types';
 
 export function WishlistSection({ handleProps }: { handleProps?: HandleProps }) {
+  const { openOverlay } = usePageOverlay();
   const { data: conn } = useSteamConnection();
   const { data: wl, isLoading } = useWishlist();
   const [active, setActive] = useState<WishlistGame | null>(null);
@@ -24,12 +25,12 @@ export function WishlistSection({ handleProps }: { handleProps?: HandleProps }) 
           <GripHandle handleProps={handleProps} />
           Steam ønskeliste
         </span>
-        <Link to="/gaming" className="section-header-link">
+        <button type="button" className="section-header-link" onClick={() => openOverlay('gaming')}>
           Alle
           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
             <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z" />
           </svg>
-        </Link>
+        </button>
       </div>
 
       {!connected && !isLoading ? (

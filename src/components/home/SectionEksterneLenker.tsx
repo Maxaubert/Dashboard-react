@@ -1,12 +1,13 @@
 import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
 import { useLinks } from '@/hooks/useLinks';
+import { usePageOverlay } from '@/context/PageOverlayContext';
 import { useDragScroll } from '@/hooks/useDragScroll';
 import { LinkIconRender } from '@/components/links/LinkCard';
 import type { LinkItem } from '@/api/types';
 import { GripHandle, type HandleProps } from '@/components/home/GripHandle';
 
 export function EksterneLenkerSection({ handleProps }: { handleProps?: HandleProps }) {
+  const { openOverlay } = usePageOverlay();
   const { data: envelope } = useLinks();
   const links = envelope?.links ?? [];
   const favorites = useMemo(
@@ -50,12 +51,12 @@ export function EksterneLenkerSection({ handleProps }: { handleProps?: HandlePro
           <GripHandle handleProps={handleProps} />
           Eksterne lenker
         </span>
-        <Link to="/links" className="section-header-link">
+        <button type="button" className="section-header-link" onClick={() => openOverlay('links')}>
           Alle
           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
             <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z" />
           </svg>
-        </Link>
+        </button>
       </div>
       <div className="ext-grid-wrap">
         <div className="ext-grid" ref={scrollerRef}>
