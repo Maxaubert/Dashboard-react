@@ -1,8 +1,12 @@
-import { api } from './client';
+import { readDoc, writeDoc } from '@/lib/docStore';
 import type { HomeEnvelope } from './types';
 
+const EMPTY_HOME: HomeEnvelope = { version: 1, sections: [], widgets: [], habits: [] };
+
 export const homeApi = {
-  list: (): Promise<HomeEnvelope> => api.get<HomeEnvelope>('/home'),
-  saveAll: (envelope: HomeEnvelope): Promise<{ ok: boolean }> =>
-    api.post<{ ok: boolean }>('/home', envelope),
+  list: () => readDoc<HomeEnvelope>('home', EMPTY_HOME),
+  saveAll: async (envelope: HomeEnvelope) => {
+    await writeDoc('home', envelope);
+    return { ok: true };
+  },
 };
