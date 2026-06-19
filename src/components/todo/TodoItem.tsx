@@ -1,5 +1,4 @@
 import { memo } from 'react';
-import { Pin, PinOff } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Todo } from '@/api/types';
@@ -11,10 +10,9 @@ export interface TodoItemProps {
   onEdit: () => void;
   onDelete: () => void;
   onToggleDone: () => void;
-  onTogglePin: () => void;
 }
 
-function TodoItemImpl({ todo, onEdit, onDelete, onToggleDone, onTogglePin }: TodoItemProps) {
+function TodoItemImpl({ todo, onEdit, onDelete, onToggleDone }: TodoItemProps) {
   const deadlineInfo = todo.deadline ? formatDeadline(todo.deadline) : null;
 
   return (
@@ -23,7 +21,6 @@ function TodoItemImpl({ todo, onEdit, onDelete, onToggleDone, onTogglePin }: Tod
         'todo-item',
         `priority-${todo.priority}`,
         todo.done && 'done',
-        todo.pinned && 'pinned',
       )}
     >
       <button
@@ -52,17 +49,6 @@ function TodoItemImpl({ todo, onEdit, onDelete, onToggleDone, onTogglePin }: Tod
       )}
 
       <div className="todo-actions">
-        <button
-          className={cn('todo-action-btn', 'pin', todo.pinned && 'pinned')}
-          onClick={(e) => {
-            e.stopPropagation();
-            onTogglePin();
-          }}
-          aria-label={todo.pinned ? 'Løsne' : 'Fest til dashboard'}
-          title={todo.pinned ? 'Løsne' : 'Fest til dashboard'}
-        >
-          {todo.pinned ? <PinOff size={14} /> : <Pin size={14} />}
-        </button>
         <button
           className="todo-action-btn edit"
           onClick={(e) => {
@@ -109,7 +95,6 @@ export const TodoItem = memo(TodoItemImpl, (prev, next) => {
     a.text === b.text &&
     a.priority === b.priority &&
     a.done === b.done &&
-    (a.pinned ?? false) === (b.pinned ?? false) &&
     (a.deadline ?? null) === (b.deadline ?? null)
   );
 });

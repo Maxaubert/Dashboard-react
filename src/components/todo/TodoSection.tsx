@@ -12,7 +12,6 @@ interface TodoSectionProps {
   onEdit: (t: Todo) => void;
   onDelete: (id: string) => void;
   onToggleDone: (id: string) => void;
-  onTogglePin: (id: string) => void;
 }
 
 /**
@@ -29,7 +28,6 @@ export function TodoSection({
   onEdit,
   onDelete,
   onToggleDone,
-  onTogglePin,
 }: TodoSectionProps) {
   const { setNodeRef: containerRef, isOver } = useDroppable({ id });
   const { setNodeRef: startRailRef, isOver: isOverStart } = useDroppable({ id: `${id}-start` });
@@ -62,7 +60,6 @@ export function TodoSection({
                 onEdit={() => onEdit(t)}
                 onDelete={() => onDelete(t.id)}
                 onToggleDone={() => onToggleDone(t.id)}
-                onTogglePin={() => onTogglePin(t.id)}
               />
             ))
           )}

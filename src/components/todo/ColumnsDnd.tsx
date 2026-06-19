@@ -21,7 +21,6 @@ interface ColumnsDndProps {
   onEdit: (t: Todo) => void;
   onDelete: (id: string) => void;
   onToggleDone: (id: string) => void;
-  onTogglePin: (id: string) => void;
   onCreate: (priority: Priority) => void;
 }
 
@@ -38,7 +37,6 @@ export function ColumnsDnd({
   onEdit,
   onDelete,
   onToggleDone,
-  onTogglePin,
   onCreate,
 }: ColumnsDndProps) {
   const containers = useMemo<Record<ColumnId, Todo[]>>(
@@ -64,7 +62,7 @@ export function ColumnsDnd({
       done: to === 'done',
     }),
     fingerprint: (t) =>
-      `${t.id}:${t.priority}:${t.done ? 1 : 0}:${t.pinned ? 1 : 0}:${t.text}:${t.deadline ?? ''}`,
+      `${t.id}:${t.priority}:${t.done ? 1 : 0}:${t.text}:${t.deadline ?? ''}`,
   });
 
   return (
@@ -87,7 +85,6 @@ export function ColumnsDnd({
             onEdit={onEdit}
             onDelete={onDelete}
             onToggleDone={onToggleDone}
-            onTogglePin={onTogglePin}
           />
         ))}
       </div>
@@ -99,7 +96,6 @@ export function ColumnsDnd({
         onEdit={onEdit}
         onDelete={onDelete}
         onToggleDone={onToggleDone}
-        onTogglePin={onTogglePin}
       />
       <DragOverlay>
         {dnd.activeItem ? (
@@ -108,7 +104,6 @@ export function ColumnsDnd({
             onEdit={() => {}}
             onDelete={() => {}}
             onToggleDone={() => {}}
-            onTogglePin={() => {}}
           />
         ) : null}
       </DragOverlay>
@@ -124,7 +119,6 @@ interface ColumnDropZoneProps {
   onEdit: (t: Todo) => void;
   onDelete: (id: string) => void;
   onToggleDone: (id: string) => void;
-  onTogglePin: (id: string) => void;
 }
 
 function ColumnDropZone({
@@ -135,7 +129,6 @@ function ColumnDropZone({
   onEdit,
   onDelete,
   onToggleDone,
-  onTogglePin,
 }: ColumnDropZoneProps) {
   const { setNodeRef: containerRef, isOver } = useDroppable({ id });
   const { setNodeRef: startRailRef, isOver: isOverStart } = useDroppable({ id: `${id}-start` });
@@ -179,7 +172,6 @@ function ColumnDropZone({
                 onEdit={() => onEdit(t)}
                 onDelete={() => onDelete(t.id)}
                 onToggleDone={() => onToggleDone(t.id)}
-                onTogglePin={() => onTogglePin(t.id)}
               />
             ))
           )}

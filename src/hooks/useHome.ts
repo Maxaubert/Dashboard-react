@@ -33,8 +33,7 @@ export function useSaveHome() {
     mutationFn: (envelope: HomeEnvelope) => homeApi.saveAll(envelope),
     onMutate: async (next) => {
       // IMPORTANT: set the cache SYNCHRONOUSLY before any await. Two rapid
-      // `save.mutate(...)` calls (e.g. `addHabit` then `addWidget` inside
-      // `handleAddHabit`) read the cache between calls; if we awaited the
+      // `save.mutate(...)` calls read the cache between calls; if we awaited the
       // cancellation first, the second call would see the pre-mutation cache
       // and its patch would clobber the first mutation's changes.
       const previous = qc.getQueryData<HomeEnvelope>(queryKeys.home);
@@ -55,13 +54,12 @@ export function useSaveHome() {
 
 /**
  * Apply a patch function to the LATEST cached envelope. Avoids the stale-closure
- * bug where two rapid `save.mutate(...)` calls — e.g. `addHabit` immediately
- * followed by `addWidget` from `handleAddHabit` — each read a pre-mutation
+ * bug where two rapid `save.mutate(...)` calls each read a pre-mutation
  * `data` reference and clobber the other's update.
  *
  * Usage:
  *   const mutate = useMutateHome();
- *   mutate((prev) => ({ ...prev, widgets: [...prev.widgets, newWidget] }));
+ *   mutate((prev) => ({ ...prev, habits: [...prev.habits, newHabit] }));
  */
 export function useMutateHome() {
   const qc = useQueryClient();

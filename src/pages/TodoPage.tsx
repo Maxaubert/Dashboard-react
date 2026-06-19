@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useToast } from '@/components/ui';
 import { useSaveTodos, useTodos } from '@/hooks/useTodos';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { useWidgets } from '@/hooks/useWidgets';
 import type { Priority, Todo } from '@/api/types';
 import { cn } from '@/lib/cn';
 import { playTodoCompleteSound } from '@/lib/sounds';
@@ -25,7 +24,6 @@ export function TodoPage() {
   const { data: todos } = useTodos();
   const saveTodos = useSaveTodos();
   const { toast } = useToast();
-  const { addWidget, removeWidgetByRefId } = useWidgets();
   const [view, setView] = useLocalStorage<'list' | 'columns'>('todo-view', 'list');
   const [editing, setEditing] = useState<Todo | null>(null);
   const [creating, setCreating] = useState<Priority | null>(null);
@@ -58,18 +56,14 @@ export function TodoPage() {
     }
     purgedRef.current = true;
     const kept = todos.filter((t) => !expired.some((e) => e.id === t.id));
-    expired.forEach((t) => {
-      if (t.pinned) removeWidgetByRefId(t.id);
-    });
     persist(kept);
-    // persist/removeWidgetByRefId and `todos` deps are intentionally
-    // excluded — purgedRef guards against re-entry.
+    // persist and `todos` deps are intentionally excluded — purgedRef guards
+    // against re-entry.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [todos]);
 
   function handleSave(item: Todo) {
     const idx = sorted.findIndex((t) => t.id === item.id);
-    const prev = idx >= 0 ? sorted[idx] : undefined;
     let next: Todo[];
     if (idx >= 0) {
       next = [...sorted];
@@ -78,25 +72,12 @@ export function TodoPage() {
       next = [...sorted, item];
     }
     persist(next);
-
-    const wasPinned = prev?.pinned ?? false;
-    const isPinned = item.pinned ?? false;
-    if (!wasPinned && isPinned) {
-      addWidget('todo', item.id);
-    } else if (wasPinned && !isPinned) {
-      removeWidgetByRefId(item.id);
-    }
-
     setEditing(null);
     setCreating(null);
   }
 
   function handleDelete(id: string) {
-    const target = sorted.find((t) => t.id === id);
     persist(sorted.filter((t) => t.id !== id));
-    if (target?.pinned) {
-      removeWidgetByRefId(id);
-    }
     setEditing(null);
   }
 
@@ -107,18 +88,6 @@ export function TodoPage() {
     // only for explicit checkbox clicks (and only on false → true).
     if (target && !target.done) playTodoCompleteSound();
     persist(sorted.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
-  }
-
-  function togglePin(id: string) {
-    const target = sorted.find((t) => t.id === id);
-    if (!target) return;
-    const wasPinned = target.pinned ?? false;
-    persist(sorted.map((t) => (t.id === id ? { ...t, pinned: !wasPinned } : t)));
-    if (wasPinned) {
-      removeWidgetByRefId(id);
-    } else {
-      addWidget('todo', id);
-    }
   }
 
   return (
@@ -158,7 +127,6 @@ export function TodoPage() {
           onEdit={setEditing}
           onDelete={handleDelete}
           onToggleDone={toggleDone}
-          onTogglePin={togglePin}
         />
       ) : (
         <ColumnsDnd
@@ -168,7 +136,6 @@ export function TodoPage() {
           onEdit={setEditing}
           onDelete={handleDelete}
           onToggleDone={toggleDone}
-          onTogglePin={togglePin}
           onCreate={setCreating}
         />
       )}

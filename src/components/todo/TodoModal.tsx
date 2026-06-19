@@ -105,17 +105,6 @@ export function TodoModal({ item, defaultPriority, onClose, onSave, onDelete }: 
           </div>
         </div>
 
-        <div className="todo-field">
-          <label className="todo-pin-toggle">
-            <input
-              type="checkbox"
-              checked={form.pinned ?? false}
-              onChange={(e) => update('pinned', e.target.checked)}
-            />
-            <span>Fest til dashboard</span>
-          </label>
-        </div>
-
         <div className="todo-modal-actions">
           {onDelete && (
             <button className="btn-delete-todo" onClick={onDelete}>

@@ -13,7 +13,6 @@ interface TodoListDndProps {
   onEdit: (t: Todo) => void;
   onDelete: (id: string) => void;
   onToggleDone: (id: string) => void;
-  onTogglePin: (id: string) => void;
 }
 
 const CONTAINER_IDS = ['active', 'done'] as const;
@@ -31,7 +30,6 @@ export function TodoListDnd({
   onEdit,
   onDelete,
   onToggleDone,
-  onTogglePin,
 }: TodoListDndProps) {
   const containers = useMemo<Record<ContainerId, Todo[]>>(
     () => ({ active, done }),
@@ -45,7 +43,7 @@ export function TodoListDnd({
     onCommit,
     transformOnMove: (item, _from, to) => ({ ...item, done: to === 'done' }),
     fingerprint: (t) =>
-      `${t.id}:${t.done ? 1 : 0}:${t.pinned ? 1 : 0}:${t.priority}:${t.text}:${t.deadline ?? ''}`,
+      `${t.id}:${t.done ? 1 : 0}:${t.priority}:${t.text}:${t.deadline ?? ''}`,
   });
 
   return (
@@ -65,7 +63,6 @@ export function TodoListDnd({
         onEdit={onEdit}
         onDelete={onDelete}
         onToggleDone={onToggleDone}
-        onTogglePin={onTogglePin}
       />
       <TodoSection
         id="done"
@@ -75,7 +72,6 @@ export function TodoListDnd({
         onEdit={onEdit}
         onDelete={onDelete}
         onToggleDone={onToggleDone}
-        onTogglePin={onTogglePin}
       />
       <DragOverlay>
         {dnd.activeItem ? (
@@ -84,7 +80,6 @@ export function TodoListDnd({
             onEdit={() => {}}
             onDelete={() => {}}
             onToggleDone={() => {}}
-            onTogglePin={() => {}}
           />
         ) : null}
       </DragOverlay>

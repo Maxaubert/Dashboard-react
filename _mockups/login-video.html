@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login mockup — Video bg (minimalist)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --indigo:#6366f1; }
+  body {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: #050507; color: #e7e7ea; overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  /* Full-bleed background video, lightly blurred + slightly scaled so the
+     soft blur edges don't reveal the page behind it. */
+  .bg {
+    position: fixed; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; z-index: 0;
+    filter: blur(5px) brightness(0.88) saturate(1.08);
+    transform: scale(1.06);
+  }
+  /* Light readability wash + vignette — kept gentle so the video reads. */
+  .scrim { position: fixed; inset: 0; z-index: 1;
+    background:
+      radial-gradient(ellipse at center, rgba(0,0,0,0.18) 35%, rgba(0,0,0,0.5) 100%),
+      linear-gradient(180deg, rgba(8,8,16,0.30), rgba(8,8,16,0.40));
+  }
+
+  .card {
+    position: relative; z-index: 2; width: 340px; max-width: calc(100vw - 32px); padding: 38px 30px;
+    display: flex; flex-direction: column; align-items: stretch; gap: 14px;
+    background: rgba(10,12,26,0.52); border: 1px solid rgba(255,255,255,0.12); border-radius: 20px;
+    backdrop-filter: blur(18px) saturate(130%); -webkit-backdrop-filter: blur(18px) saturate(130%);
+    box-shadow: 0 24px 70px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.09);
+    animation: reveal 0.7s cubic-bezier(0.16,1,0.3,1) both;
+  }
+  @keyframes reveal { from { opacity:0; transform: scale(0.95) translateY(10px); } to { opacity:1; transform: scale(1) translateY(0); } }
+  .logo { display:flex; align-items:center; justify-content:center; gap:9px; color:#c7d2fe; margin-bottom: 10px; }
+  .logo span { font-size:1.05rem; font-weight:700; letter-spacing:0.01em; color:#e7e7ea; }
+  input { width:100%; padding:12px 14px; background:rgba(0,0,0,0.32); border:1px solid rgba(255,255,255,0.14);
+    border-radius:12px; color:#e7e7ea; font-size:0.95rem; outline:none; transition:border-color .15s, box-shadow .15s; }
+  input::placeholder { color:#9aa0ad; }
+  input:focus { border-color:var(--indigo); box-shadow:0 0 0 3px rgba(99,102,241,0.3); }
+  button { width:100%; margin-top:4px; padding:13px; background:var(--indigo); color:#fff; border:none; border-radius:12px;
+    font-size:0.95rem; font-weight:600; cursor:pointer; box-shadow:0 8px 24px rgba(99,102,241,0.4);
+    transition:transform .1s, box-shadow .15s, background .15s; }
+  button:hover { background:#7376f5; box-shadow:0 10px 30px rgba(99,102,241,0.55); }
+  button:active { transform:translateY(1px); }
+  .tag { position: fixed; bottom: 14px; left: 0; right: 0; text-align: center; z-index: 3; font-size: 0.72rem; color: #b9b9c2; }
+</style>
+</head>
+<body>
+  <video class="bg" autoplay muted loop playsinline>
+    <source src="galaxy.mp4" type="video/mp4">
+  </video>
+  <div class="scrim"></div>
+  <div class="card">
+    <div class="logo">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h7v7H3V3m0 11h7v7H3v-7m11-11h7v7h-7V3m0 11h7v7h-7v-7"/></svg>
+      <span>Dashboard</span>
+    </div>
+    <input type="email" placeholder="E-post" autocomplete="email">
+    <input type="password" placeholder="Passord" autocomplete="current-password">
+    <button>Logg inn</button>
+  </div>
+  <div class="tag">Mockup — galaxy video bg blur(5px), minimalist card (logo + Dashboard wordmark + 2 fields + button)</div>
+</body>
+</html>
