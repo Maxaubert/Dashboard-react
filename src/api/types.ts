@@ -180,17 +180,6 @@ export interface NewsItem {
   img: string;
 }
 
-// ─── Generic ─────────────────────────────────────────────────────────────
-
-export interface ApiOk {
-  ok: true;
-}
-
-export interface ApiError {
-  ok: false;
-  error: string;
-}
-
 // ─── Home page ───────────────────────────────────────────────────────────────
 
 /** Single envelope for all home-page server-persisted data. */
