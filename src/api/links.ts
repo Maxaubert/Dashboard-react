@@ -1,4 +1,4 @@
-import { api } from './client';
+import { readDoc, writeDoc } from '@/lib/docStore';
 import type { LinkItem, Category, LinksEnvelope } from './types';
 import { FAVORITES_CATEGORY_ID, OTHER_CATEGORY_ID } from './types';
 
@@ -15,7 +15,7 @@ const DEFAULT_PSEUDO_CATEGORIES: Category[] = [
  * - null/undefined: return empty envelope with defaults
  * - Dedupe categories by id (first occurrence wins)
  */
-function normaliseEnvelope(raw: LinkItem[] | LinksEnvelope | null | undefined): LinksEnvelope {
+export function normaliseEnvelope(raw: LinkItem[] | LinksEnvelope | null | undefined): LinksEnvelope {
   if (raw == null) {
     return { version: 2, links: [], categories: [...DEFAULT_PSEUDO_CATEGORIES] };
   }
@@ -42,9 +42,11 @@ function normaliseEnvelope(raw: LinkItem[] | LinksEnvelope | null | undefined): 
 
 export const linksApi = {
   list: async (): Promise<LinksEnvelope> => {
-    const raw = await api.get<LinkItem[] | LinksEnvelope | null | undefined>('/links');
+    const raw = await readDoc<LinkItem[] | LinksEnvelope | null>('links', null);
     return normaliseEnvelope(raw);
   },
-  saveAll: (envelope: LinksEnvelope) =>
-    api.post<{ ok: boolean }>('/links', envelope),
+  saveAll: async (envelope: LinksEnvelope) => {
+    await writeDoc('links', envelope);
+    return { ok: true };
+  },
 };
