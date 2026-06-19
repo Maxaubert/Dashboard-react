@@ -2,10 +2,11 @@
  * IsThereAnyDeal price history fetch + chart builder.
  *
  * Ported verbatim from gaming.html so the price chart looks identical.
- * The ITAD API is public; the API key is shared with the legacy site.
+ * The ITAD API key is read from the VITE_ITAD_KEY build-time env var
+ * (client-visible but not a source literal so it can be rotated without a code change).
  */
 
-const ITAD_KEY = 'bbb182d083a1e9a41190660669883e05d133cca2';
+const ITAD_KEY = import.meta.env.VITE_ITAD_KEY as string;
 const MONTHS_NB = ['Jan', 'Feb', 'Mar', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Des'];
 
 export interface HistoryPoint {
