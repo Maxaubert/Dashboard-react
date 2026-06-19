@@ -1,4 +1,4 @@
-import { admin } from './supabaseAdmin';
+import { admin } from './supabaseAdmin.js';
 
 export async function getCached<T>(key: string, ttlMs: number, fetcher: () => Promise<T>): Promise<T> {
   const { data: row } = await admin.from('cache').select('data,fetched_at').eq('key', key).maybeSingle();

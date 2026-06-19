@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { buildWishlist } from './_lib/wishlist';
-import { getCached } from './_lib/cache';
+import { buildWishlist } from './_lib/wishlist.js';
+import { getCached } from './_lib/cache.js';
 
 export default async function handler(_req: VercelRequest, res: VercelResponse) {
   const env = {

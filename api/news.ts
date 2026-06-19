@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { fetchNews } from './_lib/news';
-import { getCached } from './_lib/cache';
+import { fetchNews } from './_lib/news.js';
+import { getCached } from './_lib/cache.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const raw = String(req.query.source ?? 'vg');

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const store: Record<string, { data: unknown; fetched_at: string }> = {};
-vi.mock('./supabaseAdmin', () => ({
+vi.mock('./supabaseAdmin.js', () => ({
   admin: {
     from: () => ({
       select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: store['k'] ?? null, error: null }) }) }),

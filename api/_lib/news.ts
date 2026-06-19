@@ -1,5 +1,5 @@
 import { XMLParser } from 'fast-xml-parser';
-import type { NewsItem } from '../../src/api/types';
+import type { NewsItem } from '../../src/api/types.js';
 
 const FEEDS: Record<string, string> = {
   vg: 'https://www.vg.no/rss/feed/',
