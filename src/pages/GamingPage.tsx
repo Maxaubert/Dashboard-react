@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useQueryClient } from '@tanstack/react-query';
 import { useWishlist, useSteamConnection } from '@/hooks/useWishlist';
+import { queryKeys } from '@/hooks/queryKeys';
 import { steamApi } from '@/api/steam';
 import type { WishlistGame } from '@/api/types';
 import { GAMING_EVENTS, type GamingEvent } from '@/data/gamingEvents';
@@ -54,7 +55,7 @@ export function GamingPage() {
     try {
       await steamApi.disconnect();
       queryClient.invalidateQueries({ queryKey: ['steam-connection'] });
-      queryClient.invalidateQueries({ queryKey: ['wishlist'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.wishlist });
       toast({ tone: 'neutral', title: 'Steam frakoblet' });
     } catch {
       toast({ tone: 'danger', title: 'Kunne ikke koble fra Steam' });
@@ -67,10 +68,12 @@ export function GamingPage() {
         <div className="page-header-eyebrow">Gaming</div>
         <div className="page-header-title">Steam ønskeliste</div>
         <div className="page-header-sub">
-          {games.length > 0
+          {isLoading
+            ? 'Laster…'
+            : games.length > 0
             ? `${games.length} spill · ${onSale.length} på salg nå`
             : connected
-            ? 'Laster…'
+            ? '0 spill'
             : 'Ikke koblet til Steam'}
         </div>
       </div>
