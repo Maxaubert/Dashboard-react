@@ -1,18 +1,34 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { admin } from './_lib/supabaseAdmin.js';
 import { buildWishlist } from './_lib/wishlist.js';
 import { getCached } from './_lib/cache.js';
 
-export default async function handler(_req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const auth = req.headers.authorization || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  const { data: udata, error: uerr } = await admin.auth.getUser(token);
+  if (uerr || !udata.user) {
+    res.status(401).json({ error: 'unauthorized' });
+    return;
+  }
+  const { data: row } = await admin
+    .from('integrations')
+    .select('steam_id')
+    .eq('user_id', udata.user.id)
+    .maybeSingle();
+  if (!row?.steam_id) {
+    res.status(200).json({ connected: false, games: [] });
+    return;
+  }
   const env = {
     steamKey: process.env.STEAM_API_KEY as string,
-    steamId: process.env.STEAM_ID as string,
-    itadKey: process.env.ITAD_API_KEY as string,
+    steamId: row.steam_id as string,
+    itadKey: (process.env.ITAD_API_KEY as string) || '',
   };
   try {
-    const games = await getCached('wishlist', 60 * 60_000, () => buildWishlist(env));
-    res.setHeader('Cache-Control', 's-maxage=3600');
-    res.status(200).json(games);
+    const games = await getCached(`wishlist:${udata.user.id}`, 60 * 60_000, () => buildWishlist(env));
+    res.status(200).json({ connected: true, games });
   } catch {
-    res.status(200).json([]);
+    res.status(200).json({ connected: true, games: [] });
   }
 }

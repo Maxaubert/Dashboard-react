@@ -87,39 +87,31 @@ export async function buildWishlist(
     });
   }
 
-  // Step 4: ITAD lookup → itadId for each game
-  for (const g of games) {
-    try {
-      const url = `https://api.isthereanydeal.com/games/lookup/v1?key=${env.itadKey}&appid=${g.appid}`;
-      const res = await fetchImpl(url);
-      const data = (await res.json()) as { game?: { id?: string } };
-      const gid = data?.game?.id ?? null;
-      if (gid) {
-        g.itadId = gid;
-      }
-    } catch {
-      // continue on failure
+  // Step 4: ITAD lookup -> itadId for each game (only if an ITAD key is configured)
+  if (env.itadKey) {
+    for (const g of games) {
+      try {
+        const url = `https://api.isthereanydeal.com/games/lookup/v1?key=${env.itadKey}&appid=${g.appid}`;
+        const res = await fetchImpl(url);
+        const data = (await res.json()) as { game?: { id?: string } };
+        const gid = data?.game?.id ?? null;
+        if (gid) g.itadId = gid;
+      } catch { /* continue */ }
     }
-  }
 
-  // Step 5: For on-sale games with itadId: ITAD history → best cut; tag 'hot' if within 5 points
-  for (const g of games) {
-    if (!g.onSale || !g.itadId) continue;
-    try {
-      const url = `https://api.isthereanydeal.com/games/history/v2?key=${env.itadKey}&id=${g.itadId}&shops=61&since=${ATL_SINCE}`;
-      const res = await fetchImpl(url);
-      const raw = await res.json();
-      const cuts = (raw as Array<{ deal?: { cut: number } }>)
-        .filter((p) => p.deal)
-        .map((p) => p.deal!.cut);
-      if (cuts.length > 0) {
-        const bestCut = Math.max(...cuts);
-        if (bestCut > 0 && g.discount >= bestCut - 5) {
-          g.priceTag = 'hot';
+    // Step 5: hot-tag on-sale games at their all-time low
+    for (const g of games) {
+      if (!g.onSale || !g.itadId) continue;
+      try {
+        const url = `https://api.isthereanydeal.com/games/history/v2?key=${env.itadKey}&id=${g.itadId}&shops=61&since=${ATL_SINCE}`;
+        const res = await fetchImpl(url);
+        const raw = await res.json();
+        const cuts = (raw as Array<{ deal?: { cut: number } }>).filter((p) => p.deal).map((p) => p.deal!.cut);
+        if (cuts.length > 0) {
+          const bestCut = Math.max(...cuts);
+          if (bestCut > 0 && g.discount >= bestCut - 5) g.priceTag = 'hot';
         }
-      }
-    } catch {
-      // continue on failure
+      } catch { /* continue */ }
     }
   }
 

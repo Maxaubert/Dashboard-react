@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { buildWishlist } from './wishlist';
 
 function stubFetch(url: string) {
@@ -22,5 +22,22 @@ describe('buildWishlist', () => {
     expect(alpha.onSale).toBe(true);
     expect(alpha.priceTag).toBe('hot'); // discount 50 >= best cut 50 - 5
     expect(games.find((g) => g.appid === '20')!.isFree).toBe(true);
+  });
+});
+
+describe('buildWishlist ITAD optional', () => {
+  it('skips ITAD lookups when itadKey is empty', async () => {
+    const calls: string[] = [];
+    const stub = (async (url: string) => {
+      calls.push(url);
+      const json = (o: unknown) => Promise.resolve({ ok: true, json: () => Promise.resolve(o), text: () => Promise.resolve('') } as Response);
+      if (url.includes('GetWishlist')) return json({ response: { items: [{ appid: 10, priority: 1, date_added: 1 }] } });
+      if (url.includes('appdetails')) return json({ '10': { success: true, data: { name: 'A', price_overview: { discount_percent: 60, final: 100, final_formatted: 'kr 1', initial_formatted: 'kr 2', currency: 'NOK' }, genres: [] } } });
+      return json({});
+    }) as unknown as typeof fetch;
+    const games = await buildWishlist({ steamKey: 'k', steamId: 's', itadKey: '' }, stub);
+    expect(games).toHaveLength(1);
+    expect(games[0].itadId).toBeNull();
+    expect(calls.some((u) => u.includes('isthereanydeal'))).toBe(false);
   });
 });
