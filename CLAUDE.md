@@ -1,4 +1,4 @@
-# Dashboard — Project context for Claude Code
+# Dashboard -- Project context for Claude Code
 
 Personal single-user dashboard. Static Vite/React frontend deployed to Vercel Hobby, with two TypeScript serverless functions under `api/` and Supabase for auth + database.
 
@@ -18,15 +18,15 @@ Personal single-user dashboard. Static Vite/React frontend deployed to Vercel Ho
 
 ## File organization (the established split)
 
-- `src/pages/*.tsx` — **thin** page shells: state, mutations, top-level layout. Target: under 200 lines.
-- `src/components/<area>/*.tsx` — per-page focused components (`todo/`, `links/`, `home/`, `widgets/`, `timer/`, `launcher/`, etc.).
-- `src/lib/<area>.ts` — pure helpers + constants, **no React imports**.
-- `src/hooks/*.ts` — react-query wrappers and cross-cutting hooks.
-- `src/api/*.ts` — typed API clients (each resource gets its own file).
-- `src/data/*.ts` — static config (icons, holidays, sports data).
-- `api/` — Vercel serverless functions and shared `_lib/` helpers. **Never import from `src/` here.**
-- `supabase/migrations/` — SQL migration files applied via the Supabase CLI or dashboard.
-- `plans_md/` — multi-step plan/audit documents (gitignored except `TEMPLATE.md`).
+- `src/pages/*.tsx` -- **thin** page shells: state, mutations, top-level layout. Target: under 200 lines.
+- `src/components/<area>/*.tsx` -- per-page focused components (`todo/`, `links/`, `home/`, `widgets/`, `timer/`, `launcher/`, etc.).
+- `src/lib/<area>.ts` -- pure helpers + constants, **no React imports**.
+- `src/hooks/*.ts` -- react-query wrappers and cross-cutting hooks.
+- `src/api/*.ts` -- typed API clients (each resource gets its own file).
+- `src/data/*.ts` -- static config (icons, holidays, sports data).
+- `api/` -- Vercel serverless functions and shared `_lib/` helpers. **Never import from `src/` here.**
+- `supabase/migrations/` -- SQL migration files applied via the Supabase CLI or dashboard.
+- `plans_md/` -- multi-step plan/audit documents (gitignored except `TEMPLATE.md`).
 
 When a page passes ~400 lines, split it the way `TodoPage`, `LinksPage`, `HomePage` were split: keep the page as an orchestrator, move JSX subcomponents to `components/<area>/`, pure helpers to `lib/<area>.ts`.
 
@@ -89,7 +89,7 @@ When a page passes ~400 lines, split it the way `TodoPage`, `LinksPage`, `HomePa
 - **Branches**: `feat/<name>`, `refactor/<name>`, `fix/<name>`, `chore/<name>`.
 - **Commits**: imperative subject. Body explains *why*, not *what*. End every body with:
   ```
-  Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
+  Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
   ```
 - **PRs**: title under 70 chars. Body sections: `## Summary` (3-5 bullets) and `## Test plan` (checklist). Flag anything that needs manual user verification (e.g. drag UX).
 - **No em-dashes** anywhere -- code, commits, PRs, chat. Global user preference.
