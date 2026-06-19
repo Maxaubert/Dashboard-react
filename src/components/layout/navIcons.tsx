@@ -32,15 +32,6 @@ export function CheckSquareIcon({ size = 15, className }: IconProps = {}) {
   );
 }
 
-export function GraduationCapIcon({ size = 15, className }: IconProps = {}) {
-  return svg(
-    'M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z',
-    '0 0 24 24',
-    size,
-    className
-  );
-}
-
 export function NotebookIcon({ size = 15, className }: IconProps = {}) {
   return svg(
     'M3 18h12v-2H3v2zm0-5h12v-2H3v2zm0-7v2h12V6H3zm14 9.34V7h-2v11.34l1 .66 1-.66z',

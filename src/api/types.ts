@@ -139,45 +139,6 @@ export interface Note {
   updatedAt: number | string;
 }
 
-// ─── Skole (university) ──────────────────────────────────────────────────
-
-export interface SkoleAssignment {
-  id: number | null;
-  title: string;
-  /** ISO 8601 — may be null when Canvas has no due date. */
-  due_at: string | null;
-  submitted: boolean;
-  html_url: string;
-}
-
-export interface SkoleCourse {
-  id: number;
-  name: string;
-  /** Short code, e.g. "STAT", "PARA". */
-  short: string;
-  color: string;
-  /** Number of submitted assignments. */
-  submitted: number;
-  /** Expected total assignments (may exceed assignments.length). */
-  total: number;
-  assignments: SkoleAssignment[];
-}
-
-export interface SkoleAnnouncement {
-  title: string;
-  /** ISO 8601 string. */
-  posted_at: string;
-  html_url: string;
-  course_name: string;
-  course_short: string;
-  course_color: string;
-}
-
-export interface SkoleData {
-  courses: SkoleCourse[];
-  announcements: SkoleAnnouncement[];
-}
-
 // ─── Wishlist (gaming) ───────────────────────────────────────────────────
 
 export type PriceTag = 'hot' | null;

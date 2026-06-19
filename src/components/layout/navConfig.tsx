@@ -1,7 +1,6 @@
 import {
   CalendarIcon,
   CheckSquareIcon,
-  GraduationCapIcon,
   NotebookIcon,
   TrophyIcon,
   GamepadIcon,
@@ -26,10 +25,9 @@ export interface NavItem {
  *   - There is no Chat — that page was removed.
  */
 export const NAV_ITEMS: NavItem[] = [
-  { to: '/plan',     label: 'Plan',     icon: <CalendarIcon />,      accent: 'var(--color-page-plan)' },
-  { to: '/todo',     label: 'Todo',     icon: <CheckSquareIcon />,   accent: 'var(--color-page-todo)' },
-  { to: '/skole',    label: 'Skole',    icon: <GraduationCapIcon />, accent: 'var(--color-page-skole)' },
-  { to: '/notes',    label: 'Notater',  icon: <NotebookIcon />,      accent: 'var(--color-page-notes)' },
+  { to: '/plan',     label: 'Plan',     icon: <CalendarIcon />,    accent: 'var(--color-page-plan)' },
+  { to: '/todo',     label: 'Todo',     icon: <CheckSquareIcon />, accent: 'var(--color-page-todo)' },
+  { to: '/notes',    label: 'Notater',  icon: <NotebookIcon />,    accent: 'var(--color-page-notes)' },
   { to: '/sport',    label: 'Sport',    icon: <TrophyIcon />,        accent: 'var(--color-page-sport)' },
   { to: '/gaming',   label: 'Gaming',   icon: <GamepadIcon />,       accent: 'var(--color-page-gaming)' },
 ];

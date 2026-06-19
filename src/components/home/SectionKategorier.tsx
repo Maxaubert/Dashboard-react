@@ -6,7 +6,7 @@ interface CategoryDef {
   to: string;
   label: string;
   desc: string;
-  variant: 'plan' | 'skole' | 'notater' | 'sport' | 'gaming';
+  variant: 'plan' | 'notater' | 'sport' | 'gaming';
   icon: React.ReactNode;
 }
 
@@ -19,17 +19,6 @@ const CATEGORIES: CategoryDef[] = [
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
         <path d="M19 3h-1V1h-2v2H8V1H6v2H5C3.9 3 3 3.9 3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" />
-      </svg>
-    ),
-  },
-  {
-    to: '/skole',
-    label: 'Skole',
-    desc: 'Fag og innleveringer',
-    variant: 'skole',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z" />
       </svg>
     ),
   },

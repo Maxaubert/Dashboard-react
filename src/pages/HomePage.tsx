@@ -24,7 +24,7 @@ import { SortableHomeSection } from '@/components/home/SortableHomeSection';
  * Home page — faithful port of the legacy index.html.
  *
  * Sections (in order):
- *   1. Kategorier — 5 category cards (Plan, Skole, Notater, Sport, Gaming)
+ *   1. Kategorier — 4 category cards (Plan, Notater, Sport, Gaming)
  *   2. Eksterne lenker — favourites carousel with "Alle" link to /links
  *   3. Dagens plan — today's events from /api/plan
  *   4. Nyhetssaker — VG news cards from /api/news

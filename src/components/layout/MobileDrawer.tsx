@@ -1,9 +1,7 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { NavLink } from 'react-router-dom';
-import { MessageSquarePlus } from 'lucide-react';
 import { NAV_ITEMS } from './navConfig';
 import { CloseIcon, MenuIcon } from './navIcons';
-import { useReport } from '@/components/report/ReportProvider';
 import { cn } from '@/lib/cn';
 
 /**
@@ -13,7 +11,6 @@ import { cn } from '@/lib/cn';
  * inside <DrawerLink>.
  */
 export function MobileDrawer() {
-  const { openReport } = useReport();
   return (
     <Dialog.Root>
       <Dialog.Trigger asChild>
@@ -83,26 +80,6 @@ export function MobileDrawer() {
             </ul>
           </nav>
 
-          <div className="mx-5 mt-4 h-px bg-[var(--color-border)]" />
-
-          <div className="px-3 pt-3">
-            <Dialog.Close asChild>
-              <button
-                type="button"
-                onClick={openReport}
-                className={cn(
-                  'flex w-full items-center gap-3 rounded-lg px-3 py-2.5',
-                  'text-[14px] font-medium text-[var(--color-text-dim)]',
-                  'transition-colors hover:bg-white/5 hover:text-[var(--color-text)]'
-                )}
-              >
-                <span className="grid h-8 w-8 place-items-center rounded-md bg-white/[0.05] text-[var(--color-text-dim)]">
-                  <MessageSquarePlus size={16} strokeWidth={1.75} />
-                </span>
-                <span>Report</span>
-              </button>
-            </Dialog.Close>
-          </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

@@ -1,9 +1,8 @@
 import { useRef, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { Link2, LogOut, MessageSquarePlus } from 'lucide-react';
+import { Link2, LogOut } from 'lucide-react';
 import { NAV_ITEMS } from './navConfig';
 import { LinksLibraryPopup } from './LinksLibraryPopup';
-import { useReport } from '@/components/report/ReportProvider';
 import { useCurrentUser, useLogout } from '@/hooks/useCurrentUser';
 import { cn } from '@/lib/cn';
 
@@ -37,7 +36,6 @@ export function Sidebar({
   const dragStartXRef = useRef(0);
   const dragStartWidthRef = useRef(0);
   const [linksOpen, setLinksOpen] = useState(false);
-  const { openReport } = useReport();
   const { data: user } = useCurrentUser();
   const logout = useLogout();
   const navigate = useNavigate();
@@ -105,16 +103,6 @@ export function Sidebar({
 
       {/* Spacer pushes the bottom-row quick-access icons down. */}
       <div className="sidebar-spacer" aria-hidden="true" />
-
-      <button
-        type="button"
-        className="sidebar-links-icon"
-        onClick={openReport}
-        title="Report a bug or idea"
-        aria-label="Report a bug or idea"
-      >
-        <MessageSquarePlus size={18} strokeWidth={1.75} />
-      </button>
 
       <button
         type="button"

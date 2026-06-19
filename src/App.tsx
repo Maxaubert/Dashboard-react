@@ -3,7 +3,6 @@ import { BrowserRouter, Outlet, Route, Routes } from 'react-router-dom';
 import { useAuthSync } from './hooks/useCurrentUser';
 import { AppShell } from './components/layout/AppShell';
 import { ToastProvider } from './components/ui';
-import { ReportProvider } from './components/report/ReportProvider';
 import { RequireAuth } from './components/auth/RequireAuth';
 import { TimerProvider } from '@/context/TimerContext';
 import { LoginPage } from './pages/LoginPage';
@@ -11,7 +10,6 @@ import { SignupPage } from './pages/SignupPage';
 import { HomePage } from './pages/HomePage';
 import { PlanPage } from './pages/PlanPage';
 import { TodoPage } from './pages/TodoPage';
-import { SkolePage } from './pages/SkolePage';
 import { NotesPage } from './pages/NotesPage';
 import { SportPage } from './pages/SportPage';
 import { GamingPage } from './pages/GamingPage';
@@ -47,18 +45,15 @@ export function App() {
               <Route
                 element={
                   <RequireAuth>
-                    <ReportProvider>
-                      <AppShell>
-                        <Outlet />
-                      </AppShell>
-                    </ReportProvider>
+                    <AppShell>
+                      <Outlet />
+                    </AppShell>
                   </RequireAuth>
                 }
               >
                 <Route path="/" element={<HomePage />} />
                 <Route path="/plan" element={<PlanPage />} />
                 <Route path="/todo" element={<TodoPage />} />
-                <Route path="/skole" element={<SkolePage />} />
                 <Route path="/notes" element={<NotesPage />} />
                 <Route path="/sport" element={<SportPage />} />
                 <Route path="/gaming" element={<GamingPage />} />
