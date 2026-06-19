@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { useWishlist } from '@/hooks/useWishlist';
+import { useQueryClient } from '@tanstack/react-query';
+import { useWishlist, useSteamConnection } from '@/hooks/useWishlist';
+import { steamApi } from '@/api/steam';
 import type { WishlistGame } from '@/api/types';
 import { GAMING_EVENTS, type GamingEvent } from '@/data/gamingEvents';
 import { buildLineChartSvg, fetchItadHistory, type HistoryPoint } from '@/lib/itadHistory';
 import { cn } from '@/lib/cn';
+import { useToast } from '@/components/ui';
 
 type Tab = 'wishlist' | 'events';
 
@@ -20,15 +23,43 @@ function ptagsArr(g: WishlistGame): string[] {
 }
 
 export function GamingPage() {
-  const { data: games, isLoading, error } = useWishlist();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const { data: conn } = useSteamConnection();
+  const { data: wl, isLoading, error } = useWishlist();
   const [tab, setTab] = useState<Tab>('wishlist');
   const [activeGame, setActiveGame] = useState<WishlistGame | null>(null);
 
+  const connected = wl?.connected ?? conn?.connected ?? false;
+  const games = wl?.games ?? [];
+
   const onSale = useMemo(
-    () => (games ?? []).filter((g) => g.onSale).sort((a, b) => b.discount - a.discount),
+    () => games.filter((g) => g.onSale).sort((a, b) => b.discount - a.discount),
     [games]
   );
-  const regular = useMemo(() => (games ?? []).filter((g) => !g.onSale), [games]);
+  const regular = useMemo(() => games.filter((g) => !g.onSale), [games]);
+
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get('steam');
+    if (p === 'connected') {
+      toast({ tone: 'success', title: 'Steam koblet til' });
+    }
+    if (p === 'error') {
+      toast({ tone: 'danger', title: 'Kunne ikke koble til Steam' });
+    }
+    if (p) window.history.replaceState({}, '', '/gaming');
+  }, [toast]);
+
+  async function handleDisconnect() {
+    try {
+      await steamApi.disconnect();
+      queryClient.invalidateQueries({ queryKey: ['steam-connection'] });
+      queryClient.invalidateQueries({ queryKey: ['wishlist'] });
+      toast({ tone: 'neutral', title: 'Steam frakoblet' });
+    } catch {
+      toast({ tone: 'danger', title: 'Kunne ikke koble fra Steam' });
+    }
+  }
 
   return (
     <div className="gaming-page">
@@ -36,7 +67,11 @@ export function GamingPage() {
         <div className="page-header-eyebrow">Gaming</div>
         <div className="page-header-title">Steam ønskeliste</div>
         <div className="page-header-sub">
-          {games ? `${games.length} spill · ${onSale.length} på salg nå` : 'Laster…'}
+          {games.length > 0
+            ? `${games.length} spill · ${onSale.length} på salg nå`
+            : connected
+            ? 'Laster…'
+            : 'Ikke koblet til Steam'}
         </div>
       </div>
 
@@ -53,18 +88,41 @@ export function GamingPage() {
         >
           Hendelser
         </button>
-        {tab === 'wishlist' && games && (
+        {tab === 'wishlist' && games.length > 0 && (
           <span className="gaming-filter-count">{games.length} spill</span>
+        )}
+        {connected && (
+          <button
+            className="gaming-filter-btn"
+            style={{ marginLeft: 'auto', opacity: 0.7, fontSize: '0.8rem' }}
+            onClick={handleDisconnect}
+          >
+            Koble fra
+          </button>
         )}
       </div>
 
       {tab === 'wishlist' ? (
-        error ? (
+        !connected && !isLoading ? (
+          <div className="gaming-state-box">
+            <p>Koble til Steam for å vise ønskelisten din.</p>
+            <p style={{ opacity: 0.7, fontSize: '0.85rem', marginTop: '0.5rem' }}>
+              Ønskelisten din på Steam må være satt til offentlig.
+            </p>
+            <button
+              className="gaming-filter-btn active"
+              style={{ marginTop: '1rem' }}
+              onClick={() => steamApi.startConnect()}
+            >
+              Koble til Steam
+            </button>
+          </div>
+        ) : error ? (
           <div className="gaming-state-box">Kunne ikke laste ønskeliste.</div>
         ) : isLoading ? (
           <div className="gaming-state-box">Laster ønskeliste…</div>
-        ) : !games || games.length === 0 ? (
-          <div className="gaming-state-box">Ønskelisten er tom.</div>
+        ) : games.length === 0 ? (
+          <div className="gaming-state-box">Ønskelisten er tom (er den satt til offentlig på Steam?).</div>
         ) : (
           <>
             {onSale.length > 0 && (
