@@ -37,10 +37,9 @@
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 
-  --sidebar-width: 0px;
   /* Page max-width — was 860px (and individual pages used 900-960). Bumped
    * to 1100px so content uses more of the viewport on wide screens. All
-   * per-page wrappers (.gaming-page, .todo-page, .sport-page)
+   * per-page wrappers (.gaming-page, .todo-page)
    * now read this same variable, so reverting is just changing this number.
    * Backup of the original file: src/styles/globals.css.bak */
   --page-max-width: 1240px;
@@ -3343,157 +3342,6 @@
   .lm-title:last-child,
   .lm-title + .lm-body { margin-top: 16px; }
 
-  /* Backdrop behind the links library popup. Manual (not Dialog.Overlay)
-   * because the popup uses modal={false} and Radix suppresses the overlay
-   * in that mode. pointer-events:none keeps clicks falling through to the
-   * popup itself / dismiss handlers. */
-  .links-popup-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 299;
-    background: rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    pointer-events: none;
-    animation: links-popup-backdrop-fade 180ms ease-out;
-  }
-  @keyframes links-popup-backdrop-fade {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  /* ── Links library popup (sidebar → Lenker quick-access) ─────────────── */
-  /* Fixed size (does NOT shrink with content), layered neutral background
-   * with a blueprint-grid overlay, a thin accent bar along the top edge,
-   * and corner brackets matching the Verktøy tile aesthetic. */
-  .links-popup-content {
-    width: min(1100px, 92vw);
-    height: min(720px, 88vh);
-    max-width: none;
-    padding: 0;
-    overflow: hidden;
-    /* Override .lm-content's `transform: translate(-50%, -50%)` centering
-     * with `inset: 0; margin: auto` instead. The transform creates a new
-     * containing block for `position: fixed` descendants — which breaks
-     * dnd-kit's DragOverlay (it positions itself relative to the
-     * viewport, but ends up offset by the dialog's transform, so the
-     * dragged item floats away from the cursor). */
-    inset: 0;
-    margin: auto;
-    left: 0;
-    top: 0;
-    transform: none;
-    /* Match the body background exactly so the popup reads as a darker
-     * surface than the cards inside it (which are `0.006` over body). */
-    background: #030304;
-    border: 1px solid rgba(255, 255, 255, 0.022);
-    border-radius: 16px;
-    box-shadow:
-      0 30px 80px rgba(0, 0, 0, 0.8);
-  }
-  /* Thin accent bar across the top edge. */
-  .links-popup-content::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.0) 8%,
-      rgba(255, 255, 255, 0.10) 50%,
-      rgba(255, 255, 255, 0.0) 92%,
-      transparent 100%
-    );
-    pointer-events: none;
-  }
-  /* Faint blueprint grid overlay behind the content. */
-  .links-popup-content::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(255, 255, 255, 0.004) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.004) 1px, transparent 1px);
-    background-size: 48px 48px;
-    pointer-events: none;
-    mask-image: radial-gradient(ellipse at center, #000 45%, transparent 85%);
-    -webkit-mask-image: radial-gradient(ellipse at center, #000 45%, transparent 85%);
-  }
-  .links-popup-body {
-    position: relative;
-    z-index: 1;
-    height: 100%;
-    /* Extra right padding reserves space for the floating close button
-     * so the "Ny lenke" button in the lenker-header never overlaps it. */
-    padding: 32px 36px 32px;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  /* Scroll the whole library inside the fixed-height popup. After the
-   * categorization redesign there are multiple per-section grids, so we
-   * scroll one container above them rather than each grid individually. */
-  .links-popup-body .links-library-root {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    padding-right: 6px;
-    /* Mask the top/bottom edges so rows fade out when scrolling. */
-    mask-image: linear-gradient(
-      180deg,
-      transparent 0,
-      #000 12px,
-      #000 calc(100% - 16px),
-      transparent 100%
-    );
-    -webkit-mask-image: linear-gradient(
-      180deg,
-      transparent 0,
-      #000 12px,
-      #000 calc(100% - 16px),
-      transparent 100%
-    );
-  }
-  /* Keep the header (title + Ny lenke) pinned while sections scroll. */
-  .links-popup-body .lenker-header {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    background: #030304;
-    padding-bottom: 8px;
-  }
-  .links-popup-body .links-library-root::-webkit-scrollbar { width: 6px; }
-  .links-popup-body .links-library-root::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.18);
-    border-radius: 3px;
-  }
-  .links-popup-body .links-library-root::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.28);
-  }
-  @media (max-width: 768px) {
-    .links-popup-content { height: 85vh; }
-    .links-popup-body { padding: 24px 18px 20px; }
-  }
-
-  /* Corner brackets — four L-shaped accents in the corners of the
-   * popup, matching the Verktøy tile language. */
-  .links-popup-corner {
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.28);
-    pointer-events: none;
-    z-index: 2;
-  }
-  .links-popup-corner.tl { top: 10px; left: 10px;  border-right: none; border-bottom: none; border-top-left-radius: 4px; }
-  .links-popup-corner.tr { top: 10px; right: 10px; border-left: none;  border-bottom: none; border-top-right-radius: 4px; }
-  .links-popup-corner.bl { bottom: 10px; left: 10px;  border-right: none; border-top: none; border-bottom-left-radius: 4px; }
-  .links-popup-corner.br { bottom: 10px; right: 10px; border-left: none;  border-top: none; border-bottom-right-radius: 4px; }
-
-
   /* Form rows inside the modal — uppercase tracked label above each field. */
   .modal-row {
     margin-bottom: 14px;
@@ -4404,23 +4252,6 @@
   /* ──────────────────────────────────────────────────────────────────────
    * Sport page — pill filters, event cards, source picker modal
    * ──────────────────────────────────────────────────────────────────── */
-
-  /* Sport variables (scoped to .sport-page) */
-  .sport-page {
-    max-width: var(--page-max-width); /* was 960px */
-    margin: 0 auto;
-    padding: 24px 28px 72px;
-    position: relative;
-    z-index: 1;
-    --cc-color: #22d3ee;
-    --bi-color: #9ca3af;
-    --fb-color: #4ade80;
-    --live: #ef4444;
-    --today-accent: #f59e0b;
-  }
-  @media (max-width: 768px) {
-    .sport-page { padding: 16px 14px 56px; }
-  }
 
   .sport-title-desktop {
     display: none;

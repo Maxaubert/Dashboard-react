@@ -30,8 +30,7 @@ import { LinkEditModal } from '@/components/links/LinkEditModal';
 import { pointerOrCorners, installOneShotClickSuppress } from '@/lib/linkUtils';
 
 /**
- * Reusable library body — used both as a full page (LinksPage) and
- * inside the sidebar popup (LinksLibraryPopup). Owns all state so
+ * Reusable library body rendered by LinksPage. Owns all state so
  * callers don't need to thread edit/create props through.
  */
 export function LinksLibrary() {
