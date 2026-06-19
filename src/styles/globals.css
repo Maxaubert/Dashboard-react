@@ -6826,3 +6826,40 @@
 [role='menuitem'][data-highlighted] {
   background: rgba(255, 255, 255, 0.06);
 }
+
+/* Home wishlist carousel */
+.wishlist-strip { gap: 10px; }
+.wishlist-cover {
+  position: relative;
+  flex: 0 0 auto;
+  width: 160px;
+  height: 75px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--color-border, #2a2a2a);
+  background: #12141a;
+  padding: 0;
+  cursor: pointer;
+}
+.wishlist-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.wishlist-cover-skeleton { background: linear-gradient(90deg, #14161c, #1c1f27, #14161c); }
+.wishlist-cover-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: #4c1d95;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+.wishlist-connect-box {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.wishlist-connect-hint { color: var(--color-text-muted); font-size: 0.8rem; }
+.wishlist-empty-note { color: var(--color-text-muted); font-size: 0.8rem; padding: 8px 0; }
