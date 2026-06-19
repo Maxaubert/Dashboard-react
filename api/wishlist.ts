@@ -3,6 +3,10 @@ import { admin } from './_lib/supabaseAdmin.js';
 import { buildWishlist } from './_lib/wishlist.js';
 import { getCached } from './_lib/cache.js';
 
+// ITAD enrichment adds an API call per game (lookup + history), so a large
+// wishlist's first uncached build can exceed the default 10s. Give it room.
+export const config = { maxDuration: 60 };
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const auth = req.headers.authorization || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
