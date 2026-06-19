@@ -15,6 +15,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { HomeAccount } from '@/components/home/HomeAccount';
 import { useHome, useMutateHome } from '@/hooks/useHome';
 import { useHomeMigration } from '@/hooks/useHomeMigration';
 import { SECTION_IDS, DEFAULT_SECTIONS, type SectionId } from '@/lib/home';
@@ -65,7 +66,10 @@ export function HomePage() {
 
   return (
     <div className="page">
-      <PageHeader eyebrow="Hjem" title="Dashboard" subtitle="Velg en kategori" />
+      <div className="home-topbar">
+        <PageHeader eyebrow="Hjem" title="Dashboard" subtitle="Velg en kategori" />
+        <HomeAccount />
+      </div>
 
       <DndContext
         sensors={sensors}

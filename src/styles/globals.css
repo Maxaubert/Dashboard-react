@@ -6927,3 +6927,9 @@
 .todo-preview-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .todo-preview-deadline { color: var(--color-text-muted, #71717a); font-size: 0.78rem; flex: 0 0 auto; }
 .todo-preview-empty { color: var(--color-text-muted, #71717a); font-size: 0.85rem; padding: 8px 0; }
+
+.home-topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.home-account { display: flex; align-items: center; gap: 10px; }
+.home-account-name { color: var(--color-text-muted, #a1a1aa); font-size: 0.85rem; }
+.home-account-logout { background: transparent; border: 1px solid var(--color-border, #2a2a2a); color: var(--color-text, #e4e4e7); border-radius: 8px; padding: 5px 10px; font-size: 0.82rem; cursor: pointer; }
+.home-account-logout:hover { background: rgba(255,255,255,0.05); }
