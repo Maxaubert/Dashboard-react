@@ -5,6 +5,8 @@ import { AppShell } from './components/layout/AppShell';
 import { ToastProvider } from './components/ui';
 import { RequireAuth } from './components/auth/RequireAuth';
 import { TimerProvider } from '@/context/TimerContext';
+import { PageOverlayProvider } from '@/context/PageOverlayContext';
+import { PageOverlay } from '@/components/overlay/PageOverlay';
 import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
 import { HomePage } from './pages/HomePage';
@@ -45,9 +47,12 @@ export function App() {
               <Route
                 element={
                   <RequireAuth>
-                    <AppShell>
-                      <Outlet />
-                    </AppShell>
+                    <PageOverlayProvider>
+                      <AppShell>
+                        <Outlet />
+                      </AppShell>
+                      <PageOverlay />
+                    </PageOverlayProvider>
                   </RequireAuth>
                 }
               >

@@ -6894,3 +6894,24 @@
 }
 .wishlist-connect-hint { color: var(--color-text-muted); font-size: 0.8rem; }
 .wishlist-empty-note { color: var(--color-text-muted); font-size: 0.8rem; padding: 8px 0; }
+
+/* Full-page pop-out overlay */
+.page-overlay-backdrop {
+  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px); z-index: 80;
+}
+.page-overlay-panel {
+  position: fixed; z-index: 81; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(96vw, 1280px); height: 92vh;
+  background: var(--color-bg, #0a0a0a);
+  border: 1px solid var(--color-border, #2a2a2a);
+  border-radius: 16px; overflow: hidden;
+}
+.page-overlay-scroll { width: 100%; height: 100%; overflow-y: auto; }
+.page-overlay-close {
+  position: absolute; top: 12px; right: 12px; z-index: 1;
+  width: 34px; height: 34px; border-radius: 8px;
+  background: rgba(0,0,0,0.4); color: #fff; border: 1px solid var(--color-border, #2a2a2a);
+  cursor: pointer; font-size: 1rem;
+}
