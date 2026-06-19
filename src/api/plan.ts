@@ -1,7 +1,10 @@
-import { api } from './client';
+import { readDoc, writeDoc } from '@/lib/docStore';
 import type { PlanItem } from './types';
 
 export const planApi = {
-  list: () => api.get<PlanItem[]>('/plan'),
-  saveAll: (items: PlanItem[]) => api.post<{ ok: boolean }>('/plan', items),
+  list: () => readDoc<PlanItem[]>('plan', []),
+  saveAll: async (items: PlanItem[]) => {
+    await writeDoc('plan', items);
+    return { ok: true };
+  },
 };

@@ -1,8 +1,10 @@
-import { api } from './client';
+import { readDoc, writeDoc } from '@/lib/docStore';
 import type { Todo } from './types';
 
 export const todosApi = {
-  list: () => api.get<Todo[]>('/todos'),
-  /** The legacy backend takes the entire list in one POST. */
-  saveAll: (todos: Todo[]) => api.post<{ ok: boolean }>('/todos', todos),
+  list: () => readDoc<Todo[]>('todos', []),
+  saveAll: async (todos: Todo[]) => {
+    await writeDoc('todos', todos);
+    return { ok: true };
+  },
 };
