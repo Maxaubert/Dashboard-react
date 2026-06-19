@@ -128,7 +128,7 @@ export function WidgetsSection({ handleProps }: { handleProps?: HandleProps }) {
   // (or a remount after navigating between routes) would see every timer
   // in inert state and incorrectly wipe persistent widgets from the
   // backend list. The *add* side must also run on first mount, however,
-  // so that starting a timer on another route (e.g. /tools/timer) results
+  // so that starting a timer on another route results
   // in its widget appearing the moment the user returns to /.
   const prevTimersRef = useRef<typeof ctx.timers | null>(null);
   useEffect(() => {

@@ -16,15 +16,6 @@ import { NotesPage } from './pages/NotesPage';
 import { SportPage } from './pages/SportPage';
 import { GamingPage } from './pages/GamingPage';
 import { LinksPage } from './pages/LinksPage';
-import { ToolsPage } from './pages/ToolsPage';
-import { ToolQrPage } from './pages/tools/ToolQrPage';
-import { ToolCalculatorPage } from './pages/tools/ToolCalculatorPage';
-import { ToolTimerPage } from './pages/tools/ToolTimerPage';
-import { ToolReaderPage } from './pages/tools/ToolReaderPage';
-import { ToolVideoDownloadPage } from './pages/tools/ToolVideoDownloadPage';
-import { ToolBgRemovePage } from './pages/tools/ToolBgRemovePage';
-import { ToolPdfPage } from './pages/tools/ToolPdfPage';
-import { ToolConvertPage } from './pages/tools/ToolConvertPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
 function AuthSync() { useAuthSync(); return null; }
@@ -72,15 +63,6 @@ export function App() {
                 <Route path="/sport" element={<SportPage />} />
                 <Route path="/gaming" element={<GamingPage />} />
                 <Route path="/links" element={<LinksPage />} />
-                <Route path="/tools" element={<ToolsPage />} />
-                <Route path="/tools/qr" element={<ToolQrPage />} />
-                <Route path="/tools/calculator" element={<ToolCalculatorPage />} />
-                <Route path="/tools/timer" element={<ToolTimerPage />} />
-                <Route path="/tools/reader" element={<ToolReaderPage />} />
-                <Route path="/tools/video" element={<ToolVideoDownloadPage />} />
-                <Route path="/tools/bgremove" element={<ToolBgRemovePage />} />
-                <Route path="/tools/pdf" element={<ToolPdfPage />} />
-                <Route path="/tools/convert" element={<ToolConvertPage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Route>
             </Routes>

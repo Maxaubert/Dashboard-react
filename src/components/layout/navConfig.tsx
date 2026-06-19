@@ -5,7 +5,6 @@ import {
   NotebookIcon,
   TrophyIcon,
   GamepadIcon,
-  WrenchIcon,
 } from './navIcons';
 import type { ReactNode } from 'react';
 
@@ -33,5 +32,4 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/notes',    label: 'Notater',  icon: <NotebookIcon />,      accent: 'var(--color-page-notes)' },
   { to: '/sport',    label: 'Sport',    icon: <TrophyIcon />,        accent: 'var(--color-page-sport)' },
   { to: '/gaming',   label: 'Gaming',   icon: <GamepadIcon />,       accent: 'var(--color-page-gaming)' },
-  { to: '/tools',    label: 'Verktøy',  icon: <WrenchIcon />,        accent: 'var(--color-page-links)' },
 ];
