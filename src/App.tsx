@@ -10,12 +10,6 @@ import { PageOverlay } from '@/components/overlay/PageOverlay';
 import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
 import { HomePage } from './pages/HomePage';
-import { PlanPage } from './pages/PlanPage';
-import { TodoPage } from './pages/TodoPage';
-import { NotesPage } from './pages/NotesPage';
-import { SportPage } from './pages/SportPage';
-import { GamingPage } from './pages/GamingPage';
-import { LinksPage } from './pages/LinksPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
 function AuthSync() { useAuthSync(); return null; }
@@ -57,12 +51,6 @@ export function App() {
                 }
               >
                 <Route path="/" element={<HomePage />} />
-                <Route path="/plan" element={<PlanPage />} />
-                <Route path="/todo" element={<TodoPage />} />
-                <Route path="/notes" element={<NotesPage />} />
-                <Route path="/sport" element={<SportPage />} />
-                <Route path="/gaming" element={<GamingPage />} />
-                <Route path="/links" element={<LinksPage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Route>
             </Routes>
