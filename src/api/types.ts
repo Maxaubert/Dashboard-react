@@ -1,10 +1,10 @@
 /**
- * Shared API types — mirror the response shapes returned by the Python
- * backend (api.py and server/notes_api.py).
+ * Shared API types — mirror the Supabase row shapes and the `api/`
+ * serverless function responses.
  *
- * If you change a type here you should also confirm the backend produces
- * that field. The Python side has no schema enforcement so type drift is
- * caught only when a page actually consumes the field.
+ * If you change a type here, confirm the Supabase table column or function
+ * response still produces that field. The schema lives in
+ * `supabase/migrations/` and type drift is caught only at runtime.
  */
 
 // ─── Auth ────────────────────────────────────────────────────────────────

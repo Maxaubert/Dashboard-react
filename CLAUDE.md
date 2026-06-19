@@ -1,14 +1,15 @@
 # Dashboard — Project context for Claude Code
 
-Personal single-user dashboard. React + TypeScript + Vite frontend, Python stdlib HTTP server, deployed to one Hetzner VPS at `37.27.210.14`.
+Personal single-user dashboard. Static Vite/React frontend deployed to Vercel Hobby, with two TypeScript serverless functions under `api/` and Supabase for auth + database.
 
-**IMPORTANT: this repo is public at `github.com/Maxaubert/Dashboard-react`. Never commit secrets. Server-side API keys load from `/etc/dashboard.env` via systemd `EnvironmentFile=` (see Server conventions).**
+**IMPORTANT: this repo is public at `github.com/Maxaubert/Dashboard-react`. Never commit secrets. Env vars live in `.env.local` (gitignored) locally and in the Vercel dashboard for production.**
 
 ## Stack
 
 - **Frontend**: React 18, TypeScript ~5.6, Vite 5, react-query, dnd-kit, Tailwind 4, Radix UI, react-router 6, framer-motion, lucide-react.
-- **Server**: Python 3 stdlib `ThreadingHTTPServer` in `server/api.py` (port 3001), plus Flask sidecars `server/notes_api.py` (5001) and `server/tools_api.py` (5002). nginx proxies them under `/api/*`.
-- **Deploy**: paramiko/SFTP to Ubuntu, nginx + systemd. Service unit lives at `server/todo-api.service` (tracked).
+- **Serverless functions**: two Vercel Node.js functions in `api/` (`/api/wishlist`, `/api/news`). Shared helpers in `api/_lib/` (`supabaseAdmin.ts`, `cache.ts`, `wishlist.ts`, `news.ts`).
+- **Auth + database**: Supabase (hosted Postgres + Supabase Auth with email+password). RLS enforces per-user data isolation. Schema in `supabase/migrations/`.
+- **Deploy**: `vercel --prod` for production. Static build + functions deploy together.
 - **UI language**: Norwegian (`nb-NO`). Don't translate user-facing strings to English.
 
 ## Path alias
@@ -23,7 +24,8 @@ Personal single-user dashboard. React + TypeScript + Vite frontend, Python stdli
 - `src/hooks/*.ts` — react-query wrappers and cross-cutting hooks.
 - `src/api/*.ts` — typed API clients (each resource gets its own file).
 - `src/data/*.ts` — static config (icons, holidays, sports data).
-- `server/` — Python services, nginx conf, systemd unit.
+- `api/` — Vercel serverless functions and shared `_lib/` helpers. **Never import from `src/` here.**
+- `supabase/migrations/` — SQL migration files applied via the Supabase CLI or dashboard.
 - `plans_md/` — multi-step plan/audit documents (gitignored except `TEMPLATE.md`).
 
 When a page passes ~400 lines, split it the way `TodoPage`, `LinksPage`, `HomePage` were split: keep the page as an orchestrator, move JSX subcomponents to `components/<area>/`, pure helpers to `lib/<area>.ts`.
@@ -33,67 +35,41 @@ When a page passes ~400 lines, split it the way `TodoPage`, `LinksPage`, `HomePa
 | Task | Command |
 |---|---|
 | Typecheck | `npm run typecheck` |
-| Tests | `npm test` (vitest) |
-| Dev server | `npm run dev` (picks first free port from 5173) |
+| Tests | `npm test` (vitest, incl. `api/_lib/*.vitest.ts`) |
+| Dev server (frontend only) | `npm run dev` (picks first free port from 5173) |
+| Dev server (incl. functions) | `vercel dev` |
 | Build | `npm run build` (runs `tsc -b && vite build`) |
-| Deploy `server/api.py` | `python _deploy_api.py` (SFTP, restarts `todo-api`, smoke-tests endpoints) |
-| Deploy frontend | `python _deploy_frontend.py` (uploads `dist/*` + `server/nginx.conf`, reloads nginx) |
+| Deploy to production | `vercel --prod` |
 
 **YOU MUST** run `npm run typecheck` before committing TS changes. **YOU MUST** run `npm test` before pushing.
 
-## Database (Phase 1 onward of multi-user-backend)
+## Database
 
-- **Engine**: PostgreSQL 16 on the same VPS, bound to `localhost:5432` only. Installed via `_setup_postgres.py` (gitignored, one-shot).
-- **Connection string**: `DASHBOARD_DB_URL` in `/etc/dashboard.env` (mode 600). Format: `postgresql://dashboard:<pw>@localhost:5432/dashboard`.
-- **Python client**: `psycopg[binary,pool]` 3.x. Initialize once at startup via `server.db.init_pool(url)`. Borrow connections with `with get_pool().connection() as conn:`. Helpers in `server/db.py`: `query()` for dict-row reads, `execute()` for one-shot writes (commits + returns rowcount), `tx()` for multi-statement transactions (rollback on exception, commit on clean exit).
-- **Schema migrations**: yoyo-migrations 8.x. Files live in `server/migrations/NNN_<descriptive>.sql` (zero-padded sequence). Apply via `python _apply_migrations.py` (gitignored) — uploads the dir to the VPS via SFTP, installs yoyo on the VPS via pip if needed, then runs `yoyo apply --batch` server-side. yoyo tracks applied migrations in `_yoyo_log`.
-- **YOU MUST** add new migrations as a NEW numbered file. **Never edit an applied migration** — yoyo refuses to re-apply or skip a changed file.
-- **Backups**: daily `pg_dump` via `/usr/local/bin/dashboard-pg-backup.sh` (gzipped, retains 14 days). Cron entry: `5 4 * * *`. Set up once via `_setup_backup_cron.py` (gitignored).
-- **Tests**: `tests/server/` uses `pytest-postgresql`. On Linux it spawns its own postmaster; on Windows it connects to a pre-running Postgres on port 5433 (see `tests/server/conftest.py` for the platform split). Run with `npm run test:server` or `pytest tests/server -v`.
-- **Dep gotchas worth knowing**: `paramiko<5` is pinned because `sshtunnel 0.4.0` references `paramiko.DSSKey` (removed in 5.0). `setuptools<81` because yoyo 8.2.0 imports `pkg_resources` (removed in 81+). `psycopg2-binary` is a build-time-only dep for yoyo (app code uses psycopg3). On Windows the migration script runs yoyo on the VPS instead of locally because cp314 wheels for psycopg2-binary are flaky.
+- **Engine**: Supabase (hosted Postgres). Schema enforced via RLS policies; no direct Postgres access needed locally.
+- **Schema migrations**: SQL files in `supabase/migrations/` (zero-padded, e.g. `0001_init.sql`). Apply via the Supabase CLI (`supabase db push`) or the Supabase dashboard SQL editor. **YOU MUST** add schema changes as a NEW numbered file -- never edit an applied migration.
+- **Data model**:
+  - `documents` -- per-user JSONB bulk-replace store. One row per `(user_id, kind)` where `kind` is `todos | plan | links | home`. RLS: owner only.
+  - `notes` -- per-row CRUD (`id TEXT`, `user_id`, `title`, `body`, `updated_at BIGINT`). RLS: owner only.
+  - `cache` -- service-role-only key/value store for the Vercel functions (wishlist + news results). No RLS policies -- anon/authenticated roles cannot touch it; only the service-role key used by the functions bypasses RLS.
+- **Client in functions**: `api/_lib/supabaseAdmin.ts` creates a service-role client (bypasses RLS). Server-only -- never import it under `src/`.
+- **Client in frontend**: `src/lib/supabase.ts` creates an anon-key client. Session is persisted via `persistSession: true`.
 
-## Auth (Phase 2 onward of multi-user-backend)
+## Auth
 
-- **Password hashing**: argon2id via `argon2-cffi`. `server.auth.hash_password` / `server.auth.verify_password`. verify never raises — returns False on any failure (wrong password, malformed hash, etc.).
-- **Sessions**: server-side. `sessions` table maps cookie token → user_id. 30-day TTL. Cookie is `HttpOnly`, `Secure`, `SameSite=Lax`. Expired rows are NOT auto-deleted yet — add a sweep cron when traffic warrants it.
-- **Session middleware**: `Handler.current_user` lazily resolves from the Cookie header (cached per request). `Handler.require_auth()` returns the user or sends 401 + returns None — endpoints needing auth start with `user = self.require_auth(); if user is None: return`.
-- **Admin**: gated by `user_id == 1` (no role column yet). **IMPORTANT**: the very first signup gets id=1 and becomes admin. Don't burn id=1 on test data — if you do, run `ALTER SEQUENCE users_id_seq RESTART WITH 1` after cleanup.
-- **Rate limiting**: in-memory per-IP-per-route (`server/rate_limit.py`). Login: 5 failures / 15 min, increments only on failure so success doesn't penalize you. Signup: 10 / hour. State resets on process restart.
-- **AES-GCM at rest**: `server.crypto.encrypt(plaintext, key)` returns `(iv, ciphertext)`. Key in `/etc/dashboard.env` as `DASHBOARD_ENCRYPTION_KEY` (32 bytes, base64-urlsafe-encoded). Phase 3 uses this for per-user integration tokens.
-- **Endpoints** (Phase 2):
-  - `POST /api/auth/signup` — `{code, email, password, display_name}` → user + Set-Cookie
-  - `POST /api/auth/login` — `{email, password}` → user + Set-Cookie
-  - `POST /api/auth/logout` — clears session, 204
-  - `GET /api/auth/me` — current user, or 401
-  - `POST /api/admin/invites` — admin only, `{count}` → `{codes: [...]}`
-- **VPS server-side Python deps** (`/usr/lib/python3/...` via `pip install --break-system-packages`): `psycopg[binary,pool]==3.3.4`, `argon2-cffi==23.1.0`, `cryptography==42.0.8`. `_deploy_api.py` uploads source modules but does NOT install Python deps — if a new dep gets added, install it on the VPS manually before deploy.
-- **SSH key auth**: paramiko uses `~/.ssh/dashboard_ed25519` (added to `/root/.ssh/authorized_keys` on the VPS). Password fallback still works if the key is missing.
+- **Provider**: Supabase Auth (email+password). No custom sessions table or cookie logic.
+- **Frontend**: `src/lib/supabase.ts` exports the `supabase` client. `useCurrentUser` (`src/hooks/useCurrentUser.ts`) wraps the Supabase session. `RequireAuth` (`src/components/auth/RequireAuth.tsx`) guards the whole app: logged-out users redirect to `/login`.
+- **Pages**: `/login` (`src/pages/LoginPage.tsx`) and `/signup` (`src/pages/SignupPage.tsx`), sharing `src/components/auth/AuthCard.tsx`.
+- **Env vars reaching the browser** (prefixed `VITE_`): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_ITAD_KEY`.
+- **Function-only env vars** (not exposed to the browser): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `STEAM_API_KEY`, `STEAM_ID`, `ITAD_API_KEY`.
+- **Local**: copy these to `.env.local` (gitignored). Production values live in the Vercel dashboard.
 
-## Data migration (Phase 3 onward)
+## Serverless functions (`api/`)
 
-- **Postgres-backed, auth-gated endpoints**:
-  - `/api/todos` (Phase 3) — scoped by `user_id`, bulk upsert + omitted-row delete.
-  - `/api/plan` (Phase 4) — same pattern; rows are calendar events. `plan_events.id` is `TEXT` (UUID strings, client-generated) per migration `002_plan_events_text_id.sql`. Ordered by `(date, start_time NULLS FIRST, position)` so the calendar renders chronologically without client-side sorting.
-  - `/api/links` (Phase 4) — v2 envelope `{version: 2, categories, links}`. Both `categories.id` and `links.id` are `TEXT` (client-generated) per migration `003_links_categories_text_id.sql`. Categories upserted first inside the single transaction so the links FK resolves. Links referencing a category not in the same payload get stored with `category_id = NULL` (defensive fallback). Accepts a bare `LinkItem[]` POST body for legacy clients (treated as v2 envelope with no categories).
-  - `/api/home` (Phase 4) — `home_layout` is one row per user with a JSONB payload. The frontend treats the payload opaquely; the server stores it as-is. POST is a simple `INSERT ... ON CONFLICT (user_id) DO UPDATE`. First-time users with no row get a v1 empty layout so the page can render without a 404. No schema migration needed (the table already existed with the right shape).
-  - `/api/notes` (Phase 4) — full CRUD (GET list, POST create, PUT `/api/notes/<id>` patch, DELETE `/api/notes/<id>`). `notes.id` is `TEXT` (e.g. `note_<timestamp>`) per migration `004_notes_text_id.sql`. Folds the orphaned `notes_api.py` Flask sidecar's `/api/notes/*` routes into `api.py`; the sidecar is still running on port 5001 because `/api/cart` and `/api/chat` haven't been migrated yet, but nginx routes everything under `/api/` to port 3001, so the sidecar's notes endpoints were already unreachable. `do_PUT` and `do_DELETE` methods were added to `Handler` for this; CORS `Allow-Methods` widened to `GET, POST, PUT, DELETE, OPTIONS`.
-- **Phase 4 leftovers**: `/api/cart` and `/api/chat` still live on `notes_api.py` (port 5001). They are unreachable through nginx; if anyone needs cart or chat, the sidecar's routes will need to fold in too. Out of scope for the multi-user-backend rollout.
-- **Frontend cookie**: `src/api/client.ts` uses `credentials: 'include'` so browsers send the session cookie on every `/api/*` call. Without it, every authenticated endpoint would 401.
-- **Login UI (Phase 6)**: `/login` + `/signup` pages (`src/pages/LoginPage.tsx`, `SignupPage.tsx`, shared `src/components/auth/AuthCard.tsx` with inline styles — MVP, visual polish deferred). `useCurrentUser` (`src/hooks/useCurrentUser.ts`) wraps `GET /api/auth/me` and returns `null` (not an error) when logged out. `RequireAuth` (`src/components/auth/RequireAuth.tsx`) guards the whole app: logged-out users redirect to `/login`. Logout button + display name live at the bottom of the desktop `Sidebar`. The old DevTools-cookie workaround is gone.
-- **HTTPS + Secure cookie**: the site is served over HTTPS at `https://37-27-210-14.sslip.io` (sslip.io wildcard DNS resolves the dashed IP to `37.27.210.14`; Let's Encrypt cert via `certbot certonly --standalone`, renewals via webroot at `/var/www/certbot`). HTTPS is a hard prerequisite because the session cookie is `Secure` and browsers won't store a Secure cookie over plain HTTP. `server.auth._secure_attr()` honours a `DASHBOARD_COOKIE_INSECURE=1` escape hatch (drops Secure) for HTTP-only fallback — do NOT set it now that HTTPS is live. nginx `auth_basic` is removed; the React login is the only gate.
-- **Migration script pattern**: `_migrate_to_postgres.py` (todos) and `_migrate_plan_to_postgres.py` (plan) both read the JSON via SFTP, generate a multi-row `INSERT ... ON CONFLICT (id) DO NOTHING`, run it via stdin-piped `psql` on the VPS. Future Phase-4 scripts (links/home/notes) follow the same shape. Both are gitignored. The `_yoyo_log` table is for schema migrations; data migration is a separate concern with separate scripts.
-- **Client-generated IDs**: `todos.id` was kept as the original JSON-era millisecond timestamps cast to BIGINT (sequence bumped past `MAX(id)` after the bulk insert). `plan_events.id` is a TEXT column holding the original client UUIDs verbatim.
-- **`apply_migrations` test fixture** (in `tests/server/conftest.py`): every server test pulls the fixture and runs every `server/migrations/*.sql` in numeric order before the test body. Adding a new migration is picked up automatically; no per-test-file changes needed.
-- **Headless production smoke test**: `python _headless_test.py` (gitignored). SSHes to the VPS, hits `127.0.0.1:3001` directly (bypassing nginx Basic Auth), exercises anon-401 → login → /me → /todos round-trip → /plan round-trip → logout → 401-after-logout for both endpoints. Run after every deploy.
-
-## Server-side conventions
-
-- **Secrets**: load via `_require_env('NAME')` at module top. Values live in `/etc/dashboard.env` on the server (mode 600, root). **Never hardcode keys in source — the repo is public.**
-- **JSON data writes** in POST handlers use the atomic-write pattern: `tempfile.mkstemp(dir=os.path.dirname(file_path))` → write → `f.flush()` → `os.fsync(f.fileno())` → `os.replace(tmp, file_path)`. A crash mid-write must not truncate user data. Follow the pattern in `server/api.py:do_POST`.
-- **Report appends** (`_append_report`) hold `fcntl.flock(fd, LOCK_EX)` across the entire read-check-seed-append. Two concurrent POSTs must not interleave their markdown or race the header-create.
-- **Threading**: top-level uses `ThreadingHTTPServer` with `daemon_threads = True`. The single-threaded `HTTPServer` wedged in production once after `ConnectionResetError`s. Don't revert.
-
-Server-side data files live in `/opt/dashboard/www/`: `todos.json`, `plan.json`, `links.json`, `home.json`, plus `*_cache.json`. Reports markdown lives one level up at `/opt/dashboard/reports/`.
+- `/api/wishlist` (`api/wishlist.ts`) -- fetches Steam + ITAD data, caches in the `cache` table for 1 hour, returns game list.
+- `/api/news` (`api/news.ts`) -- fetches RSS from `vg | nrk | aftenposten`, caches for 5 minutes, returns items sliced by `?source=&count=&offset=`.
+- Shared helpers in `api/_lib/`: `supabaseAdmin.ts` (DB client), `cache.ts` (read-through cache against the `cache` table), `wishlist.ts`, `news.ts`.
+- Test files are co-located as `*.vitest.ts` inside `api/_lib/` and run with the main `npm test` command.
+- Local testing with real function behaviour: `vercel dev` (spins up both the Vite frontend and the functions).
 
 ## Frontend conventions
 
@@ -106,7 +82,7 @@ Server-side data files live in `/opt/dashboard/www/`: `todos.json`, `plan.json`,
 
 ## UI primitives (the design system that isn't)
 
-`src/components/ui/` holds only `Modal` (focus trap, escape, backdrop) and `Toast` (app-wide notifications). Pages use raw `<button>` / `<input>` JSX. The old `Button/Card/Input/...` primitives were deleted because nothing imported them. **If you find yourself adding back a UI primitive, first check whether the pages would actually use it — otherwise add inline styles like the rest.**
+`src/components/ui/` holds only `Modal` (focus trap, escape, backdrop) and `Toast` (app-wide notifications). Pages use raw `<button>` / `<input>` JSX. The old `Button/Card/Input/...` primitives were deleted because nothing imported them. **If you find yourself adding back a UI primitive, first check whether the pages would actually use it -- otherwise add inline styles like the rest.**
 
 ## Git workflow
 
@@ -116,19 +92,17 @@ Server-side data files live in `/opt/dashboard/www/`: `todos.json`, `plan.json`,
   Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
   ```
 - **PRs**: title under 70 chars. Body sections: `## Summary` (3-5 bullets) and `## Test plan` (checklist). Flag anything that needs manual user verification (e.g. drag UX).
-- **No em-dashes** anywhere — code, commits, PRs, chat. Global user preference.
+- **No em-dashes** anywhere -- code, commits, PRs, chat. Global user preference.
 - **No emojis** in code or commits unless explicitly requested.
 
 ## Common gotchas
 
 - Repo URL is `Maxaubert/Dashboard-react` (capital D). The old lowercase form redirects; the "This repository moved" line on push is harmless.
-- `dashboard.txt` (gitignored) contains SSH password + host. The `_deploy_*.py` scripts read it via `_creds_path()`.
-- The Claude Code auto-mode classifier blocks unfamiliar destructive actions (SSH-driven service restarts, MCP config edits). When blocked, surface the action to the user for explicit text approval — don't silently retry.
-- Python output buffering: when running `_deploy_*.py` via the Bash tool, redirect to a file (`python -u script.py > _out.txt 2>&1; cat _out.txt`) — direct stdout sometimes shows empty.
 - Vite dev server hops ports (`5173 → 5174 → ...`) if any are taken. Read the actual port from `_dev.log` before navigating.
+- `api/_lib/supabaseAdmin.ts` uses `SUPABASE_URL` (no `VITE_` prefix) -- it is a Node.js module, not a Vite build input.
+- Never import `api/_lib/*` from under `src/` -- those modules use `process.env` and Node.js APIs unavailable in the browser bundle.
 
 ## Where the bones are buried
 
 - **Audit & plan docs**: `plans_md/` (gitignored). New plans follow `plans_md/TEMPLATE.md`.
 - **The 2026-05-19 audit**: `plans_md/2026-05-19-codebase-audit.md` documents the Stage 1-6 cleanup with commit SHAs. Worth reading before any structural change.
-- **One-shot migration scripts**: `_setup_env_secrets.py` (gitignored) ran once to move keys to `/etc/dashboard.env`. Re-running fails on purpose (the regex finds no keys in current `api.py`).
