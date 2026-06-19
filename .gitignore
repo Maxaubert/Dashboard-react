@@ -88,3 +88,5 @@ _dev.log
 # Playwright
 playwright-report/
 test-results/
+
+.vercel
