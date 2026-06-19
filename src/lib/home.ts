@@ -1,10 +1,9 @@
 export const SECTION_IDS = [
   'prompt-launcher',
-  'kategorier',
-  'wishlist',
-  'widgets',
-  'ext-lenker',
+  'todo',
   'dagens-plan',
+  'wishlist',
+  'ext-lenker',
   'vaer',
   'nyhetssaker',
 ] as const;
