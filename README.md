@@ -58,20 +58,13 @@ Everything lives on **one customizable page**. Sections are drag-reorderable, an
 
 ## Screenshots
 
-<p align="center"><img src="screenshots/01-home.png" alt="Home" width="62%"></p>
+<p align="center"><img src="screenshots/home.png" alt="Home" width="100%"></p>
 <p align="center"><sub><b>The home page.</b> One customizable, drag-reorderable page; each section's "Vis alle" opens the full view in a pop-out.</sub></p>
 
 <table>
 <tr>
-<td width="50%"><img src="screenshots/02-plan.png" alt="Plan"><br><sub><b>Plan.</b> Weekly calendar in a pop-out.</sub></td>
-<td width="50%"><img src="screenshots/03-todo.png" alt="Todo"><br><sub><b>Todo.</b> Priorities and deadlines; list or kanban view.</sub></td>
-</tr>
-<tr>
-<td><img src="screenshots/08-links.png" alt="Links"><br><sub><b>Links.</b> Favorites and categories, with favicons.</sub></td>
-<td><img src="screenshots/07-gaming.png" alt="Gaming"><br><sub><b>Gaming.</b> Steam wishlist with sale badges and all-time-low "hot" tags.</sub></td>
-</tr>
-<tr>
-<td colspan="2" align="center"><img src="screenshots/07b-gaming-detail.png" alt="Price history" width="62%"><br><sub><b>Price history.</b> ITAD chart and Steam link when you click a game.</sub></td>
+<td width="50%"><img src="screenshots/calendar.png" alt="Calendar"><br><sub><b>Plan.</b> Weekly calendar in a pop-out.</sub></td>
+<td width="50%"><img src="screenshots/game-detail.png" alt="Game detail"><br><sub><b>Game detail.</b> ITAD price history and Steam link when you click a game.</sub></td>
 </tr>
 </table>
 
