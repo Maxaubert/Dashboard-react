@@ -744,7 +744,7 @@
     top: calc(100% + 6px);
     right: 0;
     min-width: 140px;
-    background: rgba(10, 10, 10, 0.96);
+    background: rgba(255, 255, 255, 0.96);
     border: 1px solid rgba(13, 13, 17, 0.08);
     border-radius: 8px;
     padding: 4px;
@@ -995,7 +995,7 @@
     gap: 10px;
     padding: 12px 20px;
     border-bottom: 1px solid rgba(13, 13, 17, 0.07);
-    background: rgba(10, 10, 10, 0.8);
+    background: rgba(255, 255, 255, 0.8);
     flex-shrink: 0;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
@@ -1062,7 +1062,7 @@
     display: grid;
     grid-template-columns: 52px repeat(7, 1fr);
     border-bottom: 1px solid rgba(13, 13, 17, 0.07);
-    background: rgba(10, 10, 10, 0.9);
+    background: rgba(255, 255, 255, 0.9);
     position: sticky;
     top: 0;
     z-index: 10;
@@ -1916,7 +1916,7 @@
     height: 22px;
     border-radius: 5px;
     border: 1px solid rgba(13, 13, 17, 0.12);
-    background: rgba(10, 10, 10, 0.85);
+    background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
     display: flex;
@@ -3638,4 +3638,57 @@
 .home-empty-hint {
   padding: 48px 16px; text-align: center;
   color: var(--color-text-muted, #71717a); font-size: 0.9rem;
+}
+
+/* ============================================================
+ * Papir HUD - sleek glass pass
+ * Soft gradient backdrop (replaces the line grid) + frosted
+ * translucent panels. Appended last so it wins the cascade.
+ * ============================================================ */
+
+html { --radius: 16px; --radius-sm: 11px; }
+
+/* Ambient wash: three soft accent blooms over warm paper, pinned on
+ * scroll so panels glide over a calm, gridless background. */
+body {
+  background:
+    radial-gradient(1100px 760px at 6% -12%, rgba(232, 33, 78, 0.10), transparent 60%),
+    radial-gradient(1000px 720px at 104% 2%, rgba(43, 196, 222, 0.11), transparent 56%),
+    radial-gradient(1050px 820px at 62% 112%, rgba(148, 133, 200, 0.15), transparent 60%),
+    linear-gradient(180deg, #f6f4ef 0%, #efece4 100%) !important;
+  background-attachment: fixed !important;
+}
+body::after { background-image: none !important; animation: none !important; }
+
+/* Frosted glass on the boxed components. */
+.card,
+.weather-card,
+.prompt-launcher-card,
+.ext-link,
+.lm-content,
+.gaming-modal-panel,
+.page-overlay-panel {
+  background: rgba(255, 255, 255, 0.55) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid rgba(13, 13, 17, 0.07) !important;
+  box-shadow:
+    0 12px 36px rgba(13, 13, 17, 0.09),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+
+.card:hover,
+.ext-link:hover {
+  background: rgba(255, 255, 255, 0.72) !important;
+  box-shadow:
+    0 16px 44px rgba(13, 13, 17, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Lighter, frosted scrim behind the page popup so the glass panel reads
+ * as paper rather than blurring a near-black backdrop. */
+.page-overlay-backdrop {
+  background: rgba(24, 22, 20, 0.26) !important;
+  -webkit-backdrop-filter: blur(7px) !important;
+  backdrop-filter: blur(7px) !important;
 }
