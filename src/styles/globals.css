@@ -3885,7 +3885,8 @@ html, body { overflow-x: hidden; }
  * scrollbar (it sits in the padding-bottom zone, like the news carousel).
  * Add top padding + negative margin so the hover lift has room at the top
  * within the clip instead of being cut off. */
-.ext-grid-wrap { overflow: hidden; padding-top: 24px; margin-top: -24px; }
+.ext-grid-wrap { overflow: hidden; padding-top: 16px; margin-top: -16px; }
+.ext-grid { padding-top: 16px; margin-top: -16px; }
 
 /* Settings popup: draggable reorder rows. */
 .settings-hint { font-size: 0.78rem; color: var(--color-text-muted); margin: 0 0 12px; }
