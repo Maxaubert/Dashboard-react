@@ -9,8 +9,8 @@
  * ──────────────────────────────────────────────────────────────────────────── */
 
 @theme {
-  /* Theme: Papir HUD (Frames light - warm paper, crimson/violet/cyan). */
-  --color-bg: #f4f2ed;
+  /* Theme: Papir HUD (Frames light - blank white, crimson/violet/cyan). */
+  --color-bg: #ffffff;
   --color-surface: #ffffff;
   --color-surface-2: #ece9e1;
   --color-border: rgba(13, 13, 17, 0.14);
@@ -85,8 +85,8 @@
      * between baseline grid, highlighted grid, and background stays
      * visually identical to the previous setup — everything is just
      * dimmer overall. */
-    background: #f4f2ed !important;
-    /* ── LINE GRID (current) ── */
+    background: #ffffff !important;
+    /* ── LINE GRID (removed; see blank-white override below) ── */
     background-image:
       linear-gradient(rgba(13, 13, 17, 0.05) 1px, transparent 1px),
       linear-gradient(90deg, rgba(13, 13, 17, 0.05) 1px, transparent 1px) !important;
@@ -3648,15 +3648,9 @@
 
 html { --radius: 16px; --radius-sm: 11px; }
 
-/* Ambient wash: three soft accent blooms over warm paper, pinned on
- * scroll so panels glide over a calm, gridless background. */
+/* Plain blank-white background: no grid, no wash. */
 body {
-  background:
-    radial-gradient(1100px 760px at 6% -12%, rgba(232, 33, 78, 0.10), transparent 60%),
-    radial-gradient(1000px 720px at 104% 2%, rgba(43, 196, 222, 0.11), transparent 56%),
-    radial-gradient(1050px 820px at 62% 112%, rgba(148, 133, 200, 0.15), transparent 60%),
-    linear-gradient(180deg, #f6f4ef 0%, #efece4 100%) !important;
-  background-attachment: fixed !important;
+  background: #ffffff !important;
 }
 body::after { background-image: none !important; animation: none !important; }
 
