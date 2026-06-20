@@ -3701,8 +3701,7 @@ body::after { background-image: none !important; animation: none !important; }
   transition: transform 0.5s cubic-bezier(.85, 0, .15, 1);
 }
 .ext-link:hover .ext-fill i { transform: translateX(0); }
-.ext-link > .ext-link-top,
-.ext-link > .card-bottom { position: relative; z-index: 1; }
+.ext-link > div { position: relative; z-index: 1; }
 .ext-link:hover .ext-link-name,
 .ext-link:hover .ext-link-sub,
 .ext-link:hover .ext-link-arrow { color: #fff; }

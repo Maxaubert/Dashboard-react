@@ -25,21 +25,7 @@ export function LinkCard({ link, onToggleFavorite, onContextMenu }: LinkCardProp
       style={{ ['--ext-color' as string]: accent }}
       onContextMenu={onContextMenu}
     >
-      {/* Hover fill: a left-anchored staircase of accent bars that slides in
-       * and steps up toward the top-right. */}
-      <span className="ext-fill" aria-hidden="true">
-        {Array.from({ length: 8 }, (_, k) => (
-          <i
-            key={k}
-            style={{
-              top: `${(k / 8) * 100}%`,
-              height: `${100 / 8 + 0.6}%`,
-              width: `${Math.round(((k + 1) / 8) * 100)}%`,
-              transitionDelay: `${k * 38}ms`,
-            }}
-          />
-        ))}
-      </span>
+      <ExtLinkFill />
 
       {/* Stretched anchor — fills the whole card so the entire surface
        * is clickable, not just the icon/text patches. The favorite
@@ -84,6 +70,27 @@ export function LinkCard({ link, onToggleFavorite, onContextMenu }: LinkCardProp
         </button>
       </div>
     </div>
+  );
+}
+
+/** Hover fill: a left-anchored staircase of accent bars that slides in and
+ *  steps up toward the top-right. Shared by the Lenker cards and the home
+ *  favorites carousel so both animate identically. */
+export function ExtLinkFill() {
+  return (
+    <span className="ext-fill" aria-hidden="true">
+      {Array.from({ length: 8 }, (_, k) => (
+        <i
+          key={k}
+          style={{
+            top: `${(k / 8) * 100}%`,
+            height: `${100 / 8 + 0.6}%`,
+            width: `${Math.round(((k + 1) / 8) * 100)}%`,
+            transitionDelay: `${k * 38}ms`,
+          }}
+        />
+      ))}
+    </span>
   );
 }
 
