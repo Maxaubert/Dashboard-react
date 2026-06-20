@@ -3852,34 +3852,73 @@ body::after { background-image: none !important; animation: none !important; }
 /* No horizontal page scroll — all horizontal scrolling lives inside the
  * carousels, so kill the stray window scrollbar from full-width content. */
 html, body { overflow-x: hidden; }
-.wishlist-cover { transition: transform 0.2s cubic-bezier(.2, .85, .25, 1); }
-.wishlist-cover:hover { transform: translateY(-4px); }
-.wishlist-cover:hover .wishlist-cover-img {
-  border-color: var(--color-text);
-  box-shadow: 0 10px 24px rgba(13, 13, 17, 0.16);
+/* Hover-expand accordion: narrow covers that widen and reveal details. */
+.wishlist-cover {
+  position: relative;
+  flex: 0 0 132px;
+  width: auto;
+  height: 162px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background: #ece9e1;
+  padding: 0;
+  cursor: pointer;
+  transition: flex-basis 0.45s cubic-bezier(.2, .85, .25, 1);
 }
-.wishlist-cover-img::after {
-  content: '';
+.wishlist-cover:hover { flex-basis: 344px; }
+.wishlist-cover-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.wishlist-cover-grad {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(transparent 42%, rgba(8, 8, 12, 0.92));
+  pointer-events: none;
+}
+.wishlist-cover-badge {
+  background: #16a34a;
+  color: #fff;
+  z-index: 2;
+}
+.wishlist-cover-panel {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 55%;
-  background: linear-gradient(transparent, rgba(13, 13, 17, 0.72));
-  pointer-events: none;
-}
-.wishlist-cover-meta {
-  position: absolute;
-  left: 9px;
-  bottom: 7px;
   z-index: 2;
-  padding: 0;
-  min-height: 0;
-  gap: 7px;
+  padding: 11px 13px;
+  color: #fff;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.3s, transform 0.4s cubic-bezier(.2, .85, .25, 1);
 }
-.wishlist-price-now { color: #fff; }
+.wishlist-cover:hover .wishlist-cover-panel { opacity: 1; transform: none; }
+.wishlist-cover-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 14px;
+  line-height: 1;
+  margin-bottom: 7px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wishlist-cover-meta { display: flex; align-items: center; gap: 8px; padding: 0; min-height: 0; }
+.wishlist-price-now { color: #fff; font-family: var(--font-mono); font-weight: 600; font-size: 13px; }
 .wishlist-price-now.sale { color: #4ade80; }
-.wishlist-price-was { color: rgba(255, 255, 255, 0.72); }
+.wishlist-price-was {
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: line-through;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.wishlist-cover-skeleton { flex: 0 0 132px; width: auto; height: 162px; }
 
 /* The wrapper stays overflow:hidden so it clips the inner scroller's
  * scrollbar (it sits in the padding-bottom zone, like the news carousel).

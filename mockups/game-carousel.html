@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Game carousel - cooler mockups</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Mono:wght@500;600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--body:'Space Grotesk',sans-serif;--mono:'IBM Plex Mono',monospace;--display:'Chakra Petch',sans-serif;
+        --ink:#0d0d11;--muted:#6b6a62;--line:rgba(13,13,17,.16);--crimson:#e8214e;--green:#1db954;--e:cubic-bezier(.2,.85,.25,1);}
+  *{box-sizing:border-box;}
+  body{margin:0;background:#fff;color:var(--ink);font-family:var(--body);padding:34px 40px 120px;}
+  h1{font-family:var(--display);text-transform:uppercase;font-size:24px;margin:0 0 4px;}
+  .sub{color:var(--muted);margin:0 0 30px;font-size:14px;}
+  .lab{font-family:var(--mono);text-transform:uppercase;letter-spacing:.18em;font-size:.66rem;color:var(--muted);
+       border-bottom:1px solid rgba(13,13,17,.12);padding-bottom:8px;margin:34px 0 16px;display:flex;justify-content:space-between;}
+  .note{text-transform:none;letter-spacing:0;font-family:var(--body);}
+  .strip{display:flex;gap:14px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin;}
+  img{display:block;}
+  .price{font-family:var(--mono);font-weight:600;}
+  .was{font-family:var(--mono);text-decoration:line-through;opacity:.6;font-size:.78em;margin-right:6px;}
+  .disc{font-family:var(--mono);font-weight:700;background:var(--green);color:#06210f;padding:2px 7px;border-radius:3px;font-size:.78rem;}
+
+  /* ---------- 1. CINEMATIC ZOOM ---------- */
+  .cine .card{position:relative;flex:0 0 300px;height:160px;border-radius:10px;overflow:hidden;cursor:pointer;border:1px solid var(--line);}
+  .cine img{width:100%;height:100%;object-fit:cover;transition:transform .5s var(--e);}
+  .cine .card:hover img{transform:scale(1.09);}
+  .cine .grad{position:absolute;inset:0;background:linear-gradient(transparent 40%, rgba(8,8,12,.9));}
+  .cine .accent{position:absolute;left:0;right:0;top:0;height:3px;background:var(--crimson);transform:scaleX(0);transform-origin:left;transition:transform .4s var(--e);}
+  .cine .card:hover .accent{transform:scaleX(1);}
+  .cine .meta{position:absolute;left:13px;right:13px;bottom:11px;color:#fff;}
+  .cine .ttl{font-family:var(--display);font-weight:700;font-size:15px;text-transform:uppercase;line-height:1;margin-bottom:6px;}
+  .cine .row{display:flex;align-items:center;gap:8px;}
+  .cine .price{color:#fff;font-size:14px;}
+
+  /* ---------- 2. HOVER-EXPAND ACCORDION ---------- */
+  .acc{align-items:stretch;}
+  .acc .card{position:relative;flex:0 0 130px;height:175px;border-radius:10px;overflow:hidden;cursor:pointer;
+    transition:flex-basis .45s var(--e);border:1px solid var(--line);}
+  .acc .card:hover{flex-basis:330px;}
+  .acc img{width:100%;height:100%;object-fit:cover;}
+  .acc .grad{position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(8,8,12,.15));}
+  .acc .panel{position:absolute;left:0;right:0;bottom:0;padding:12px 14px;color:#fff;
+    background:linear-gradient(transparent,rgba(8,8,12,.92));opacity:0;transform:translateY(10px);transition:.4s var(--e);}
+  .acc .card:hover .panel{opacity:1;transform:none;}
+  .acc .ttl{font-family:var(--display);font-weight:700;text-transform:uppercase;font-size:15px;line-height:1;margin-bottom:7px;}
+  .acc .row{display:flex;align-items:center;gap:8px;}
+  .acc .price{color:#fff;font-size:14px;}
+
+  /* ---------- 3. ANGLED HUD (Frames) ---------- */
+  .hud{padding:4px 0 16px;}
+  .hud .card{position:relative;flex:0 0 280px;height:150px;cursor:pointer;
+    clip-path:polygon(0 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%);
+    transform:skewX(-7deg);transition:transform .35s var(--e);overflow:hidden;}
+  .hud .card:hover{transform:skewX(-7deg) translateY(-4px);}
+  .hud .inner{position:absolute;inset:0;transform:skewX(7deg) scale(1.18);}
+  .hud img{width:100%;height:100%;object-fit:cover;}
+  .hud .grad{position:absolute;inset:0;background:linear-gradient(105deg,rgba(8,8,12,.75) 18%,transparent 60%);}
+  .hud .meta{position:absolute;left:20px;bottom:12px;transform:skewX(7deg);color:#fff;}
+  .hud .ttl{font-family:var(--display);font-weight:700;text-transform:uppercase;font-size:14px;margin-bottom:6px;}
+  .hud .tag{display:inline-flex;align-items:center;gap:8px;background:rgba(8,8,12,.7);border:1px solid rgba(255,255,255,.25);
+    padding:3px 8px;font-family:var(--mono);font-size:12px;color:#fff;}
+  .hud .disc{position:absolute;top:10px;right:24px;transform:skewX(7deg);
+    background:repeating-linear-gradient(-45deg,var(--crimson) 0 7px,#0d0d11 7px 14px);color:#fff;font-family:var(--mono);font-weight:700;
+    padding:3px 9px;font-size:.74rem;border:1px solid #0d0d11;}
+
+  /* ---------- 4. TILT + GLOW ---------- */
+  .tilt{perspective:900px;}
+  .tilt .card{position:relative;flex:0 0 270px;height:150px;border-radius:12px;overflow:hidden;cursor:pointer;
+    transition:transform .4s var(--e),box-shadow .4s var(--e);transform-style:preserve-3d;border:1px solid var(--line);}
+  .tilt .card:hover{transform:rotateX(7deg) rotateY(-9deg) translateZ(10px);box-shadow:-14px 18px 36px rgba(13,13,17,.28);}
+  .tilt img{width:100%;height:100%;object-fit:cover;}
+  .tilt .glow{position:absolute;inset:0;opacity:0;transition:opacity .4s;
+    background:radial-gradient(120% 80% at 20% 0%,rgba(255,255,255,.35),transparent 55%);}
+  .tilt .card:hover .glow{opacity:1;}
+  .tilt .meta{position:absolute;left:12px;bottom:10px;color:#fff;}
+  .tilt .grad{position:absolute;inset:0;background:linear-gradient(transparent 45%,rgba(8,8,12,.88));}
+  .tilt .ttl{font-family:var(--display);font-weight:700;text-transform:uppercase;font-size:14px;margin-bottom:5px;}
+  .tilt .price{color:#fff;}
+
+  /* ---------- 5. FEATURED + RAIL ---------- */
+  .feat{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:14px;align-items:stretch;}
+  .feat .big{position:relative;border-radius:12px;overflow:hidden;min-height:300px;cursor:pointer;border:1px solid var(--line);}
+  .feat .big img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;}
+  .feat .big .grad{position:absolute;inset:0;background:linear-gradient(60deg,rgba(8,8,12,.92),transparent 70%);}
+  .feat .big .meta{position:absolute;left:22px;bottom:20px;right:22px;color:#fff;}
+  .feat .big .ttl{font-family:var(--display);font-weight:700;text-transform:uppercase;font-size:30px;line-height:.95;margin-bottom:10px;}
+  .feat .big .price{font-size:18px;color:#fff;}
+  .feat .rail{display:grid;grid-template-rows:repeat(3,1fr);gap:10px;}
+  .feat .mini{position:relative;border-radius:9px;overflow:hidden;cursor:pointer;border:1px solid var(--line);}
+  .feat .mini img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;}
+  .feat .mini .grad{position:absolute;inset:0;background:linear-gradient(90deg,rgba(8,8,12,.85),transparent 75%);}
+  .feat .mini .meta{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#fff;}
+  .feat .mini .ttl{font-family:var(--display);font-weight:600;text-transform:uppercase;font-size:13px;margin-bottom:4px;}
+  .feat .mini .price{color:#fff;font-size:12px;}
+</style>
+</head>
+<body>
+  <h1>Game carousel - cooler</h1>
+  <p class="sub">Fem retninger for spillkarusellen (Steam-onskeliste). Ekte covers. Hover for a se interaksjon.</p>
+  <div id="root"></div>
+
+  <script>
+    const hdr = (id)=>`https://cdn.cloudflare.steamstatic.com/steam/apps/${id}/header.jpg`;
+    const G=[
+      {id:1086940,t:'Baldurs Gate 3',price:'549 kr'},
+      {id:1245620,t:'Elden Ring',price:'479 kr',was:'599 kr',disc:'-20%'},
+      {id:1174180,t:'Red Dead 2',price:'199 kr',was:'599 kr',disc:'-67%'},
+      {id:990080,t:'Hogwarts Legacy',price:'312 kr',was:'625 kr',disc:'-50%'},
+      {id:2050650,t:'Resident Evil 4',price:'412 kr',was:'625 kr',disc:'-34%'},
+      {id:292030,t:'The Witcher 3',price:'79 kr',was:'399 kr',disc:'-80%'},
+      {id:1593500,t:'God of War',price:'499 kr'},
+    ];
+    const priceRow=(g,cls='')=>`<div class="row ${cls}">${g.disc?`<span class="disc">${g.disc}</span>`:''}${g.was?`<span class="was">${g.was}</span>`:''}<span class="price">${g.price}</span></div>`;
+
+    const root=document.getElementById('root');
+    const sec=(name,note,inner)=>`<div class="lab"><span>${name}</span><span class="note">${note}</span></div>${inner}`;
+
+    // 1 cinematic
+    root.insertAdjacentHTML('beforeend', sec('1 / Cinematic zoom','bilde zoomer, aksent-topp, tittel i display',
+      `<div class="strip cine">${G.map(g=>`<div class="card"><img src="${hdr(g.id)}" alt=""><div class="grad"></div><div class="accent"></div>
+        <div class="meta"><div class="ttl">${g.t}</div>${priceRow(g)}</div></div>`).join('')}</div>`));
+
+    // 2 accordion
+    root.insertAdjacentHTML('beforeend', sec('2 / Hover-expand','smale covers som utvider seg og viser detaljer',
+      `<div class="strip acc">${G.map(g=>`<div class="card"><img src="${hdr(g.id)}" alt=""><div class="grad"></div>
+        <div class="panel"><div class="ttl">${g.t}</div>${priceRow(g)}</div></div>`).join('')}</div>`));
+
+    // 3 angled hud
+    root.insertAdjacentHTML('beforeend', sec('3 / Angled HUD','skraskaarne kort, hazard-rabatt, mono pris-tag',
+      `<div class="strip hud">${G.map(g=>`<div class="card"><div class="inner"><img src="${hdr(g.id)}" alt=""><div class="grad"></div></div>
+        ${g.disc?`<span class="disc">${g.disc}</span>`:''}
+        <div class="meta"><div class="ttl">${g.t}</div><span class="tag">${g.was?`<s style="opacity:.6">${g.was}</s>`:''}${g.price}</span></div></div>`).join('')}</div>`));
+
+    // 4 tilt
+    root.insertAdjacentHTML('beforeend', sec('4 / 3D tilt + glow','kort vipper i perspektiv med lysglimt',
+      `<div class="strip tilt">${G.map(g=>`<div class="card"><img src="${hdr(g.id)}" alt=""><div class="grad"></div><div class="glow"></div>
+        <div class="meta"><div class="ttl">${g.t}</div>${priceRow(g)}</div></div>`).join('')}</div>`));
+
+    // 5 featured + rail
+    const f=G[0], rail=G.slice(1,4);
+    root.insertAdjacentHTML('beforeend', sec('5 / Featured + rail','ett stort utvalgt spill + liten liste',
+      `<div class="feat"><div class="big"><img src="${hdr(f.id)}" alt=""><div class="grad"></div>
+        <div class="meta"><div class="ttl">${f.t}</div>${priceRow(f)}</div></div>
+        <div class="rail">${rail.map(g=>`<div class="mini"><img src="${hdr(g.id)}" alt=""><div class="grad"></div>
+          <div class="meta"><div class="ttl">${g.t}</div>${priceRow(g)}</div></div>`).join('')}</div></div>`));
+  </script>
+</body>
+</html>
