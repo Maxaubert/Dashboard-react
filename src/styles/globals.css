@@ -3693,10 +3693,21 @@ body::after { background-image: none !important; animation: none !important; }
 
 /* Lighter, frosted scrim behind the page popup so the glass panel reads
  * as paper rather than blurring a near-black backdrop. */
+/* Popups (all modals + page overlays, incl. nested ones like
+ * Lenker -> Ny lenke): rounded corners + depth, over a lightly dimmed,
+ * blurred page so the background reads as frosted rather than blacked out. */
+.lm-content,
+.gaming-modal-panel,
+.page-overlay-panel {
+  border-radius: 16px !important;
+  box-shadow: 0 24px 60px rgba(13, 13, 17, 0.28) !important;
+}
+.lm-overlay,
+.gaming-modal-overlay,
 .page-overlay-backdrop {
-  background: rgba(24, 22, 20, 0.26) !important;
-  -webkit-backdrop-filter: blur(7px) !important;
-  backdrop-filter: blur(7px) !important;
+  background: rgba(13, 13, 17, 0.3) !important;
+  -webkit-backdrop-filter: blur(10px) saturate(115%) !important;
+  backdrop-filter: blur(10px) saturate(115%) !important;
 }
 
 /* Decorative vertical CJK lettering down the side margins (home). */
