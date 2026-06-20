@@ -17,7 +17,7 @@ interface LinkCardProps {
 }
 
 export function LinkCard({ link, onToggleFavorite, onContextMenu }: LinkCardProps) {
-  const accent = link.color ?? '#a78bfa';
+  const accent = link.color ?? '#e8214e';
 
   return (
     <div

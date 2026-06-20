@@ -131,7 +131,7 @@ export function LinkEditModal({ item, defaultCategoryId, onClose, onSave, onDele
             <div className="color-custom-btn" />
             <input
               type="color"
-              value={form.color ?? '#a78bfa'}
+              value={form.color ?? '#e8214e'}
               onChange={(e) => update('color', e.target.value)}
             />
           </div>
