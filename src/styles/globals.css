@@ -35,8 +35,9 @@
   --radius:      12px;
   --radius-sm:   8px;
 
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --font-sans: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --font-display: 'Chakra Petch', 'Space Grotesk', sans-serif;
 
   /* Page max-width — was 860px (and individual pages used 900-960). Bumped
    * to 1100px so content uses more of the viewport on wide screens. All
@@ -227,19 +228,22 @@
   /* ── Page header (eyebrow + title + subtitle) ────────────────────────── */
   .page-header { margin-bottom: 36px; }
   .page-header-eyebrow {
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    font-weight: 500;
+    letter-spacing: 0.28em;
     text-transform: uppercase;
     color: var(--color-text-muted);
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
   .page-header-title {
-    font-size: 1.9rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
+    font-family: var(--font-display);
+    font-size: 2.1rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
     color: var(--color-text);
-    line-height: 1.1;
+    line-height: 1.05;
   }
   .page-header-sub {
     font-size: 0.88rem;
@@ -355,12 +359,15 @@
 
   /* ── Section header (used by every section on home + other pages) ────── */
   .section-header {
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.10em;
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    font-weight: 500;
+    letter-spacing: 0.22em;
     text-transform: uppercase;
     color: var(--color-text-muted);
-    margin-bottom: 12px;
+    margin-bottom: 14px;
+    padding-bottom: 9px;
+    border-bottom: 1px solid rgba(13, 13, 17, 0.12);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -370,9 +377,10 @@
     align-items: center;
     gap: 4px;
     color: var(--color-text-muted);
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 0.10em;
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    font-weight: 500;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
     transition: color 0.15s;
   }
@@ -3644,7 +3652,7 @@
  * translucent panels. Appended last so it wins the cascade.
  * ============================================================ */
 
-html { --radius: 16px; --radius-sm: 11px; }
+html { --radius: 2px; --radius-sm: 2px; }
 
 /* Plain blank-white background: no grid, no wash. */
 body {
@@ -3653,6 +3661,8 @@ body {
 body::after { background-image: none !important; animation: none !important; }
 
 /* Frosted glass on the boxed components. */
+/* Flat HUD panels: crisp hairline borders, square corners, no glass blur
+ * or soft shadow. Hover prints a hard offset shadow (Frames signature). */
 .card,
 .weather-card,
 .prompt-launcher-card,
@@ -3660,21 +3670,19 @@ body::after { background-image: none !important; animation: none !important; }
 .lm-content,
 .gaming-modal-panel,
 .page-overlay-panel {
-  background: rgba(255, 255, 255, 0.55) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
-  backdrop-filter: blur(18px) saturate(150%);
-  border: 1px solid rgba(13, 13, 17, 0.07) !important;
-  box-shadow:
-    0 12px 36px rgba(13, 13, 17, 0.09),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+  background: #ffffff !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  border: 1px solid rgba(13, 13, 17, 0.18) !important;
+  border-radius: 2px !important;
+  box-shadow: none !important;
 }
 
 .card:hover,
 .ext-link:hover {
-  background: rgba(255, 255, 255, 0.72) !important;
-  box-shadow:
-    0 16px 44px rgba(13, 13, 17, 0.13),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+  transform: none !important;
+  border-color: #0d0d11 !important;
+  box-shadow: 4px 4px 0 #e8214e !important;
 }
 
 /* Lighter, frosted scrim behind the page popup so the glass panel reads
