@@ -7,7 +7,7 @@ import { queryKeys } from './queryKeys';
 const EMPTY_HOME: HomeEnvelope = { version: 1, sections: [], hidden: [], widgets: [], habits: [] };
 
 /**
- * Fetches the single home-page envelope: { version, sections, widgets, habits }.
+ * Fetches the single home-page envelope: { version, sections, hidden, widgets, habits }.
  * Passes through `normaliseHome` so consumers never see missing arrays even if
  * the backend returns a partial payload.
  */

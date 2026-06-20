@@ -3600,7 +3600,7 @@
 }
 .section-add-btn:hover { background: rgba(255, 255, 255, 0.05); border-color: #d97757; }
 
-/* Settings popup — section show/hide toggles */
+/* Settings popup - section show/hide toggles */
 .settings-list { display: flex; flex-direction: column; }
 .settings-row {
   display: flex; align-items: center; justify-content: space-between;
