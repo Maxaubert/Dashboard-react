@@ -21,6 +21,7 @@ export function readLocalStorageHome(): HomeEnvelope {
   return {
     version: 1,
     sections: parse<string[]>('home-section-order', []),
+    hidden: [],
     widgets: parse<HomeWidget[]>('home-widgets-v1', []),
     habits: parse<HomeHabit[]>('home-habits-v1', []),
   };
