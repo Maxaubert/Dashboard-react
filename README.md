@@ -58,10 +58,13 @@ Everything lives on **one customizable page**. Sections are drag-reorderable, an
 
 ## Screenshots
 
+<p align="center"><img src="screenshots/01-home.png" alt="Home" width="62%"></p>
+<p align="center"><sub><b>The home page.</b> One customizable, drag-reorderable page; each section's "Vis alle" opens the full view in a pop-out.</sub></p>
+
 <table>
 <tr>
-<td width="50%"><img src="screenshots/07-gaming.png" alt="Gaming"><br><sub><b>Gaming.</b> Steam wishlist with sale badges and price tags.</sub></td>
-<td width="50%"><img src="screenshots/07b-gaming-detail.png" alt="Gaming detail"><br><sub><b>Price history.</b> ITAD chart and Steam link when you click a game.</sub></td>
+<td width="50%"><img src="screenshots/07-gaming.png" alt="Gaming"><br><sub><b>Gaming pop-out.</b> Steam wishlist with sale badges and all-time-low "hot" tags.</sub></td>
+<td width="50%"><img src="screenshots/07b-gaming-detail.png" alt="Price history"><br><sub><b>Price history.</b> ITAD chart and Steam link when you click a game.</sub></td>
 </tr>
 </table>
 
