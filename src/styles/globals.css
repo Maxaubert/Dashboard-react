@@ -3688,9 +3688,9 @@ body::after { background-image: none !important; animation: none !important; }
 /* Link cards: staircase accent fill on hover (no lift; the fill is the
  * effect). Left-anchored bars step up toward the top-right and slide in. */
 .ext-link:hover {
-  transform: none !important;
+  transform: translate(-2px, -3px) !important;
   border-color: var(--ext-color, #e8214e) !important;
-  box-shadow: none !important;
+  box-shadow: 0 8px 22px rgba(13, 13, 17, 0.12) !important;
 }
 .ext-fill { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
 .ext-fill i {
