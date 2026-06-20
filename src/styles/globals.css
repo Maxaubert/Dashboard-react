@@ -3689,7 +3689,7 @@ body::after { background-image: none !important; animation: none !important; }
  * effect). Left-anchored bars step up toward the top-right and slide in. */
 .ext-link:hover {
   transform: none !important;
-  border-color: #0d0d11 !important;
+  border-color: var(--ext-color, #e8214e) !important;
   box-shadow: none !important;
 }
 .ext-fill { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
