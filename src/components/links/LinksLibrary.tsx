@@ -3,7 +3,7 @@ import { useLinks, useSaveLinks } from '@/hooks/useLinks';
 import { FAVORITES_CATEGORY_ID, OTHER_CATEGORY_ID } from '@/api/types';
 import type { LinkItem } from '@/api/types';
 import { useToast } from '@/components/ui';
-import * as ContextMenu from '@radix-ui/react-context-menu';
+import { useInlineContextMenu, InlineContextMenuList } from '@/components/links/InlineContextMenu';
 import { groupLinks, type SectionRender } from '@/lib/groupLinks';
 import { useCategories } from '@/hooks/useCategories';
 import {
@@ -75,6 +75,8 @@ export function LinksLibrary() {
     if (keyOf(derivedSections) === keyOf(localSections)) return;
     setLocalSections(derivedSections);
   }, [derivedSections, localSections, activeLinkId, activeSectionId]);
+
+  const { menu, openMenu, close: closeMenu } = useInlineContextMenu();
 
   const { reorder: reorderCategories, rename: renameCategory, remove: removeCategory } = useCategories();
   const sensors = useSensors(
@@ -276,20 +278,22 @@ export function LinksLibrary() {
 
   return (
     <>
-      <ContextMenu.Root>
-        <ContextMenu.Trigger asChild>
-          <div
-            className="links-library-root"
-            onContextMenu={(e) => {
-              const hit = (e.target as HTMLElement).closest('[data-category-id]');
-              const id = hit?.getAttribute('data-category-id') ?? undefined;
-              pendingCategoryRef.current =
-                id && id !== FAVORITES_CATEGORY_ID && id !== OTHER_CATEGORY_ID
-                  ? id
-                  : undefined;
-            }}
-          >
-            <div className="lenker-header">
+      <div
+        className="links-library-root"
+        onContextMenu={(e) => {
+          // Empty-area right-click → "Ny lenke", seeded with the category
+          // under the cursor. Card/header right-clicks stopPropagation, so
+          // they never reach here.
+          const hit = (e.target as HTMLElement).closest('[data-category-id]');
+          const id = hit?.getAttribute('data-category-id') ?? undefined;
+          pendingCategoryRef.current =
+            id && id !== FAVORITES_CATEGORY_ID && id !== OTHER_CATEGORY_ID
+              ? id
+              : undefined;
+          openMenu(e, [{ label: 'Ny lenke', onSelect: () => setCreating(true) }]);
+        }}
+      >
+        <div className="lenker-header">
               <div className="lenker-title-wrap">
                 <div className="lenker-title">Lenkebibliotek</div>
                 <div className="lenker-sub">Dine lagrede lenker</div>
@@ -357,9 +361,19 @@ export function LinksLibrary() {
                           removeCategory(section.category.id);
                         }
                       }}
-                      onEdit={(l) => setEditing(l)}
-                      onDelete={handleDelete}
                       onToggleFavorite={toggleFavorite}
+                      onCardContextMenu={(e, link) =>
+                        openMenu(e, [
+                          { label: 'Edit', onSelect: () => setEditing(link) },
+                          {
+                            label: 'Remove',
+                            danger: true,
+                            onSelect: () => {
+                              if (confirm(`Slette «${link.name}»?`)) handleDelete(link.id);
+                            },
+                          },
+                        ])
+                      }
                     />
                   ))}
                 </SortableContext>
@@ -368,29 +382,9 @@ export function LinksLibrary() {
                 </DragOverlay>
               </DndContext>
             )}
-          </div>
-        </ContextMenu.Trigger>
-        <ContextMenu.Portal>
-          <ContextMenu.Content
-            style={{
-              background: '#0a0a0a',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: 8,
-              padding: 4,
-              minWidth: 140,
-              zIndex: 50,
-              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.5)',
-            }}
-          >
-            <ContextMenu.Item
-              onSelect={() => setCreating(true)}
-              style={{ padding: '6px 10px', color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.78rem', cursor: 'pointer', borderRadius: 4, outline: 'none' }}
-            >
-              Ny lenke
-            </ContextMenu.Item>
-          </ContextMenu.Content>
-        </ContextMenu.Portal>
-      </ContextMenu.Root>
+
+        <InlineContextMenuList menu={menu} onClose={closeMenu} />
+      </div>
 
       {(editing || creating) && (
         <LinkEditModal

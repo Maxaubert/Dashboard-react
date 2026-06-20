@@ -1,8 +1,7 @@
-import { type CSSProperties } from 'react';
+import { type CSSProperties, type MouseEvent } from 'react';
 import type { LinkItem } from '@/api/types';
 import { faviconUrl } from '@/api/pdf';
 import { resolveSvgIcon } from '@/data/svgIcons';
-import * as ContextMenu from '@radix-ui/react-context-menu';
 import { cn } from '@/lib/cn';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -11,102 +10,74 @@ import { getDomain } from '@/lib/linkUtils';
 /* ── Link card ───────────────────────────────────────────────────────────── */
 interface LinkCardProps {
   link: LinkItem;
-  onEdit: () => void;
-  onDelete: () => void;
   onToggleFavorite: () => void;
+  /** Right-click handler — opens the Edit/Remove menu owned by LinksLibrary.
+   *  Omitted for the drag overlay clone, which has no menu. */
+  onContextMenu?: (e: MouseEvent) => void;
 }
 
-export function LinkCard({ link, onEdit, onDelete, onToggleFavorite }: LinkCardProps) {
+export function LinkCard({ link, onToggleFavorite, onContextMenu }: LinkCardProps) {
   const accent = link.color ?? '#a78bfa';
 
   return (
-    <ContextMenu.Root>
-      <ContextMenu.Trigger asChild>
-        <div className="ext-link" style={{ ['--ext-color' as string]: accent }}>
-          {/* Stretched anchor — fills the whole card so the entire surface
-           * is clickable, not just the icon/text patches. The favorite
-           * button sits above it via z-index in the CSS. Edit/Delete are
-           * now on the right-click context menu (Radix) — matches the
-           * widget pattern on the home page. */}
-          <a
-            href={link.url}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="ext-link-stretched"
-            aria-label={link.name}
-          />
+    <div
+      className="ext-link"
+      style={{ ['--ext-color' as string]: accent }}
+      onContextMenu={onContextMenu}
+    >
+      {/* Stretched anchor — fills the whole card so the entire surface
+       * is clickable, not just the icon/text patches. The favorite
+       * button sits above it via z-index in the CSS. Edit/Delete are on
+       * the right-click menu (see LinksLibrary), not Radix — Radix's
+       * ContextMenu doesn't open inside the modal Dialog popup. */}
+      <a
+        href={link.url}
+        target="_blank"
+        rel="noreferrer noopener"
+        className="ext-link-stretched"
+        aria-label={link.name}
+      />
 
-          {/* Top: icon + arrow (visual only — clicks pass through to the
-           * stretched anchor above) */}
-          <div className="ext-link-top">
-            <div className="ext-link-icon-wrap">
-              <LinkIconRender link={link} />
-            </div>
-            <svg className="ext-link-arrow" width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M14 3l-1.41 1.41L18.17 10H4v2h14.17l-5.58 5.59L14 19l8-8z" />
-            </svg>
-          </div>
-
-          {/* Bottom: text + favorite star */}
-          <div className="card-bottom">
-            <div className="card-bottom-text">
-              <div className="ext-link-name">{link.name}</div>
-              {link.sub && <div className="ext-link-sub">{link.sub}</div>}
-            </div>
-            <button
-              type="button"
-              className={cn('fav-btn', link.favorite && 'favorited')}
-              aria-label={link.favorite ? 'Fjern favoritt' : 'Marker som favoritt'}
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleFavorite();
-              }}
-            >
-              ★
-            </button>
-          </div>
+      {/* Top: icon + arrow (visual only — clicks pass through to the
+       * stretched anchor above) */}
+      <div className="ext-link-top">
+        <div className="ext-link-icon-wrap">
+          <LinkIconRender link={link} />
         </div>
-      </ContextMenu.Trigger>
-      <ContextMenu.Portal>
-        <ContextMenu.Content
-          style={{
-            background: '#0a0a0a',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: 8,
-            padding: 4,
-            minWidth: 140,
-            zIndex: 50,
-            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.5)',
+        <svg className="ext-link-arrow" width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M14 3l-1.41 1.41L18.17 10H4v2h14.17l-5.58 5.59L14 19l8-8z" />
+        </svg>
+      </div>
+
+      {/* Bottom: text + favorite star */}
+      <div className="card-bottom">
+        <div className="card-bottom-text">
+          <div className="ext-link-name">{link.name}</div>
+          {link.sub && <div className="ext-link-sub">{link.sub}</div>}
+        </div>
+        <button
+          type="button"
+          className={cn('fav-btn', link.favorite && 'favorited')}
+          aria-label={link.favorite ? 'Fjern favoritt' : 'Marker som favoritt'}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite();
           }}
         >
-          <ContextMenu.Item
-            onSelect={onEdit}
-            style={{ padding: '6px 10px', color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.78rem', cursor: 'pointer', borderRadius: 4, outline: 'none' }}
-          >
-            Edit
-          </ContextMenu.Item>
-          <ContextMenu.Item
-            onSelect={() => {
-              if (confirm(`Slette «${link.name}»?`)) onDelete();
-            }}
-            style={{ padding: '6px 10px', color: '#ef4444', fontSize: '0.78rem', cursor: 'pointer', borderRadius: 4, outline: 'none' }}
-          >
-            Remove
-          </ContextMenu.Item>
-        </ContextMenu.Content>
-      </ContextMenu.Portal>
-    </ContextMenu.Root>
+          ★
+        </button>
+      </div>
+    </div>
   );
 }
 
 /* ── Sortable link card ──────────────────────────────────────────────────── */
 export function SortableLinkCard({
-  link, onEdit, onDelete, onToggleFavorite,
+  link, onToggleFavorite, onContextMenu,
 }: {
   link: LinkItem;
-  onEdit: () => void;
-  onDelete: () => void;
   onToggleFavorite: () => void;
+  onContextMenu: (e: MouseEvent) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: link.id });
@@ -126,7 +97,7 @@ export function SortableLinkCard({
       {...attributes}
       {...listeners}
     >
-      <LinkCard link={link} onEdit={onEdit} onDelete={onDelete} onToggleFavorite={onToggleFavorite} />
+      <LinkCard link={link} onToggleFavorite={onToggleFavorite} onContextMenu={onContextMenu} />
     </div>
   );
 }
@@ -135,12 +106,7 @@ export function SortableLinkCard({
 export function LinkCardOverlay({ link }: { link: LinkItem }) {
   return (
     <div style={{ cursor: 'grabbing' }}>
-      <LinkCard
-        link={link}
-        onEdit={() => {}}
-        onDelete={() => {}}
-        onToggleFavorite={() => {}}
-      />
+      <LinkCard link={link} onToggleFavorite={() => {}} />
     </div>
   );
 }

@@ -45,16 +45,14 @@ export function SectionGrid({
 export function SortableSection({
   section,
   readonly,
-  onEdit,
-  onDelete,
+  onCardContextMenu,
   onDeleteSection,
   onRename,
   onToggleFavorite,
 }: {
   section: ReturnType<typeof groupLinks>[number];
   readonly: boolean;
-  onEdit: (link: LinkItem) => void;
-  onDelete: (id: string) => void;
+  onCardContextMenu: (e: React.MouseEvent, link: LinkItem) => void;
   onDeleteSection: () => void;
   onRename: (next: string) => void;
   onToggleFavorite: (id: string) => void;
@@ -99,9 +97,8 @@ export function SortableSection({
             <SortableLinkCard
               key={link.id}
               link={link}
-              onEdit={() => onEdit(link)}
-              onDelete={() => onDelete(link.id)}
               onToggleFavorite={() => onToggleFavorite(link.id)}
+              onContextMenu={(e) => onCardContextMenu(e, link)}
             />
           ))}
         </SectionGrid>
