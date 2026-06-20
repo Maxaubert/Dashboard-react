@@ -175,6 +175,8 @@ export interface HomeEnvelope {
   version: 1;
   /** Section IDs in the order they render on the home page. */
   sections: string[];
+  /** Section IDs the user has hidden via Settings. Empty = all visible. */
+  hidden: string[];
   widgets: HomeWidget[];
   habits: HomeHabit[];
 }

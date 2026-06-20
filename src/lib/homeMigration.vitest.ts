@@ -9,7 +9,7 @@ import {
 import type { HomeEnvelope } from '@/api/types';
 
 function emptyEnvelope(): HomeEnvelope {
-  return { version: 1, sections: [], widgets: [], habits: [] };
+  return { version: 1, sections: [], hidden: [], widgets: [], habits: [] };
 }
 
 describe('readLocalStorageHome', () => {
@@ -45,10 +45,10 @@ describe('readLocalStorageHome', () => {
 describe('decideMigration', () => {
   it('returns shouldMigrate=false when backend is non-empty', () => {
     const backend: HomeEnvelope = {
-      version: 1, sections: ['widgets'], widgets: [], habits: [],
+      version: 1, sections: ['widgets'], hidden: [], widgets: [], habits: [],
     };
     const local: HomeEnvelope = {
-      version: 1, sections: [], widgets: [], habits: [],
+      version: 1, sections: [], hidden: [], widgets: [], habits: [],
     };
     expect(decideMigration(backend, local).shouldMigrate).toBe(false);
   });
@@ -61,6 +61,7 @@ describe('decideMigration', () => {
     const local: HomeEnvelope = {
       version: 1,
       sections: ['widgets'],
+      hidden: [],
       widgets: [{ id: 'w1', type: 'alarm', refId: 'alarm' }],
       habits: [],
     };

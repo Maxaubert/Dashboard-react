@@ -4,7 +4,7 @@ import { homeApi } from '@/api/home';
 import type { HomeEnvelope } from '@/api/types';
 import { queryKeys } from './queryKeys';
 
-const EMPTY_HOME: HomeEnvelope = { version: 1, sections: [], widgets: [], habits: [] };
+const EMPTY_HOME: HomeEnvelope = { version: 1, sections: [], hidden: [], widgets: [], habits: [] };
 
 /**
  * Fetches the single home-page envelope: { version, sections, widgets, habits }.
@@ -80,6 +80,7 @@ export function normaliseHome(raw: Partial<HomeEnvelope> | null | undefined): Ho
   return {
     version: 1,
     sections: Array.isArray(raw?.sections) ? raw!.sections : [],
+    hidden: Array.isArray(raw?.hidden) ? raw!.hidden : [],
     widgets: Array.isArray(raw?.widgets) ? raw!.widgets : [],
     habits: Array.isArray(raw?.habits) ? raw!.habits : [],
   };
