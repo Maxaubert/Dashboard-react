@@ -11,7 +11,7 @@ export function SideGlyphs() {
         ダッシュボード
       </div>
       <div className="side-glyph side-glyph-right" aria-hidden="true">
-        制御盤
+        ハローマックス
       </div>
     </>
   );
