@@ -85,6 +85,7 @@ export function HomePage() {
   return (
     <div className="page">
       <SideGlyphs />
+      <h1 className="home-title">Dashboard</h1>
       <div className="home-topbar home-topbar--bare">
         <div className="home-topbar-actions">
           <button

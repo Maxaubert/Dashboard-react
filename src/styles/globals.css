@@ -3768,6 +3768,16 @@ body::after { background-image: none !important; animation: none !important; }
 .section-header { justify-content: flex-end; }
 .section-header:has(> span:only-child) { display: none; }
 
+/* Dashboard title at the top, set in the Rockybilly display face. */
+.home-title {
+  font-family: 'Rockybilly', var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.8rem, 5.5vw, 4rem);
+  line-height: 0.95;
+  color: var(--color-text);
+  margin: 0 0 16px;
+}
+
 /* Tighter spacing between home sections (was 36px). */
 .sections-container > * + * { margin-top: 18px; }
 
