@@ -543,15 +543,14 @@
   /* ── Dagens plan / today list ────────────────────────────────────────── */
   .today-list { display: flex; flex-direction: column; gap: 6px; }
   .today-item {
-    background: rgba(0, 0, 0, 0.22);
-    border: 1px solid rgba(13, 13, 17, 0.06);
-    border-radius: var(--radius-sm);
-    padding: 10px 14px;
-    transition: background 0.12s, border-color 0.12s;
+    background: rgba(13, 13, 17, 0.02);
+    border: none;
+    border-radius: 8px;
+    padding: 9px 12px;
+    transition: background 0.12s;
   }
   .today-item:hover {
-    background: rgba(0, 0, 0, 0.22);
-    border-color: rgba(13, 13, 17, 0.10);
+    background: rgba(13, 13, 17, 0.05);
   }
   .today-item.past {
     opacity: 0.28;
