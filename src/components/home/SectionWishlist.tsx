@@ -67,33 +67,33 @@ export function WishlistSection({ handleProps }: { handleProps?: HandleProps }) 
 function WishlistCover({ game, onClick }: { game: WishlistGame; onClick: () => void }) {
   return (
     <button type="button" className="wishlist-cover" onClick={onClick} title={game.name}>
-      <img
-        className="wishlist-cover-bg"
-        src={game.imgUrl}
-        alt={game.name}
-        loading="lazy"
-        onError={(e) => {
-          const img = e.target as HTMLImageElement;
-          if (game.imgFallback && img.src !== game.imgFallback) img.src = game.imgFallback;
-          else img.style.display = 'none';
-        }}
-      />
-      <div className="wishlist-cover-grad" />
+      <div className="wishlist-cover-inner">
+        <img
+          className="wishlist-cover-bg"
+          src={game.imgUrl}
+          alt={game.name}
+          loading="lazy"
+          onError={(e) => {
+            const img = e.target as HTMLImageElement;
+            if (game.imgFallback && img.src !== game.imgFallback) img.src = game.imgFallback;
+            else img.style.display = 'none';
+          }}
+        />
+        <div className="wishlist-cover-grad" />
+      </div>
       {game.onSale && <span className="wishlist-cover-badge">-{game.discount}%</span>}
       <div className="wishlist-cover-panel">
         <div className="wishlist-cover-title">{game.name}</div>
-        <div className="wishlist-cover-meta">
+        <span className="wishlist-tag">
           {game.isFree ? (
-            <span className="wishlist-price-now">Gratis</span>
-          ) : game.onSale ? (
-            <>
-              <span className="wishlist-price-was">{game.origPrice}</span>
-              <span className="wishlist-price-now sale">{game.price}</span>
-            </>
+            'Gratis'
           ) : (
-            game.price && <span className="wishlist-price-now">{game.price}</span>
+            <>
+              {game.onSale && game.origPrice && <s>{game.origPrice}</s>}
+              {game.price}
+            </>
           )}
-        </div>
+        </span>
       </div>
     </button>
   );
