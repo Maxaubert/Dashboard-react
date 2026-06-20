@@ -1787,9 +1787,9 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: rgba(234, 88, 12, 0.20);
-    border: 1px solid rgba(234, 88, 12, 0.40);
-    color: #fed7aa;
+    background: rgba(234, 88, 12, 0.14);
+    border: 1px solid rgba(234, 88, 12, 0.45);
+    color: #9a3412;
     border-radius: 9999px;
     padding: 5px 11px;
     font-size: 0.75rem;
