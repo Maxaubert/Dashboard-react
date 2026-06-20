@@ -3772,14 +3772,14 @@ body::after { background-image: none !important; animation: none !important; }
 .home-title {
   font-family: 'Rockybilly', var(--font-display);
   font-weight: 400;
-  font-size: clamp(1.8rem, 3.4vw, 2.5rem);
+  font-size: clamp(1.5rem, 2.9vw, 2.1rem);
   /* Script face has tall brush strokes; generous line-height + top padding
    * so the ascenders aren't clipped at the page top. */
-  line-height: 1.35;
-  padding-top: 8px;
+  line-height: 1.5;
+  padding-top: 22px;
   overflow: visible;
   color: var(--color-text);
-  margin: 0 0 10px;
+  margin: 0 0 8px;
 }
 
 /* Tighter spacing between home sections (was 36px). */
