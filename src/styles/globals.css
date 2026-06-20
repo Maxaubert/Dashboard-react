@@ -3678,11 +3678,17 @@ body::after { background-image: none !important; animation: none !important; }
   box-shadow: none !important;
 }
 
-.card:hover,
-.ext-link:hover {
-  transform: none !important;
+/* Variant B: flat card prints a hard offset shadow in its own accent on
+ * hover, nudging up-left like a stamped layer. */
+.card:hover {
+  transform: translate(-2px, -2px) !important;
   border-color: #0d0d11 !important;
-  box-shadow: 4px 4px 0 #e8214e !important;
+  box-shadow: 6px 6px 0 var(--card-color, #e8214e) !important;
+}
+.ext-link:hover {
+  transform: translate(-2px, -2px) !important;
+  border-color: #0d0d11 !important;
+  box-shadow: 6px 6px 0 var(--ext-color, #e8214e) !important;
 }
 
 /* Lighter, frosted scrim behind the page popup so the glass panel reads
