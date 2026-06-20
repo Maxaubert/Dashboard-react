@@ -4,7 +4,6 @@ import { useAuthSync } from './hooks/useCurrentUser';
 import { AppShell } from './components/layout/AppShell';
 import { ToastProvider } from './components/ui';
 import { RequireAuth } from './components/auth/RequireAuth';
-import { TimerProvider } from '@/context/TimerContext';
 import { PageOverlayProvider } from '@/context/PageOverlayContext';
 import { PageOverlay } from '@/components/overlay/PageOverlay';
 import { LoginPage } from './pages/LoginPage';
@@ -29,33 +28,31 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
-        <TimerProvider>
-          <BrowserRouter>
-            <AuthSync />
-            <Routes>
-              {/* Public auth routes — no sidebar, no guard. */}
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
+        <BrowserRouter>
+          <AuthSync />
+          <Routes>
+            {/* Public auth routes — no sidebar, no guard. */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
 
-              {/* Everything else lives behind the session guard. */}
-              <Route
-                element={
-                  <RequireAuth>
-                    <PageOverlayProvider>
-                      <AppShell>
-                        <Outlet />
-                      </AppShell>
-                      <PageOverlay />
-                    </PageOverlayProvider>
-                  </RequireAuth>
-                }
-              >
-                <Route path="/" element={<HomePage />} />
-                <Route path="*" element={<NotFoundPage />} />
-              </Route>
-            </Routes>
-          </BrowserRouter>
-        </TimerProvider>
+            {/* Everything else lives behind the session guard. */}
+            <Route
+              element={
+                <RequireAuth>
+                  <PageOverlayProvider>
+                    <AppShell>
+                      <Outlet />
+                    </AppShell>
+                    <PageOverlay />
+                  </PageOverlayProvider>
+                </RequireAuth>
+              }
+            >
+              <Route path="/" element={<HomePage />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
       </ToastProvider>
     </QueryClientProvider>
   );
