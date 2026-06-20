@@ -3729,3 +3729,25 @@ body::after { background-image: none !important; animation: none !important; }
 @media (min-width: 1480px) {
   .side-glyph { display: flex; }
 }
+
+/* Section headers: grip + label removed (reorder + show/hide live in the
+ * Settings popup now). Keep the remaining action right-aligned; fully hide
+ * headers that have nothing left but the removed label (e.g. the launcher). */
+.section-header > span:first-child { display: none; }
+.section-header { justify-content: flex-end; }
+.section-header:has(> span:only-child) { display: none; }
+
+/* Settings popup: draggable reorder rows. */
+.settings-hint { font-size: 0.78rem; color: var(--color-text-muted); margin: 0 0 12px; }
+.settings-row { gap: 10px; }
+.settings-row-grip {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  color: var(--color-text-dim);
+  cursor: grab;
+  touch-action: none;
+  padding: 2px;
+}
+.settings-row-grip:active { cursor: grabbing; }
+.settings-row-label { flex: 1; }

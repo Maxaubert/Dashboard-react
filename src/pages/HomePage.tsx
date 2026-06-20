@@ -123,6 +123,7 @@ export function HomePage() {
         order={order}
         hidden={hidden}
         onToggle={toggleSection}
+        onReorder={setStoredOrder}
       />
     </div>
   );
