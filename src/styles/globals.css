@@ -3901,25 +3901,34 @@ html, body { overflow-x: hidden; }
   transform: skewX(7deg);
   color: #fff;
 }
-.wishlist-cover-title {
+.wishlist-cover-eyebrow {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.6rem;
+  opacity: 0.85;
+  margin-bottom: 4px;
+  max-width: 250px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wishlist-cover-price {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
   font-family: var(--font-display);
   font-weight: 700;
-  text-transform: uppercase;
-  font-size: 14px;
-  margin-bottom: 6px;
+  font-size: 21px;
+  line-height: 1;
 }
-.wishlist-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(8, 8, 12, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  padding: 3px 9px;
+.wishlist-cover-price .wishlist-price-was {
   font-family: var(--font-mono);
-  font-size: 12px;
-  color: #fff;
+  font-weight: 500;
+  font-size: 0.5em;
+  text-decoration: line-through;
+  opacity: 0.6;
 }
-.wishlist-tag s { opacity: 0.6; }
 .wishlist-cover-skeleton { flex: 0 0 280px; width: auto; height: 150px; transform: skewX(-7deg); }
 
 /* The wrapper stays overflow:hidden so it clips the inner scroller's

@@ -83,17 +83,19 @@ function WishlistCover({ game, onClick }: { game: WishlistGame; onClick: () => v
       </div>
       {game.onSale && <span className="wishlist-cover-badge">-{game.discount}%</span>}
       <div className="wishlist-cover-panel">
-        <div className="wishlist-cover-title">{game.name}</div>
-        <span className="wishlist-tag">
+        <div className="wishlist-cover-eyebrow">{game.name}</div>
+        <div className="wishlist-cover-price">
           {game.isFree ? (
             'Gratis'
           ) : (
             <>
-              {game.onSale && game.origPrice && <s>{game.origPrice}</s>}
-              {game.price}
+              {game.price && <span>{game.price}</span>}
+              {game.onSale && game.origPrice && (
+                <span className="wishlist-price-was">{game.origPrice}</span>
+              )}
             </>
           )}
-        </span>
+        </div>
       </div>
     </button>
   );
