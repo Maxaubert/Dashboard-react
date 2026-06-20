@@ -3751,8 +3751,9 @@ body::after { background-image: none !important; animation: none !important; }
   transition: color 0.15s, border-color 0.15s;
 }
 .home-account-logout:hover { color: #e8214e; border-color: #0d0d11; }
-/* Content can start near the top now that the topbar is out of flow. */
-.page { padding-top: 18px; }
+/* Content can start near the top now that the topbar is out of flow,
+ * and spans the full viewport width (no centered max-width cap). */
+.page { padding-top: 18px; max-width: none; }
 
 .side-glyph-left { left: clamp(8px, 2vw, 44px); }
 .side-glyph-right { right: clamp(8px, 2vw, 44px); }
