@@ -3,11 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { authApi } from '@/api/auth';
 import { queryKeys } from '@/hooks/queryKeys';
-import { AuthCard, authStyles } from '@/components/auth/AuthCard';
+import { AuthCard } from '@/components/auth/AuthCard';
 
 /**
- * Signup form. On success the user is logged in immediately (Supabase sets
- * the session) and routed to `/`.
+ * Signup shares the login shell (galaxy video + glass card). On success the
+ * user is logged in immediately (Supabase sets the session) and routed to `/`.
  */
 export function SignupPage() {
   const navigate = useNavigate();
@@ -47,47 +47,41 @@ export function SignupPage() {
   }
 
   return (
-    <AuthCard title="Registrer deg">
-      <form onSubmit={onSubmit} style={authStyles.form}>
-        <label style={authStyles.label}>
-          Visningsnavn
-          <input
-            type="text"
-            required
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            style={authStyles.input}
-          />
-        </label>
-        <label style={authStyles.label}>
-          E-post
-          <input
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={authStyles.input}
-          />
-        </label>
-        <label style={authStyles.label}>
-          Passord (minst 10 tegn)
-          <input
-            type="password"
-            autoComplete="new-password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={authStyles.input}
-          />
-        </label>
-        {error && <p style={authStyles.error}>{error}</p>}
-        <button type="submit" disabled={submitting} style={authStyles.button}>
+    <AuthCard>
+      <form onSubmit={onSubmit} style={{ display: 'contents' }}>
+        <input
+          className="auth-input"
+          type="text"
+          placeholder="Visningsnavn"
+          required
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+        />
+        <input
+          className="auth-input"
+          type="email"
+          placeholder="E-post"
+          autoComplete="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <input
+          className="auth-input"
+          type="password"
+          placeholder="Passord (minst 10 tegn)"
+          autoComplete="new-password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        {error && <p className="auth-error">{error}</p>}
+        <button className="auth-btn" type="submit" disabled={submitting}>
           {submitting ? 'Registrerer…' : 'Registrer deg'}
         </button>
       </form>
-      <p style={authStyles.footer}>
-        Har du allerede konto? <Link to="/login" style={authStyles.link}>Logg inn</Link>
+      <p className="auth-footer">
+        Har du allerede konto? <Link to="/login">Logg inn</Link>
       </p>
     </AuthCard>
   );
