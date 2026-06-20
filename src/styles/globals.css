@@ -3684,3 +3684,30 @@ body::after { background-image: none !important; animation: none !important; }
   -webkit-backdrop-filter: blur(7px) !important;
   backdrop-filter: blur(7px) !important;
 }
+
+/* Decorative vertical CJK lettering down the side margins (home). */
+.side-glyph {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  z-index: -1;
+  display: none;
+  align-items: center;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  font-family: 'Yu Gothic', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+  font-weight: 800;
+  font-size: clamp(96px, 11vw, 196px);
+  line-height: 1;
+  letter-spacing: 0.06em;
+  color: rgba(13, 13, 17, 0.06);
+  user-select: none;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.side-glyph-left { left: clamp(8px, 2vw, 44px); }
+.side-glyph-right { right: clamp(8px, 2vw, 44px); }
+/* Only show when the centered page leaves empty margins beside it. */
+@media (min-width: 1480px) {
+  .side-glyph { display: flex; }
+}

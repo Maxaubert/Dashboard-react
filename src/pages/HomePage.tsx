@@ -22,6 +22,7 @@ import { useHome, useMutateHome } from '@/hooks/useHome';
 import { useHomeMigration } from '@/hooks/useHomeMigration';
 import { SECTION_IDS, DEFAULT_SECTIONS, type SectionId } from '@/lib/home';
 import { SortableHomeSection } from '@/components/home/SortableHomeSection';
+import { SideGlyphs } from '@/components/home/SideGlyphs';
 
 /**
  * Home page — faithful port of the legacy index.html.
@@ -84,6 +85,7 @@ export function HomePage() {
 
   return (
     <div className="page">
+      <SideGlyphs />
       <div className="home-topbar">
         <PageHeader eyebrow="Hjem" title="Dashboard" subtitle="Velg en kategori" />
         <div className="home-topbar-actions">
