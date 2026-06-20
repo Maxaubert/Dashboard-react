@@ -3770,16 +3770,15 @@ body::after { background-image: none !important; animation: none !important; }
 
 /* Dashboard title at the top, set in the Rockybilly display face. */
 .home-title {
-  font-family: 'Rockybilly', var(--font-display);
+  font-family: 'Xirod', var(--font-display);
   font-weight: 400;
-  font-size: clamp(1.5rem, 2.9vw, 2.1rem);
-  /* Script face has tall brush strokes; generous line-height + top padding
-   * so the ascenders aren't clipped at the page top. */
-  line-height: 1.5;
-  padding-top: 22px;
+  font-size: clamp(1.3rem, 2.5vw, 1.85rem);
+  line-height: 1.2;
+  padding-top: 6px;
   overflow: visible;
+  letter-spacing: 0.02em;
   color: var(--color-text);
-  margin: 0 0 8px;
+  margin: 0 0 12px;
 }
 
 /* Tighter spacing between home sections (was 36px). */
