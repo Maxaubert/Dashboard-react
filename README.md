@@ -4,108 +4,96 @@
 
 </div>
 
-<p align="center"><b>A unified personal dashboard for daily routines, study, and quick tools.</b><br><i>One React SPA replacing a folder of standalone HTML pages.</i></p>
+<p align="center"><b>A single-page personal dashboard for daily routines, study, and gaming.</b><br><i>One React app, fully serverless: static frontend on Vercel, data and auth on Supabase.</i></p>
 
-<p align="center"><a href="https://37-27-210-14.sslip.io"><b>Live site</b></a> &middot; login required</p>
+<p align="center"><a href="https://dashboard-react-mauve-alpha.vercel.app"><b>Live site</b></a> &middot; login required</p>
+
+<p align="center">
+  <img src="screenshots/01-login.png" alt="Login" width="100%">
+</p>
+
+---
+
+## What it does
+
+Everything lives on **one customizable page**. Sections are drag-reorderable, and each area opens its full view in a pop-out overlay.
 
 <table>
 <tr>
-<th align="center" width="25%">Hub</th>
-<th align="center" width="25%">Daily</th>
-<th align="center" width="25%">Toolbox</th>
-<th align="center" width="25%">Gaming</th>
+<th align="center" width="33%">Home sections</th>
+<th align="center" width="33%">Pop-out pages</th>
+<th align="center" width="33%">Gaming</th>
 </tr>
 <tr>
 <td valign="top">
 <ul>
-<li>Today's events</li>
-<li>Widgets</li>
+<li>Today's plan</li>
+<li>Top todos</li>
+<li>Steam wishlist carousel</li>
 <li>External links</li>
-<li>Quick prompt to AI</li>
+<li>Weather</li>
 <li>News feed</li>
+<li>Quick prompt to AI</li>
 </ul>
 </td>
 <td valign="top">
 <ul>
 <li>Plan (weekly calendar)</li>
 <li>Todo (priorities, kanban)</li>
-<li>Skole (announcements)</li>
-<li>Sport (TV schedule)</li>
-<li>Notes</li>
+<li>Gaming (full wishlist)</li>
 <li>Links library</li>
 </ul>
+<sub>Opened as overlays from the home page; no page reload.</sub>
 </td>
 <td valign="top">
 <ul>
-<li>Calculator</li>
-<li>QR generator</li>
-<li>Timer &amp; Pomodoro</li>
-<li>PDF tools</li>
-<li>Reader mode</li>
-<li>Video downloader</li>
-<li>Background remover</li>
-<li>File converter</li>
-</ul>
-</td>
-<td valign="top">
-<ul>
-<li>Fetches Steam wishlist</li>
-<li>Tracks sales</li>
-<li>Price history via ITAD API</li>
-<li>Steam events calendar</li>
+<li>Connect via Sign in through Steam (OpenID)</li>
+<li>Per-user wishlist, sale tracking</li>
+<li>All-time-low "hot" tags</li>
+<li>Price history via the ITAD API</li>
 </ul>
 </td>
 </tr>
 </table>
-
-<p align="center">
-  <img src="screenshots/01-home.png" alt="Dashboard home" width="100%">
-</p>
-
----
 
 ## Screenshots
 
 <table>
 <tr>
 <td width="50%"><img src="screenshots/07-gaming.png" alt="Gaming"><br><sub><b>Gaming.</b> Steam wishlist with sale badges and price tags.</sub></td>
-<td width="50%"><img src="screenshots/07b-gaming-detail.png" alt="Gaming detalj"><br><sub><b>Price history.</b> ITAD chart and Steam link when you click a game.</sub></td>
-</tr>
-<tr>
-<td><img src="screenshots/02-plan.png" alt="Plan"><br><sub><b>Plan.</b> Weekly calendar with the class schedule.</sub></td>
-<td><img src="screenshots/03-todo.png" alt="Todo"><br><sub><b>Todo.</b> Active and completed tasks, list or kanban view.</sub></td>
-</tr>
-<tr>
-<td><img src="screenshots/06-sport.png" alt="Sport"><br><sub><b>Sport.</b> TV schedule for football, cross-country, and biathlon.</sub></td>
-<td><img src="screenshots/09-tools.png" alt="Verktoy"><br><sub><b>Toolbox.</b> Card grid linking to all eight built-in utilities.</sub></td>
-</tr>
-<tr>
-<td><img src="screenshots/11-tools-qr.png" alt="QR-kode generator"><br><sub><b>QR.</b> Generate a code from any link or piece of text.</sub></td>
-<td><img src="screenshots/12-tools-timer.png" alt="Timer"><br><sub><b>Timer &amp; Pomodoro.</b> Alarm, timer, stopwatch, and Pomodoro in one tool.</sub></td>
+<td width="50%"><img src="screenshots/07b-gaming-detail.png" alt="Gaming detail"><br><sub><b>Price history.</b> ITAD chart and Steam link when you click a game.</sub></td>
 </tr>
 </table>
 
 ## Stack
 
-React 18, TypeScript, Vite, Tailwind v4, React Router v6, TanStack Query, Radix UI primitives, dnd-kit, react-markdown. Backend is a Python API on a separate host; nginx proxies `/api/*` in production and the Vite proxy forwards it in dev.
+- **Frontend:** React 18, TypeScript, Vite, Tailwind v4, React Router v6, TanStack Query, Radix UI primitives, dnd-kit, framer-motion.
+- **Auth + data:** [Supabase](https://supabase.com) (hosted Postgres + Supabase Auth). Row-level security scopes every row per user. Schema lives in `supabase/migrations/`.
+- **Serverless functions:** two Vercel Node functions in `api/` (`/api/wishlist`, `/api/news`) hold the third-party secrets (Steam, ITAD, RSS) the browser cannot.
+- **Hosting:** [Vercel](https://vercel.com) serves the static build and runs the functions. No server to maintain.
+- **UI language:** Norwegian (`nb-NO`).
 
 ## Layout
 
 ```
+api/              Vercel serverless functions
+  _lib/           shared: supabaseAdmin, cache, wishlist, news, steamOpenid
+  wishlist.ts     per-user Steam wishlist (auth + cache)
+  news.ts         VG / NRK / Aftenposten RSS
+  steam/          OpenID login + callback
+supabase/
+  migrations/     SQL schema (documents, notes, cache, integrations)
 src/
-  api/          API client, per-endpoint modules, shared types
-  hooks/        TanStack Query wrappers, one per domain
+  api/            typed clients (Supabase queries + function fetches)
+  hooks/          TanStack Query wrappers, one per domain
+  context/        PageOverlay (pop-out state), Timer
   components/
-    layout/     AppShell, Sidebar, MobileDrawer, PageHeader
-    ui/         Primitives: Button, Card, Modal, Input, Badge, Toast, ...
-    patterns/   SortableList, HorizontalScroller, IconPicker, PdfViewer, ...
-    widgets/    Composable home-page widgets
-    calculator/ Calculator engine and panels
-    timer/      Timer, stopwatch, Pomodoro
-    links/      Link library popup and editors
-    launcher/   Quick-prompt launcher
-  pages/        One file per route
-  styles/       globals.css with design tokens
-  lib/          Utilities (cn, dates, ...)
-screenshots/    Captured via capture.mjs (puppeteer-core + system Edge)
+    home/         the home sections (todo, plan, wishlist, links, weather, news)
+    overlay/      PageOverlay (renders a full page in a pop-out)
+    gaming/       shared GameModal (price-history chart)
+    auth/         AuthCard (galaxy login shell)
+    ui/           Modal + Toast primitives
+  pages/          HomePage + the overlay pages (Plan, Todo, Gaming, Links) + Login/Signup
+  lib/            pure helpers + design tokens (styles/globals.css)
+screenshots/      captured with Playwright
 ```
