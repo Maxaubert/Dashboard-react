@@ -3845,6 +3845,39 @@ body::after { background-image: none !important; animation: none !important; }
 /* Tighter spacing between home sections (was 36px). */
 .sections-container > * + * { margin-top: 18px; }
 
+/* Wishlist covers: hover lift, hidden scrollbar, price overlaid on the
+ * image bottom-left over a soft gradient. */
+.ext-grid { scrollbar-width: none; -ms-overflow-style: none; }
+.ext-grid::-webkit-scrollbar { width: 0; height: 0; display: none; }
+.wishlist-cover { transition: transform 0.2s cubic-bezier(.2, .85, .25, 1); }
+.wishlist-cover:hover { transform: translateY(-4px); }
+.wishlist-cover:hover .wishlist-cover-img {
+  border-color: var(--color-text);
+  box-shadow: 0 10px 24px rgba(13, 13, 17, 0.16);
+}
+.wishlist-cover-img::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 55%;
+  background: linear-gradient(transparent, rgba(13, 13, 17, 0.72));
+  pointer-events: none;
+}
+.wishlist-cover-meta {
+  position: absolute;
+  left: 9px;
+  bottom: 7px;
+  z-index: 2;
+  padding: 0;
+  min-height: 0;
+  gap: 7px;
+}
+.wishlist-price-now { color: #fff; }
+.wishlist-price-now.sale { color: #4ade80; }
+.wishlist-price-was { color: rgba(255, 255, 255, 0.72); }
+
 /* Carousel reserves room at the bottom for the hover lift/shadow; mirror it
  * at the top, and let the wrapper show the overflow so the upward nudge and
  * the card's top border aren't clipped. */
