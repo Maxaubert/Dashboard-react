@@ -3699,8 +3699,15 @@ body::after { background-image: none !important; animation: none !important; }
 .lm-content,
 .gaming-modal-panel,
 .page-overlay-panel {
+  border: none !important;
   border-radius: 16px !important;
   box-shadow: 0 24px 60px rgba(13, 13, 17, 0.28) !important;
+}
+/* Close buttons removed; popups close via Escape or clicking outside. */
+.lm-close,
+.gaming-modal-close,
+.page-overlay-close {
+  display: none !important;
 }
 .lm-overlay,
 .gaming-modal-overlay,
