@@ -3733,8 +3733,24 @@ body::after { background-image: none !important; animation: none !important; }
 .home-topbar--bare .home-topbar-actions {
   flex-direction: row;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
+/* Logout is now an icon-only button matching the gear. */
+.home-account-logout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 2px;
+  background: rgba(13, 13, 17, 0.04);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.home-account-logout:hover { color: #e8214e; border-color: #0d0d11; }
 /* Content can start near the top now that the topbar is out of flow. */
 .page { padding-top: 18px; }
 

@@ -1,3 +1,4 @@
+import { LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCurrentUser, useLogout } from '@/hooks/useCurrentUser';
 
@@ -10,7 +11,6 @@ export function HomeAccount() {
 
   return (
     <div className="home-account">
-      <span className="home-account-name">{user.display_name || user.email}</span>
       <button
         type="button"
         className="home-account-logout"
@@ -23,7 +23,7 @@ export function HomeAccount() {
           })
         }
       >
-        Logg ut
+        <LogOut size={16} />
       </button>
     </div>
   );
