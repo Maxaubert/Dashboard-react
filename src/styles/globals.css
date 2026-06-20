@@ -3713,6 +3713,10 @@ body::after { background-image: none !important; animation: none !important; }
   pointer-events: none;
   white-space: nowrap;
 }
+/* Home topbar with the title removed: just the gear + account, right-aligned
+ * and tight, to reclaim vertical space. */
+.home-topbar--bare { justify-content: flex-end !important; margin-bottom: 14px; }
+
 .side-glyph-left { left: clamp(8px, 2vw, 44px); }
 .side-glyph-right { right: clamp(8px, 2vw, 44px); }
 /* Only show when the centered page leaves empty margins beside it. */
