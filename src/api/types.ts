@@ -126,18 +126,6 @@ export interface LinksEnvelope {
   categories: Category[];
 }
 
-// ─── Notes ───────────────────────────────────────────────────────────────
-
-export interface Note {
-  id: string;
-  title: string;
-  body: string;
-  /**
-   * Last-modified timestamp. Legacy stores `Date.now()` (number);
-   * older entries may be ISO strings. The Notes page sort tolerates both.
-   */
-  updatedAt: number | string;
-}
 
 // ─── Wishlist (gaming) ───────────────────────────────────────────────────
 
