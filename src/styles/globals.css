@@ -3688,7 +3688,7 @@ body::after { background-image: none !important; animation: none !important; }
 /* Link cards: staircase accent fill on hover (no lift; the fill is the
  * effect). Left-anchored bars step up toward the top-right and slide in. */
 .ext-link:hover {
-  transform: translate(-2px, -3px) !important;
+  transform: translateY(-3px) !important;
   border-color: var(--ext-color, #e8214e) !important;
   box-shadow: 0 8px 22px rgba(13, 13, 17, 0.12) !important;
   /* Faint accent wash behind the staircase (shows where it hasn't covered). */
@@ -3881,11 +3881,11 @@ html, body { overflow-x: hidden; }
 .wishlist-price-now.sale { color: #4ade80; }
 .wishlist-price-was { color: rgba(255, 255, 255, 0.72); }
 
-/* Carousel reserves room at the bottom for the hover lift/shadow; mirror it
- * at the top, and let the wrapper show the overflow so the upward nudge and
- * the card's top border aren't clipped. */
-.ext-grid-wrap { overflow: visible; }
-.ext-grid { padding-top: 20px; margin-top: -20px; }
+/* The wrapper stays overflow:hidden so it clips the inner scroller's
+ * scrollbar (it sits in the padding-bottom zone, like the news carousel).
+ * Add top padding + negative margin so the hover lift has room at the top
+ * within the clip instead of being cut off. */
+.ext-grid-wrap { overflow: hidden; padding-top: 24px; margin-top: -24px; }
 
 /* Settings popup: draggable reorder rows. */
 .settings-hint { font-size: 0.78rem; color: var(--color-text-muted); margin: 0 0 12px; }
