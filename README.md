@@ -63,10 +63,19 @@ Everything lives on **one customizable page**. Sections are drag-reorderable, an
 
 <table>
 <tr>
-<td width="50%"><img src="screenshots/07-gaming.png" alt="Gaming"><br><sub><b>Gaming pop-out.</b> Steam wishlist with sale badges and all-time-low "hot" tags.</sub></td>
-<td width="50%"><img src="screenshots/07b-gaming-detail.png" alt="Price history"><br><sub><b>Price history.</b> ITAD chart and Steam link when you click a game.</sub></td>
+<td width="50%"><img src="screenshots/02-plan.png" alt="Plan"><br><sub><b>Plan.</b> Weekly calendar in a pop-out.</sub></td>
+<td width="50%"><img src="screenshots/03-todo.png" alt="Todo"><br><sub><b>Todo.</b> Priorities and deadlines; list or kanban view.</sub></td>
+</tr>
+<tr>
+<td><img src="screenshots/08-links.png" alt="Links"><br><sub><b>Links.</b> Favorites and categories, with favicons.</sub></td>
+<td><img src="screenshots/07-gaming.png" alt="Gaming"><br><sub><b>Gaming.</b> Steam wishlist with sale badges and all-time-low "hot" tags.</sub></td>
+</tr>
+<tr>
+<td colspan="2" align="center"><img src="screenshots/07b-gaming-detail.png" alt="Price history" width="62%"><br><sub><b>Price history.</b> ITAD chart and Steam link when you click a game.</sub></td>
 </tr>
 </table>
+
+<sub>Screenshots use sample data; the live dashboard is yours to fill.</sub>
 
 ## Stack
 

@@ -13,41 +13,63 @@ if (!EMAIL || !PASSWORD) {
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1280, height: 960 } });
 
+async function openSection(heading, buttonName) {
+  await page.locator('.section-header').filter({ hasText: heading }).getByRole('button', { name: buttonName }).first().click();
+  await page.waitForSelector('.page-overlay-panel', { timeout: 15000 });
+  await page.waitForTimeout(2800);
+}
+async function closeOverlay() {
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.page-overlay-panel', { state: 'detached', timeout: 10000 }).catch(() => {});
+  await page.waitForTimeout(600);
+}
+
 // Log in
 await page.goto(`${BASE}/login`, { waitUntil: 'networkidle' });
 await page.getByPlaceholder(/e-?post/i).fill(EMAIL);
 await page.getByPlaceholder(/passord/i).fill(PASSWORD);
 await page.getByRole('button', { name: /logg inn/i }).click();
 await page.waitForURL(`${BASE}/`, { timeout: 20000 });
-
-// Wait for the wishlist covers to actually load (the function does Steam+ITAD work)
-try {
-  await page.waitForSelector('.wishlist-cover img', { timeout: 60000 });
-  await page.waitForTimeout(3000); // let all cover images + prices settle
-} catch {
-  console.error('wishlist covers did not load in time; capturing anyway');
-}
+await page.waitForSelector('.wishlist-cover img', { timeout: 60000 }).catch(() => {});
+await page.waitForTimeout(3000);
 await page.waitForLoadState('networkidle').catch(() => {});
 await page.screenshot({ path: 'screenshots/01-home.png', fullPage: true });
 console.log('captured 01-home.png');
 
-// Open the Gaming pop-out via the wishlist section "Alle" button
+// Todo pop-out
+await openSection('Todo', /vis alle/i);
+await page.screenshot({ path: 'screenshots/03-todo.png' });
+console.log('captured 03-todo.png');
+await closeOverlay();
+
+// Plan (calendar) pop-out
+await openSection('Dagens plan', /vis alle/i);
+await page.waitForTimeout(1500);
+await page.screenshot({ path: 'screenshots/02-plan.png' });
+console.log('captured 02-plan.png');
+await closeOverlay();
+
+// Links pop-out
+await openSection('Eksterne lenker', /^Alle$/);
+await page.waitForTimeout(1500); // favicons
+await page.screenshot({ path: 'screenshots/08-links.png' });
+console.log('captured 08-links.png');
+await closeOverlay();
+
+// Gaming pop-out + price-history modal
 try {
-  await page.getByRole('button', { name: /^Alle$/ }).first().click();
-  // wait for the full wishlist grid to render inside the overlay
+  await openSection('Steam', /^Alle$/);
   await page.waitForSelector('.games-grid img', { timeout: 60000 });
-  await page.waitForTimeout(2500);
+  await page.waitForTimeout(2000);
   await page.screenshot({ path: 'screenshots/07-gaming.png' });
   console.log('captured 07-gaming.png');
-
-  // Click the first game card to open the price-history modal
   await page.locator('.games-grid img').first().click();
   await page.waitForSelector('.gaming-modal-panel', { timeout: 15000 });
-  await page.waitForTimeout(4000); // let the ITAD chart render
+  await page.waitForTimeout(4000);
   await page.screenshot({ path: 'screenshots/07b-gaming-detail.png' });
   console.log('captured 07b-gaming-detail.png');
 } catch (e) {
-  console.error('gaming capture step failed (home shot still saved):', e.message);
+  console.error('gaming capture failed:', e.message);
 }
 
 await browser.close();
