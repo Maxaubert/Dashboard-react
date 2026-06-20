@@ -3737,6 +3737,9 @@ body::after { background-image: none !important; animation: none !important; }
 .section-header { justify-content: flex-end; }
 .section-header:has(> span:only-child) { display: none; }
 
+/* Tighter spacing between home sections (was 36px). */
+.sections-container > * + * { margin-top: 18px; }
+
 /* Settings popup: draggable reorder rows. */
 .settings-hint { font-size: 0.78rem; color: var(--color-text-muted); margin: 0 0 12px; }
 .settings-row { gap: 10px; }
