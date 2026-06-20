@@ -3719,9 +3719,23 @@ body::after { background-image: none !important; animation: none !important; }
   pointer-events: none;
   white-space: nowrap;
 }
-/* Home topbar with the title removed: just the gear + account, right-aligned
- * and tight, to reclaim vertical space. */
-.home-topbar--bare { justify-content: flex-end !important; margin-bottom: 14px; }
+/* Account controls (gear + name + logout) lifted out of the content flow
+ * into a fixed vertical cluster in the top-right margin, so they cost no
+ * vertical space and the sections start at the top. */
+.home-topbar--bare {
+  position: fixed;
+  top: 16px;
+  right: clamp(10px, 1.6vw, 30px);
+  z-index: 40;
+  margin: 0;
+}
+.home-topbar--bare .home-topbar-actions {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+/* Content can start near the top now that the topbar is out of flow. */
+.page { padding-top: 18px; }
 
 .side-glyph-left { left: clamp(8px, 2vw, 44px); }
 .side-glyph-right { right: clamp(8px, 2vw, 44px); }
