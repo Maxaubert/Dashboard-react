@@ -3614,3 +3614,18 @@
   color: #a5b4fc;
   text-decoration: none;
 }
+
+/* Empty-state add buttons (home sections) */
+.todo-preview-empty, .today-empty, .ext-empty { display: flex; align-items: center; gap: 14px; }
+.today-empty, .ext-empty { color: var(--color-text-muted, #71717a); font-size: 0.82rem; padding: 8px 0; }
+.section-add-btn {
+  background: transparent;
+  border: 1px solid var(--color-border, #2a2a2a);
+  color: var(--color-text, #e4e4e7);
+  border-radius: 7px;
+  padding: 4px 11px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.section-add-btn:hover { background: rgba(255, 255, 255, 0.05); border-color: #d97757; }

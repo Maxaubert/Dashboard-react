@@ -61,8 +61,9 @@ export function EksterneLenkerSection({ handleProps }: { handleProps?: HandlePro
       <div className="ext-grid-wrap">
         <div className="ext-grid" ref={scrollerRef}>
           {favorites.length === 0 ? (
-            <div style={{ color: 'var(--color-text-muted)', fontSize: '0.78rem', padding: '8px 0' }}>
-              Ingen favoritter
+            <div className="ext-empty">
+              <span>Ingen favoritter</span>
+              <button type="button" className="section-add-btn" onClick={() => openOverlay('links')}>+ Legg til</button>
             </div>
           ) : (
             looped.map((link) => <ExternalLinkCard key={link._k} link={link} />)
