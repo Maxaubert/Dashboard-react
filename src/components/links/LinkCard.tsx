@@ -86,7 +86,7 @@ export function ExtLinkFill() {
             top: `${(k / 8) * 100}%`,
             height: `${100 / 8 + 0.6}%`,
             width: `${Math.round(((k + 1) / 8) * 100)}%`,
-            transitionDelay: `${k * 38}ms`,
+            transitionDelay: `${k * 19}ms`,
           }}
         />
       ))}

@@ -3698,7 +3698,7 @@ body::after { background-image: none !important; animation: none !important; }
   left: 0;
   background: var(--ext-color, #e8214e);
   transform: translateX(-120%);
-  transition: transform 0.5s cubic-bezier(.85, 0, .15, 1);
+  transition: transform 0.25s cubic-bezier(.85, 0, .15, 1);
 }
 .ext-link:hover .ext-fill i { transform: translateX(0); }
 .ext-link > div { position: relative; z-index: 1; }
