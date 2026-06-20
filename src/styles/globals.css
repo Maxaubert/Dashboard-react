@@ -3427,8 +3427,11 @@
   backdrop-filter: blur(2px); z-index: 80;
 }
 .page-overlay-panel {
-  position: fixed; z-index: 81; top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
+  /* Centered via fixed insets + margin:auto rather than translate(-50%,-50%).
+   * A `transform` here would make the panel the containing block for
+   * `position: fixed` descendants, which offsets dnd-kit's DragOverlay and
+   * the `.section-context-menu` (both fixed) away from the cursor. */
+  position: fixed; z-index: 81; inset: 0; margin: auto;
   width: min(96vw, 1280px); height: 92vh;
   background: var(--color-bg, #0a0a0a);
   border: 1px solid var(--color-border, #2a2a2a);
