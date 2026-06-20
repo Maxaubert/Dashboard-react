@@ -384,24 +384,6 @@
     overflow: hidden;
     position: relative;
   }
-  .ext-grid-wrap::before,
-  .ext-grid-wrap::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 80px;
-    pointer-events: none;
-    z-index: 2;
-  }
-  .ext-grid-wrap::before {
-    left: 0;
-    background: linear-gradient(to right, var(--color-bg) 0%, transparent 100%);
-  }
-  .ext-grid-wrap::after {
-    right: 0;
-    background: linear-gradient(to left, var(--color-bg) 0%, transparent 100%);
-  }
   .ext-grid {
     display: flex;
     flex-direction: row;
@@ -653,18 +635,6 @@
   .news-wrap {
     overflow: hidden;
     position: relative;
-    -webkit-mask-image: linear-gradient(
-      to right,
-      rgba(0, 0, 0, 1) 0%,
-      rgba(0, 0, 0, 1) 92%,
-      rgba(0, 0, 0, 0) 100%
-    );
-    mask-image: linear-gradient(
-      to right,
-      rgba(0, 0, 0, 1) 0%,
-      rgba(0, 0, 0, 1) 92%,
-      rgba(0, 0, 0, 0) 100%
-    );
   }
   .news-list {
     display: flex;

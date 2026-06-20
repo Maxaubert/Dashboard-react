@@ -48,7 +48,6 @@ export function DagensPlanSection({ handleProps }: { handleProps?: HandleProps }
       <div className="today-list">
         {todays.length === 0 ? (
           <div className="today-empty">
-            <span>Ingen hendelser i dag.</span>
             <button type="button" className="section-add-btn" onClick={() => openOverlay('plan')}>+ Legg til</button>
           </div>
         ) : (

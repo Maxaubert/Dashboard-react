@@ -24,7 +24,6 @@ export function TodoSection({ handleProps }: { handleProps?: HandleProps }) {
       </div>
       {top.length === 0 ? (
         <div className="todo-preview-empty">
-          <span>Ingen åpne oppgaver</span>
           <button type="button" className="section-add-btn" onClick={() => openOverlay('todo')}>+ Legg til</button>
         </div>
       ) : (

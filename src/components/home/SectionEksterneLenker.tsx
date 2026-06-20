@@ -62,7 +62,6 @@ export function EksterneLenkerSection({ handleProps }: { handleProps?: HandlePro
         <div className="ext-grid" ref={scrollerRef}>
           {favorites.length === 0 ? (
             <div className="ext-empty">
-              <span>Ingen favoritter</span>
               <button type="button" className="section-add-btn" onClick={() => openOverlay('links')}>+ Legg til</button>
             </div>
           ) : (
