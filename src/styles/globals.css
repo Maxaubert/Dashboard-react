@@ -3691,6 +3691,8 @@ body::after { background-image: none !important; animation: none !important; }
   transform: translate(-2px, -3px) !important;
   border-color: var(--ext-color, #e8214e) !important;
   box-shadow: 0 8px 22px rgba(13, 13, 17, 0.12) !important;
+  /* Faint accent wash behind the staircase (shows where it hasn't covered). */
+  background: color-mix(in srgb, var(--ext-color, #e8214e) 14%, #fff) !important;
 }
 .ext-fill { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
 .ext-fill i {
