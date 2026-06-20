@@ -3652,7 +3652,7 @@
  * translucent panels. Appended last so it wins the cascade.
  * ============================================================ */
 
-html { --radius: 2px; --radius-sm: 2px; }
+html { --radius: 2px; --radius-sm: 2px; color-scheme: light; }
 
 /* Plain blank-white background: no grid, no wash. */
 body {
