@@ -86,11 +86,9 @@
      * visually identical to the previous setup — everything is just
      * dimmer overall. */
     background: #ffffff !important;
-    /* ── LINE GRID (removed; see blank-white override below) ── */
-    background-image:
-      linear-gradient(rgba(13, 13, 17, 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(13, 13, 17, 0.05) 1px, transparent 1px) !important;
-    background-size: 34px 34px !important;
+    /* ── LINE GRID removed: blank white background ── */
+    background-image: none !important;
+    background-size: auto !important;
     /* ── DOT GRID (revert) ──
     background-image: radial-gradient(
       circle,
