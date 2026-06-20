@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   DndContext,
   KeyboardSensor,
@@ -14,8 +14,10 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
+import { Settings } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { HomeAccount } from '@/components/home/HomeAccount';
+import { SettingsModal } from '@/components/home/SettingsModal';
 import { useHome, useMutateHome } from '@/hooks/useHome';
 import { useHomeMigration } from '@/hooks/useHomeMigration';
 import { SECTION_IDS, DEFAULT_SECTIONS, type SectionId } from '@/lib/home';
@@ -38,6 +40,17 @@ export function HomePage() {
   // doesn't drop or duplicate sections.
   const { data: home } = useHome();
   const mutateHome = useMutateHome();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const hidden = (home?.hidden ?? []) as SectionId[];
+
+  function toggleSection(id: SectionId) {
+    mutateHome((prev) => {
+      const cur = (prev.hidden ?? []) as SectionId[];
+      const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
+      return { ...prev, hidden: next };
+    });
+  }
+
   const storedOrder: SectionId[] = (home?.sections?.length ? home.sections : DEFAULT_SECTIONS) as SectionId[];
   function setStoredOrder(next: SectionId[]) {
     mutateHome((prev) => ({ ...prev, sections: next }));
@@ -49,6 +62,11 @@ export function HomePage() {
     const missing = SECTION_IDS.filter((id) => !known.includes(id));
     return [...known, ...missing];
   }, [storedOrder]);
+
+  const visible = useMemo<SectionId[]>(
+    () => order.filter((id) => !hidden.includes(id)),
+    [order, hidden],
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -68,7 +86,18 @@ export function HomePage() {
     <div className="page">
       <div className="home-topbar">
         <PageHeader eyebrow="Hjem" title="Dashboard" subtitle="Velg en kategori" />
-        <HomeAccount />
+        <div className="home-topbar-actions">
+          <button
+            type="button"
+            className="home-settings-btn"
+            aria-label="Innstillinger"
+            title="Innstillinger"
+            onClick={() => setSettingsOpen(true)}
+          >
+            <Settings size={18} />
+          </button>
+          <HomeAccount />
+        </div>
       </div>
 
       <DndContext
@@ -76,14 +105,25 @@ export function HomePage() {
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
-        <SortableContext items={order} strategy={verticalListSortingStrategy}>
+        <SortableContext items={visible} strategy={verticalListSortingStrategy}>
           <div className="sections-container">
-            {order.map((id) => (
-              <SortableHomeSection key={id} id={id} />
-            ))}
+            {visible.length === 0 ? (
+              <div className="home-empty-hint">
+                Alle seksjoner er skjult – åpne Innstillinger for å vise dem.
+              </div>
+            ) : (
+              visible.map((id) => <SortableHomeSection key={id} id={id} />)
+            )}
           </div>
         </SortableContext>
       </DndContext>
+      <SettingsModal
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        order={order}
+        hidden={hidden}
+        onToggle={toggleSection}
+      />
     </div>
   );
 }
