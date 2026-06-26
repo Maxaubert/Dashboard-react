@@ -17,6 +17,7 @@ import {
 import { Settings } from 'lucide-react';
 import { HomeAccount } from '@/components/home/HomeAccount';
 import { SettingsModal } from '@/components/home/SettingsModal';
+import { SideGlyphs } from '@/components/home/SideGlyphs';
 import { useHome, useMutateHome } from '@/hooks/useHome';
 import { useHomeMigration } from '@/hooks/useHomeMigration';
 import { SECTION_IDS, DEFAULT_SECTIONS, type SectionId } from '@/lib/home';
@@ -83,6 +84,7 @@ export function HomePage() {
 
   return (
     <div className="page">
+      <SideGlyphs />
       <h1 className="home-title">Dashboard</h1>
       <div className="home-topbar home-topbar--bare">
         <div className="home-topbar-actions">
