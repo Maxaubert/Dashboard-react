@@ -3774,7 +3774,7 @@ body::after { background-image: none !important; animation: none !important; }
   font-size: clamp(96px, 11vw, 196px);
   line-height: 1;
   letter-spacing: 0.06em;
-  color: rgba(13, 13, 17, 0.06);
+  color: rgba(13, 13, 17, 0.10);
   user-select: none;
   pointer-events: none;
   white-space: nowrap;
