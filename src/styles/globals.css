@@ -81,14 +81,16 @@
    * ───────────────────────────────────────────────────────────────── */
   body {
     font-family: var(--font-sans);
-    /* Slightly darker than --color-bg for a flatter, more OLED-ish feel.
-     * Grid + sunbeam alphas below are scaled proportionally so the ratio
-     * between baseline grid, highlighted grid, and background stays
-     * visually identical to the previous setup — everything is just
-     * dimmer overall. */
-    background: #ffffff !important;
-    /* ── LINE GRID removed: blank white background ── */
-    background-image: none !important;
+    /* Riso paper: warm off-white stock + two faint duotone halftone blooms
+     * (crimson top-left, cyan bottom-right). Defined here in @layer base
+     * because a layered !important wins over an unlayered one, so this is
+     * the rule that actually takes effect. Longhands (not the background
+     * shorthand) so the gradients survive the background-image line. */
+    background-color: #f4efe6 !important;
+    background-image:
+      radial-gradient(closest-side at 16% 18%, rgba(232, 33, 78, 0.16), transparent 70%),
+      radial-gradient(closest-side at 86% 64%, rgba(43, 196, 222, 0.18), transparent 70%) !important;
+    background-attachment: fixed !important;
     background-size: auto !important;
     /* ── DOT GRID (revert) ──
     background-image: radial-gradient(
@@ -3653,17 +3655,9 @@
 
 html { --radius: 2px; --radius-sm: 2px; color-scheme: light; background: #f4efe6; }
 
-/* Riso paper background: warm off-white stock with two faint duotone
- * halftone blooms (crimson top-left, cyan bottom-right) bleeding in from
- * the margins. Fixed so the wash stays put while the page scrolls. The
- * white surfaces (cards, covers, panels) read as paper laid on the stock. */
-body {
-  background:
-    radial-gradient(closest-side at 16% 18%, rgba(232, 33, 78, 0.16), transparent 70%),
-    radial-gradient(closest-side at 86% 64%, rgba(43, 196, 222, 0.18), transparent 70%),
-    #f4efe6 !important;
-  background-attachment: fixed !important;
-}
+/* Riso paper background lives in the @layer base body rule above (a layered
+ * !important wins over an unlayered one, so that is the rule that takes
+ * effect). Here we only kill the old sunbeam sweep overlay. */
 body::after { background-image: none !important; animation: none !important; }
 
 /* Frosted glass on the boxed components. */
