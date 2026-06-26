@@ -3651,11 +3651,18 @@
  * translucent panels. Appended last so it wins the cascade.
  * ============================================================ */
 
-html { --radius: 2px; --radius-sm: 2px; color-scheme: light; }
+html { --radius: 2px; --radius-sm: 2px; color-scheme: light; background: #f4efe6; }
 
-/* Plain blank-white background: no grid, no wash. */
+/* Riso paper background: warm off-white stock with two faint duotone
+ * halftone blooms (crimson top-left, cyan bottom-right) bleeding in from
+ * the margins. Fixed so the wash stays put while the page scrolls. The
+ * white surfaces (cards, covers, panels) read as paper laid on the stock. */
 body {
-  background: #ffffff !important;
+  background:
+    radial-gradient(closest-side at 16% 18%, rgba(232, 33, 78, 0.16), transparent 70%),
+    radial-gradient(closest-side at 86% 64%, rgba(43, 196, 222, 0.18), transparent 70%),
+    #f4efe6 !important;
+  background-attachment: fixed !important;
 }
 body::after { background-image: none !important; animation: none !important; }
 
