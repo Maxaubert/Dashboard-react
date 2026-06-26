@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lenkekort - glitch partial cover</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Mono:wght@500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--body:'Space Grotesk',sans-serif;--mono:'IBM Plex Mono',monospace;--display:'Chakra Petch',sans-serif;
+        --ink:#0d0d11;--muted:#6b6a62;--line:rgba(13,13,17,.16);}
+  *{box-sizing:border-box;}
+  body{margin:0;background:#fff;color:var(--ink);font-family:var(--body);padding:36px 40px 120px;}
+  h1{font-family:var(--display);text-transform:uppercase;font-size:24px;margin:0 0 4px;}
+  .sub{color:var(--muted);margin:0 0 28px;font-size:14px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:22px 16px;}
+  .cell .cap{font-family:var(--mono);text-transform:uppercase;letter-spacing:.12em;font-size:.58rem;color:var(--muted);margin:0 0 7px;}
+
+  .lc{position:relative;width:100%;height:108px;padding:14px;background:#fff;border:1px solid var(--line);border-radius:2px;
+      overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;isolation:isolate;cursor:pointer;}
+  .lc .top{display:flex;justify-content:space-between;align-items:flex-start;}
+  .lc .nm{font-weight:600;font-size:14px;position:relative;z-index:3;}
+  .lc .dom{font-family:var(--mono);font-size:10px;color:var(--muted);position:relative;z-index:3;}
+  .icon{width:28px;height:28px;display:grid;place-items:center;font-weight:700;font-size:12px;color:#fff;flex:none;position:relative;z-index:3;}
+  .arrow{color:var(--muted);position:relative;z-index:3;transition:color .3s;}
+  .lc:hover .arrow{color:#fff;}
+
+  .liquid{position:absolute;inset:0;z-index:1;pointer-events:none;}
+  .liquid i{position:absolute;background:var(--ac);}
+  .lc:hover .liquid i{transform:none !important;}
+</style>
+</head>
+<body>
+  <h1>Glitch - partial cover (50-80%)</h1>
+  <p class="sub">Delvis dekning fra hoyre/hjorne sa teksten til venstre blir lesbar. Hover hvert kort.</p>
+  <div class="grid" id="grid"></div>
+
+  <script>
+    const data=[{nm:'YouTube',dom:'youtube.com',ic:'#ff0033',t:'YT'},{nm:'NRK TV',dom:'tv.nrk.no',ic:'#1f6feb',t:'N'},{nm:'Spotify',dom:'spotify.com',ic:'#1db954',t:'S'}];
+    const ARROW='<svg class="arrow" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M14 3l-1.41 1.41L18.17 10H4v2h14.17l-5.58 5.59L14 19l8-8z"/></svg>';
+    const SNAP='cubic-bezier(.85,0,.15,1)',SMOOTH='cubic-bezier(.2,.85,.25,1)',BOUNCE='cubic-bezier(.34,1.56,.64,1)';
+    const rnd=(n)=>Math.floor(Math.random()*n);
+
+    // right-anchored horizontal bars; cov = target coverage %, jitter for jagged
+    function hbars({count=6,cov=65,jitter=0,rows=null,stagger='down',dur=.45,ease=SNAP}){
+      const h=100/count; let o='';
+      for(let k=0;k<count;k++){
+        if(rows && !rows.includes(k)) continue;
+        const w = Math.max(20, cov - rnd(jitter+1));
+        const delay = stagger==='down'?k*45: stagger==='center'?Math.round(Math.abs(k-(count-1)/2)*55): stagger==='rand'?rnd(220):0;
+        o+=`<i style="top:${k*h}%;height:${h+0.6}%;width:${w}%;right:0;transform:translateX(120%);transition:transform ${dur}s ${ease};transition-delay:${delay}ms"></i>`;
+      } return o;
+    }
+    // staircase growing to max cov (left edge steps in)
+    function stair({count=8,maxCov=72,ease=SNAP}){
+      const h=100/count;let o='';
+      for(let k=0;k<count;k++){const w=Math.round((k+1)/count*maxCov);
+        o+=`<i style="top:${k*h}%;height:${h+0.6}%;width:${w}%;right:0;transform:translateX(120%);transition:transform .5s ${ease};transition-delay:${k*40}ms"></i>`;}
+      return o;
+    }
+    // vertical columns confined to the right portion
+    function vcols({count=5,cov=60,side='B',ease=SNAP}){
+      const region=cov, w=region/count, start=100-region; let o='';
+      for(let k=0;k<count;k++){const ty=side==='B'?'translateY(120%)':'translateY(-120%)';const anc=side==='B'?'bottom:0;':'top:0;';
+        o+=`<i style="left:${start+k*w}%;width:${w+0.6}%;height:100%;${anc}transform:${ty};transition:transform .45s ${ease};transition-delay:${k*45}ms"></i>`;}
+      return o;
+    }
+    // sparse mosaic across whole card (~ratio filled)
+    function mosaic({cols=6,rows=4,ratio=.55,ease=BOUNCE}){
+      const w=100/cols,h=100/rows;let o='';
+      for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){ if(Math.random()>ratio) continue;
+        o+=`<i style="left:${c*w}%;top:${r*h}%;width:${w+0.6}%;height:${h+0.6}%;transform:scale(0);transform-origin:center;transition:transform .4s ${ease};transition-delay:${rnd(240)}ms"></i>`;}
+      return o;
+    }
+
+    const V=[
+      ['Right 50% uniform', hbars({count:6,cov:50})],
+      ['Right 65% uniform', hbars({count:6,cov:65})],
+      ['Right 80% uniform', hbars({count:6,cov:80})],
+      ['Right jagged 50-70%', hbars({count:8,cov:70,jitter:22,stagger:'rand'})],
+      ['Right jagged 60-80%', hbars({count:8,cov:80,jitter:22,stagger:'rand'})],
+      ['Staircase to ~72%', stair({count:8,maxCov:72})],
+      ['Top-right corner ~60%', hbars({count:6,cov:60,rows:[0,1,2]})],
+      ['Bottom-right corner ~60%', hbars({count:6,cov:60,rows:[3,4,5]})],
+      ['Center band right ~75%', hbars({count:6,cov:75,rows:[1,2,3,4]})],
+      ['Vertical cols, right 60%', vcols({count:5,cov:60})],
+      ['Mosaic sparse ~55%', mosaic({cols:6,rows:4,ratio:.55})],
+      ['Mosaic sparse ~70%', mosaic({cols:7,rows:5,ratio:.7})],
+      ['Right 65% bounce', hbars({count:5,cov:65,ease:BOUNCE,dur:.55})],
+      ['Right 70% center-out', hbars({count:7,cov:70,stagger:'center'})],
+    ];
+
+    document.getElementById('grid').innerHTML=V.map(([name,bars],i)=>{
+      const d=data[i%data.length];
+      return `<div class="cell"><div class="cap">${name}</div>
+        <a class="lc" style="--ac:${d.ic}"><div class="liquid">${bars}</div>
+          <div class="top"><span class="icon" style="background:${d.ic}">${d.t}</span>${ARROW}</div>
+          <div><div class="nm">${d.nm}</div><div class="dom">${d.dom}</div></div></a></div>`;
+    }).join('');
+  </script>
+</body>
+</html>

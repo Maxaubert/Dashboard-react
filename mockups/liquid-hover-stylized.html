@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lenkekort - 30 stylish hover-effekter</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Mono:wght@500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--body:'Space Grotesk',sans-serif;--mono:'IBM Plex Mono',monospace;--display:'Chakra Petch',sans-serif;
+        --ink:#0d0d11;--muted:#6b6a62;--line:rgba(13,13,17,.16);--e:cubic-bezier(.2,.85,.25,1);}
+  *{box-sizing:border-box;}
+  body{margin:0;background:#fff;color:var(--ink);font-family:var(--body);padding:36px 40px 120px;}
+  h1{font-family:var(--display);text-transform:uppercase;font-size:24px;margin:0 0 4px;}
+  .sub{color:var(--muted);margin:0 0 28px;font-size:14px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:22px 16px;}
+  .cell .cap{font-family:var(--mono);text-transform:uppercase;letter-spacing:.12em;font-size:.58rem;color:var(--muted);margin:0 0 7px;}
+
+  .lc{position:relative;width:100%;height:108px;padding:14px;background:#fff;border:1px solid var(--line);border-radius:2px;
+      overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;isolation:isolate;cursor:pointer;}
+  .lc .top{display:flex;justify-content:space-between;align-items:flex-start;}
+  .lc .nm{font-weight:600;font-size:14px;position:relative;z-index:3;transition:color .3s;}
+  .lc .dom{font-family:var(--mono);font-size:10px;color:var(--muted);position:relative;z-index:3;transition:color .3s;}
+  .icon{width:28px;height:28px;display:grid;place-items:center;font-weight:700;font-size:12px;color:#fff;flex:none;position:relative;z-index:3;}
+  .arrow{color:var(--muted);position:relative;z-index:3;}
+  .lc:hover .nm,.lc:hover .dom{color:#fff;}
+
+  .liquid{position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform,clip-path;}
+  .liquid.solid{background:var(--ac);}
+  .liquid svg{width:100%;height:100%;display:block;}
+  .liquid :is(path,circle,rect,ellipse){fill:var(--ac);}
+
+  /* ---- shared reveal patterns (set on .cell) ---- */
+  .r-up   .liquid{transform:translateY(58%);opacity:0;transition:opacity .25s,transform .6s var(--e);}
+  .r-up   .lc:hover .liquid{opacity:1;transform:translateY(0);}
+  .r-down .liquid{transform:translateY(-58%);opacity:0;transition:opacity .25s,transform .6s var(--e);}
+  .r-down .lc:hover .liquid{opacity:1;transform:translateY(0);}
+  .r-bl .liquid{transform:translate(-45%,45%) scale(.35);transform-origin:0 100%;opacity:0;transition:opacity .3s,transform .65s var(--e);}
+  .r-bl .lc:hover .liquid{opacity:1;transform:translate(0,0) scale(1.25);}
+  .r-tr .liquid{transform:translate(45%,-45%) scale(.35);transform-origin:100% 0;opacity:0;transition:opacity .3s,transform .65s var(--e);}
+  .r-tr .lc:hover .liquid{opacity:1;transform:translate(0,0) scale(1.25);}
+  .r-tl .liquid{transform:translate(-45%,-45%) scale(.35);transform-origin:0 0;opacity:0;transition:opacity .3s,transform .65s var(--e);}
+  .r-tl .lc:hover .liquid{opacity:1;transform:translate(0,0) scale(1.25);}
+  .r-sweepL .liquid{transform:translateX(-101%);transition:transform .55s var(--e);}
+  .r-sweepL .lc:hover .liquid{transform:translateX(0);}
+  .r-sweepR .liquid{transform:translateX(101%);transition:transform .55s var(--e);}
+  .r-sweepR .lc:hover .liquid{transform:translateX(0);}
+  .r-scaleBL .liquid{transform:scale(0);transform-origin:0 100%;transition:transform .6s var(--e);}
+  .r-scaleBL .lc:hover .liquid{transform:scale(1.8);}
+  .r-scaleTR .liquid{transform:scale(0);transform-origin:100% 0;transition:transform .6s var(--e);}
+  .r-scaleTR .lc:hover .liquid{transform:scale(1.8);}
+
+  /* soft/feathered for ink & smoke */
+  .feather .liquid{filter:blur(5px);}
+  .feather2 .liquid{filter:blur(9px);}
+  /* gooey metaball */
+  .goo .liquid{filter:blur(6px) contrast(14);}
+
+  /* ---- bespoke CSS effects ---- */
+  /* bubbles rising */
+  .b-bubbles .liquid{background:none;}
+  .b-bubbles .liquid b{position:absolute;bottom:-30%;border-radius:50%;background:var(--ac);opacity:0;transition:transform .7s var(--e),opacity .4s;}
+  .b-bubbles .lc:hover .liquid b{opacity:1;transform:translateY(-260%);}
+  /* confetti squares from bottom */
+  .b-confetti .liquid{background:none;}
+  .b-confetti .liquid i{position:absolute;bottom:-20%;width:13px;height:13px;background:var(--ac);opacity:0;transition:transform .7s var(--e),opacity .35s;}
+  .b-confetti .lc:hover .liquid i{opacity:1;transform:translateY(-320%) rotate(180deg);}
+  /* glitch offset bars from right */
+  .b-glitch .liquid{background:none;}
+  .b-glitch .liquid i{position:absolute;right:0;height:22%;background:var(--ac);transform:translateX(110%);transition:transform .4s var(--e);}
+  .b-glitch .lc:hover .liquid i{transform:translateX(0);}
+  /* shatter shards from left */
+  .b-shatter .liquid{background:none;}
+  .b-shatter .liquid i{position:absolute;left:0;width:100%;background:var(--ac);transform:translateX(-110%);transition:transform .5s var(--e);}
+  .b-shatter .lc:hover .liquid i{transform:translateX(0);}
+  /* airbrush spray from bottom-left */
+  .b-spray .liquid{background:radial-gradient(circle at 0% 100%, var(--ac) 0 18%, transparent 19%),
+      radial-gradient(circle at 12% 90%, var(--ac) 0 3px, transparent 4px) 0 0/14px 14px;
+    transform:scale(0);transform-origin:0 100%;transition:transform .6s var(--e);}
+  .b-spray .lc:hover .liquid{transform:scale(2);}
+  /* meniscus rising (curved concave top) */
+  .b-menisc .liquid{background:radial-gradient(120% 90% at 50% 130%, var(--ac) 0 70%, transparent 71%);transform:translateY(64%);transition:transform .55s var(--e);}
+  .b-menisc .lc:hover .liquid{transform:translateY(0);}
+</style>
+</head>
+<body>
+  <h1>Lenkekort - 30 stylish hover-effekter (31-60)</h1>
+  <p class="sub">Mer stylish: blod, splatter, maling, boelger, goo. Alle starter fra kant/hjorne, solid aksent. De forste 30 ligger i liquid-hover-30.html.</p>
+  <div class="grid" id="grid"></div>
+
+  <script>
+    const data=[{nm:'YouTube',dom:'youtube.com',ic:'#ff0033',t:'YT'},{nm:'NRK TV',dom:'tv.nrk.no',ic:'#1f6feb',t:'N'},{nm:'Spotify',dom:'spotify.com',ic:'#1db954',t:'S'}];
+    const ARROW='<svg class="arrow" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M14 3l-1.41 1.41L18.17 10H4v2h14.17l-5.58 5.59L14 19l8-8z"/></svg>';
+    const A=(d)=>`<animate attributeName="d" dur="${d.dur}s" repeatCount="indefinite" values="${d.v}"/>`;
+
+    // morphing shapes
+    const SPLAT=`<svg viewBox="0 0 100 100"><path d="M50,20 C66,16 74,30 86,34 C96,38 92,54 84,62 C76,70 80,84 66,86 C54,88 50,78 38,84 C26,90 14,80 16,66 C18,54 8,48 16,36 C24,26 34,24 50,20 Z">${A({dur:5,v:'M50,20 C66,16 74,30 86,34 C96,38 92,54 84,62 C76,70 80,84 66,86 C54,88 50,78 38,84 C26,90 14,80 16,66 C18,54 8,48 16,36 C24,26 34,24 50,20 Z;M48,18 C64,20 80,28 84,44 C88,60 78,62 80,76 C82,90 64,90 52,84 C40,78 36,90 26,80 C16,70 20,60 14,50 C8,40 14,30 26,26 C36,22 34,16 48,18 Z;M50,20 C66,16 74,30 86,34 C96,38 92,54 84,62 C76,70 80,84 66,86 C54,88 50,78 38,84 C26,90 14,80 16,66 C18,54 8,48 16,36 C24,26 34,24 50,20 Z'})}</path>
+      <circle cx="18" cy="22" r="5"/><circle cx="86" cy="18" r="4"/><circle cx="92" cy="74" r="6"/><circle cx="24" cy="86" r="3.5"/><circle cx="68" cy="10" r="3"/></svg>`;
+    const DRIP=`<svg viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,0 H100 V26 C94,26 92,60 86,60 C80,60 82,26 72,26 C62,26 66,80 58,80 C50,80 54,26 42,26 C32,26 36,52 30,52 C24,52 26,26 16,26 C8,26 10,44 0,40 Z">${A({dur:4.5,v:'M0,0 H100 V26 C94,26 92,60 86,60 C80,60 82,26 72,26 C62,26 66,80 58,80 C50,80 54,26 42,26 C32,26 36,52 30,52 C24,52 26,26 16,26 C8,26 10,44 0,40 Z;M0,0 H100 V30 C92,30 94,74 86,74 C78,74 80,30 70,30 C60,30 62,58 56,58 C50,58 52,30 40,30 C30,30 34,72 28,72 C22,72 24,30 14,30 C6,30 8,52 0,46 Z;M0,0 H100 V26 C94,26 92,60 86,60 C80,60 82,26 72,26 C62,26 66,80 58,80 C50,80 54,26 42,26 C32,26 36,52 30,52 C24,52 26,26 16,26 C8,26 10,44 0,40 Z'})}</path></svg>`;
+    const FLAME=`<svg viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,58 L12,34 L22,52 L34,26 L46,50 L58,22 L70,48 L82,32 L92,54 L100,42 L100,100 L0,100 Z">${A({dur:1.4,v:'M0,58 L12,34 L22,52 L34,26 L46,50 L58,22 L70,48 L82,32 L92,54 L100,42 L100,100 L0,100 Z;M0,52 L12,44 L22,30 L34,50 L46,28 L58,52 L70,30 L82,52 L92,36 L100,52 L100,100 L0,100 Z;M0,58 L12,34 L22,52 L34,26 L46,50 L58,22 L70,48 L82,32 L92,54 L100,42 L100,100 L0,100 Z'})}</path></svg>`;
+    const POUR=`<svg viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M42,0 L58,0 C58,28 70,40 80,60 C92,84 70,100 50,100 C30,100 8,84 20,60 C30,40 42,28 42,0 Z">${A({dur:4,v:'M42,0 L58,0 C58,28 70,40 80,60 C92,84 70,100 50,100 C30,100 8,84 20,60 C30,40 42,28 42,0 Z;M44,0 L56,0 C56,30 66,42 78,62 C90,84 72,100 50,100 C28,100 10,84 22,62 C34,42 44,30 44,0 Z;M42,0 L58,0 C58,28 70,40 80,60 C92,84 70,100 50,100 C30,100 8,84 20,60 C30,40 42,28 42,0 Z'})}</path></svg>`;
+    const WAVE2=`<svg viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,46 C10,34 18,56 30,46 C42,36 50,58 62,46 C74,34 86,56 100,46 L100,100 L0,100 Z">${A({dur:4,v:'M0,46 C10,34 18,56 30,46 C42,36 50,58 62,46 C74,34 86,56 100,46 L100,100 L0,100 Z;M0,50 C10,60 20,40 32,52 C44,62 50,42 62,52 C74,62 88,42 100,50 L100,100 L0,100 Z;M0,46 C10,34 18,56 30,46 C42,36 50,58 62,46 C74,34 86,56 100,46 L100,100 L0,100 Z'})}</path></svg>`;
+    const CURL=`<svg viewBox="0 0 100 100"><path d="M0,100 L0,46 C20,30 44,34 52,52 C58,66 46,76 38,68 C32,62 40,54 48,58 C40,62 46,74 58,72 C74,69 78,52 70,40 C90,52 96,78 80,94 C64,100 20,100 0,100 Z">${A({dur:5,v:'M0,100 L0,46 C20,30 44,34 52,52 C58,66 46,76 38,68 C32,62 40,54 48,58 C40,62 46,74 58,72 C74,69 78,52 70,40 C90,52 96,78 80,94 C64,100 20,100 0,100 Z;M0,100 L0,50 C22,36 46,40 54,56 C60,70 48,80 40,72 C34,66 42,58 50,62 C42,66 48,78 60,76 C76,73 80,56 72,44 C92,56 96,80 82,96 C66,100 20,100 0,100 Z;M0,100 L0,46 C20,30 44,34 52,52 C58,66 46,76 38,68 C32,62 40,54 48,58 C40,62 46,74 58,72 C74,69 78,52 70,40 C90,52 96,78 80,94 C64,100 20,100 0,100 Z'})}</path></svg>`;
+    const BLOB=`<svg viewBox="0 0 100 100"><path d="M52,14 C70,12 80,30 88,42 C96,50 88,64 78,72 C68,80 56,76 42,86 C30,94 16,82 14,66 C12,52 6,42 16,28 C24,16 36,16 52,14 Z">${A({dur:5,v:'M52,14 C70,12 80,30 88,42 C96,50 88,64 78,72 C68,80 56,76 42,86 C30,94 16,82 14,66 C12,52 6,42 16,28 C24,16 36,16 52,14 Z;M50,10 C68,16 86,24 86,44 C86,62 76,66 72,80 C68,94 50,92 38,88 C24,84 14,76 14,60 C14,44 8,34 22,24 C32,16 36,8 50,10 Z;M52,14 C70,12 80,30 88,42 C96,50 88,64 78,72 C68,80 56,76 42,86 C30,94 16,82 14,66 C12,52 6,42 16,28 C24,16 36,16 52,14 Z'})}</path></svg>`;
+
+    // entries: [revealClass(es), name, svg|null, extra-html-builder]
+    const E=[
+      ['r-bl','31 Blood splatter BL',SPLAT],
+      ['r-tr','32 Blood splatter TR',SPLAT],
+      ['r-bl feather','33 Ink splat (feather)',SPLAT],
+      ['r-tr','34 Paint splat burst',SPLAT],
+      ['r-down','35 Blood drip down',DRIP],
+      ['r-up','36 Blood pool rising',WAVE2],
+      ['r-down','37 Paint pour',POUR],
+      ['r-down','38 Dripping paint',DRIP],
+      ['r-bl','39 Paint spill puddle',BLOB],
+      ['r-sweepL','40 Brush stroke',BLOB],
+      ['r-bl','41 Curl wave (tsunami)',CURL],
+      ['r-up','42 Multi-lobe wave',WAVE2],
+      ['r-up','43 Flame rising',FLAME],
+      ['r-up','44 Double crest wave',WAVE2],
+      ['r-scaleBL','45 Ripple wavy rings',null,'rings'],
+      ['r-up goo','46 Metaball goo',null,'goo'],
+      ['r-up goo','47 Lava blobs',null,'goo'],
+      ['r-down','48 Honey drip (slow)',POUR],
+      ['r-sweepL','49 Mercury sweep',BLOB],
+      ['b-bubbles','50 Bubbles rising',null,'bubbles'],
+      ['r-up','51 Flame flicker',FLAME],
+      ['r-tl feather2','52 Smoke puff',BLOB],
+      ['b-shatter','53 Shatter shards',null,'shatter'],
+      ['r-sweepL','54 Lightning bolt',null,'bolt'],
+      ['b-confetti','55 Confetti burst',null,'confetti'],
+      ['b-glitch','56 Glitch blocks',null,'glitch'],
+      ['r-scaleTR','57 Vortex swirl',BLOB],
+      ['b-menisc','58 Meniscus fill',null,'menisc'],
+      ['b-spray','59 Airbrush spray',null,'spray'],
+      ['r-scaleBL','60 Spreading stain',SPLAT],
+    ];
+
+    function liquidFor(extra, svg){
+      if(svg) return `<div class="liquid">${svg}</div>`;
+      if(extra==='bubbles'){let b='';const P=[[12,30],[34,20],[58,26],[80,18],[24,16],[68,14]];for(const[l,s]of P)b+=`<b style="left:${l}%;width:${s}px;height:${s}px;transition-delay:${(l%5)*40}ms"></b>`;return `<div class="liquid">${b}</div>`;}
+      if(extra==='confetti'){let i='';for(let k=0;k<10;k++)i+=`<i style="left:${6+k*9}%;transition-delay:${k*35}ms;transform-origin:center"></i>`;return `<div class="liquid">${i}</div>`;}
+      if(extra==='glitch'){let i='';for(let k=0;k<5;k++)i+=`<i style="top:${k*22}%;width:${70+k*6}%;transition-delay:${k*45}ms"></i>`;return `<div class="liquid">${i}</div>`;}
+      if(extra==='shatter'){let i='';const cl=['polygon(0 0,100% 8%,90% 30%,0 22%)','polygon(0 22%,90% 30%,100% 52%,0 46%)','polygon(0 46%,100% 52%,92% 74%,0 70%)','polygon(0 70%,92% 74%,100% 96%,0 100%)'];for(const c of cl)i+=`<i style="top:0;height:100%;clip-path:${c};transition-delay:${Math.random()*120|0}ms"></i>`;return `<div class="liquid">${i}</div>`;}
+      if(extra==='bolt'){return `<div class="liquid solid" style="clip-path:polygon(0 0,55% 0,35% 45%,70% 40%,30% 100%,45% 55%,12% 60%)"></div>`;}
+      if(extra==='rings'){return `<div class="liquid" style="background:radial-gradient(circle at 0 100%,var(--ac) 0 16%,transparent 16% 30%,var(--ac) 30% 46%,transparent 46% 60%,var(--ac) 60% 76%,transparent 76%)"></div>`;}
+      if(extra==='goo'){return `<div class="liquid"><svg viewBox="0 0 100 100"><circle cx="20" cy="120" r="22"><animate attributeName="cy" dur="3s" repeatCount="indefinite" values="120;60;120"/></circle><circle cx="50" cy="130" r="26"><animate attributeName="cy" dur="3.6s" repeatCount="indefinite" values="130;55;130"/></circle><circle cx="80" cy="125" r="20"><animate attributeName="cy" dur="3.2s" repeatCount="indefinite" values="125;62;125"/></circle><rect x="0" y="70" width="100" height="40"/></svg></div>`;}
+      if(extra==='menisc'||extra==='spray') return `<div class="liquid"></div>`;
+      return `<div class="liquid solid"></div>`;
+    }
+
+    document.getElementById('grid').innerHTML=E.map(([cls,name,svg,extra],idx)=>{
+      const d=data[idx%data.length];
+      return `<div class="cell ${cls}"><div class="cap">${name}</div>
+        <a class="lc" style="--ac:${d.ic}">${liquidFor(extra,svg)}
+          <div class="top"><span class="icon" style="background:${d.ic}">${d.t}</span>${ARROW}</div>
+          <div><div class="nm">${d.nm}</div><div class="dom">${d.dom}</div></div></a></div>`;
+    }).join('');
+  </script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lenkekort - liquid hover</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --body:'Space Grotesk',sans-serif; --mono:'IBM Plex Mono',monospace; --display:'Chakra Petch',sans-serif;
+          --ink:#0d0d11; --muted:#6b6a62; --line:rgba(13,13,17,0.16); }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#fff; color:var(--ink); font-family:var(--body); padding:40px 48px 100px; }
+  h1 { font-family:var(--display); text-transform:uppercase; font-size:24px; margin:0 0 4px; }
+  .sub { color:var(--muted); margin:0 0 36px; font-size:14px; }
+  .variant { margin-bottom:46px; }
+  .variant-label { font-family:var(--mono); text-transform:uppercase; letter-spacing:.22em; font-size:.66rem; color:var(--muted);
+                   border-bottom:1px solid rgba(13,13,17,.12); padding-bottom:8px; display:flex; justify-content:space-between; }
+  .variant-note { text-transform:none; letter-spacing:0; font-family:var(--body); }
+  .row { display:flex; gap:14px; margin-top:18px; flex-wrap:wrap; }
+
+  .icon { width:30px; height:30px; display:grid; place-items:center; font-weight:700; font-size:13px; color:#fff; flex:none; position:relative; z-index:2; }
+  .arrow { color:var(--muted); position:relative; z-index:2; }
+
+  /* base card */
+  .lc { position:relative; width:172px; min-height:104px; padding:14px; background:#fff; border:1px solid var(--line);
+        border-radius:2px; overflow:hidden; display:flex; flex-direction:column; justify-content:space-between; isolation:isolate; }
+  .lc .top { display:flex; justify-content:space-between; align-items:flex-start; }
+  .lc .nm { font-weight:600; font-size:14px; position:relative; z-index:2; }
+  .lc .dom { font-family:var(--mono); font-size:10px; color:var(--muted); position:relative; z-index:2; }
+
+  /* morphing blob shapes */
+  @keyframes morph {
+    0%,100% { border-radius:42% 58% 63% 37% / 41% 44% 56% 59%; }
+    33%     { border-radius:64% 36% 33% 67% / 57% 36% 64% 43%; }
+    66%     { border-radius:40% 60% 58% 42% / 36% 64% 36% 64%; }
+  }
+  @keyframes drift {
+    0%,100% { transform: translate(0,0) scale(1.5) rotate(0deg); }
+    50%     { transform: translate(8%,-6%) scale(1.65) rotate(20deg); }
+  }
+
+  /* ── A: corner blob bleed (soft, blurred) ─────────────────────── */
+  .a .lc::before { content:''; position:absolute; z-index:1; left:-30%; bottom:-40%; width:130%; height:130%;
+    background: radial-gradient(closest-side, var(--ac), transparent 72%);
+    opacity:0; transform:scale(.4); filter:blur(6px);
+    transition:opacity .45s ease, transform .55s cubic-bezier(.2,.8,.2,1);
+    animation: morph 7s ease-in-out infinite; }
+  .a .lc:hover::before { opacity:.30; transform:scale(1.4); }
+
+  /* ── B: rising liquid (wavy top, fills from bottom) ───────────── */
+  .b .lc::before { content:''; position:absolute; z-index:1; left:-10%; right:-10%; bottom:-60%; height:120%;
+    background: var(--ac); opacity:0; transform:translateY(60%);
+    border-radius:46% 54% 0 0 / 18% 22% 0 0;
+    transition:opacity .4s, transform .6s cubic-bezier(.2,.8,.2,1);
+    animation: morph 6s ease-in-out infinite; }
+  .b .lc:hover::before { opacity:.22; transform:translateY(18%); }
+
+  /* ── C: gooey twin blobs drifting ─────────────────────────────── */
+  .c .lc::before, .c .lc::after { content:''; position:absolute; z-index:1; width:80%; height:80%;
+    background: radial-gradient(closest-side, var(--ac), transparent 70%);
+    opacity:0; filter:blur(10px); transition:opacity .5s; }
+  .c .lc::before { left:-20%; top:-25%; animation: drift 8s ease-in-out infinite; }
+  .c .lc::after  { right:-20%; bottom:-25%; animation: drift 9s ease-in-out infinite reverse; }
+  .c .lc:hover::before, .c .lc:hover::after { opacity:.26; }
+
+  /* ── D: diagonal tint sweep (organic edge) ────────────────────── */
+  .d .lc::before { content:''; position:absolute; z-index:1; inset:-20%;
+    background: radial-gradient(120% 120% at 0% 100%, var(--ac) 0%, transparent 55%);
+    opacity:0; transform:translate(-12%,12%) scale(1.1);
+    transition:opacity .45s, transform .6s cubic-bezier(.2,.8,.2,1);
+    animation: morph 9s ease-in-out infinite; }
+  .d .lc:hover::before { opacity:.28; transform:translate(0,0) scale(1.15); }
+
+  /* ── E: full morph blob sweep (like the reference) ────────────── */
+  .e .lc::before { content:''; position:absolute; z-index:1; left:50%; top:55%; width:160%; height:160%; margin:-80% 0 0 -80%;
+    background: var(--ac); opacity:0; transform:scale(.2);
+    transition:opacity .4s, transform .7s cubic-bezier(.2,.8,.2,1);
+    animation: morph 7s ease-in-out infinite; }
+  .e .lc:hover::before { opacity:.20; transform:scale(1); }
+</style>
+</head>
+<body>
+  <h1>Lenkekort - liquid hover</h1>
+  <p class="sub">Hover et kort. Aksenttinten bler inn og morpher (flytende). Aksentfargen er kortets egen.</p>
+
+  <div class="variant a"><div class="variant-label"><span>A / Hjornebleed (myk, blurra)</span><span class="variant-note">blob vokser fra hjornet, lav opacity</span></div><div class="row" id="rowA"></div></div>
+  <div class="variant b"><div class="variant-label"><span>B / Stigende vaeske</span><span class="variant-note">fylles nedenfra med boelgetopp</span></div><div class="row" id="rowB"></div></div>
+  <div class="variant c"><div class="variant-label"><span>C / Gooey tvillingblober</span><span class="variant-note">to blurra blober som driver</span></div><div class="row" id="rowC"></div></div>
+  <div class="variant d"><div class="variant-label"><span>D / Diagonal tint-sweep</span><span class="variant-note">organisk kant fra hjorne til hjorne</span></div><div class="row" id="rowD"></div></div>
+  <div class="variant e"><div class="variant-label"><span>E / Full morph-blob (referansen)</span><span class="variant-note">blob sveiper inn og morpher</span></div><div class="row" id="rowE"></div></div>
+
+  <script>
+    const data = [
+      { nm:'YouTube', dom:'youtube.com', ic:'#ff0033', t:'YT' },
+      { nm:'GitHub', dom:'github.com', ic:'#0d0d11', t:'GH' },
+      { nm:'NRK TV', dom:'tv.nrk.no', ic:'#1f6feb', t:'N' },
+      { nm:'Telenor', dom:'telenor.no', ic:'#00b9f1', t:'T' },
+      { nm:'Spotify', dom:'spotify.com', ic:'#1db954', t:'S' },
+    ];
+    const ARROW = '<svg class="arrow" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M14 3l-1.41 1.41L18.17 10H4v2h14.17l-5.58 5.59L14 19l8-8z"/></svg>';
+    const card = d => `<a class="lc" style="--ac:${d.ic}"><div class="top"><span class="icon" style="background:${d.ic}">${d.t}</span>${ARROW}</div><div><div class="nm">${d.nm}</div><div class="dom">${d.dom}</div></div></a>`;
+    for (const id of ['rowA','rowB','rowC','rowD','rowE']) document.getElementById(id).innerHTML = data.map(card).join('');
+  </script>
+</body>
+</html>

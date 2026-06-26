@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lenkekort - glitch block-varianter</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Mono:wght@500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--body:'Space Grotesk',sans-serif;--mono:'IBM Plex Mono',monospace;--display:'Chakra Petch',sans-serif;
+        --ink:#0d0d11;--muted:#6b6a62;--line:rgba(13,13,17,.16);}
+  *{box-sizing:border-box;}
+  body{margin:0;background:#fff;color:var(--ink);font-family:var(--body);padding:36px 40px 120px;}
+  h1{font-family:var(--display);text-transform:uppercase;font-size:24px;margin:0 0 4px;}
+  .sub{color:var(--muted);margin:0 0 28px;font-size:14px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:22px 16px;}
+  .cell .cap{font-family:var(--mono);text-transform:uppercase;letter-spacing:.12em;font-size:.58rem;color:var(--muted);margin:0 0 7px;}
+
+  .lc{position:relative;width:100%;height:108px;padding:14px;background:#fff;border:1px solid var(--line);border-radius:2px;
+      overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;isolation:isolate;cursor:pointer;}
+  .lc .top{display:flex;justify-content:space-between;align-items:flex-start;}
+  .lc .nm{font-weight:600;font-size:14px;position:relative;z-index:3;transition:color .3s;}
+  .lc .dom{font-family:var(--mono);font-size:10px;color:var(--muted);position:relative;z-index:3;transition:color .3s;}
+  .icon{width:28px;height:28px;display:grid;place-items:center;font-weight:700;font-size:12px;color:#fff;flex:none;position:relative;z-index:3;}
+  .arrow{color:var(--muted);position:relative;z-index:3;}
+  .lc:hover .nm,.lc:hover .dom{color:#fff;}
+
+  .liquid{position:absolute;inset:0;z-index:1;pointer-events:none;}
+  .liquid i{position:absolute;background:var(--ac);}
+  .lc:hover .liquid i{transform:none !important;}
+</style>
+</head>
+<body>
+  <h1>Glitch block-varianter</h1>
+  <p class="sub">Variasjoner av #56: solide aksentblokker som klikker inn fra kantene. Hover hvert kort.</p>
+  <div class="grid" id="grid"></div>
+
+  <script>
+    const data=[{nm:'YouTube',dom:'youtube.com',ic:'#ff0033',t:'YT'},{nm:'NRK TV',dom:'tv.nrk.no',ic:'#1f6feb',t:'N'},{nm:'Spotify',dom:'spotify.com',ic:'#1db954',t:'S'}];
+    const ARROW='<svg class="arrow" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M14 3l-1.41 1.41L18.17 10H4v2h14.17l-5.58 5.59L14 19l8-8z"/></svg>';
+    const SNAP='cubic-bezier(.85,0,.15,1)', SMOOTH='cubic-bezier(.2,.85,.25,1)', BOUNCE='cubic-bezier(.34,1.56,.64,1)';
+    const rnd=(n)=>Math.floor(Math.random()*n);
+
+    // horizontal bars
+    function hbars({count,side='R',width='full',stagger='down',dur=.45,ease=SNAP}){
+      const h=100/count; let o='';
+      for(let k=0;k<count;k++){
+        const w = width==='stair'?Math.round((k+1)/count*100): width==='rand'?60+rnd(40): 100;
+        const sk = side==='alt'?(k%2?'L':'R'):side;
+        const tx = sk==='R'?'translateX(115%)':'translateX(-115%)';
+        const anchor = sk==='R'?'right:0;':'left:0;';
+        const delay = stagger==='down'?k*45: stagger==='up'?(count-k)*45: stagger==='center'?Math.round(Math.abs(k-(count-1)/2)*55): stagger==='rand'?rnd(240):0;
+        o+=`<i style="top:${k*h}%;height:${h+0.6}%;width:${w}%;${anchor}transform:${tx};transition:transform ${dur}s ${ease};transition-delay:${delay}ms"></i>`;
+      } return o;
+    }
+    // vertical columns
+    function vbars({count,side='B',stagger='lr',dur=.45,ease=SNAP}){
+      const w=100/count; let o='';
+      for(let k=0;k<count;k++){
+        const ty = side==='B'?'translateY(115%)':'translateY(-115%)';
+        const anchor = side==='B'?'bottom:0;':'top:0;';
+        const delay = stagger==='rand'?rnd(240): stagger==='center'?Math.round(Math.abs(k-(count-1)/2)*55): k*45;
+        o+=`<i style="left:${k*w}%;width:${w+0.6}%;height:100%;${anchor}transform:${ty};transition:transform ${dur}s ${ease};transition-delay:${delay}ms"></i>`;
+      } return o;
+    }
+    // venetian blinds (scaleX)
+    function blinds({count,dur=.5,ease=SMOOTH}){
+      const h=100/count; let o='';
+      for(let k=0;k<count;k++) o+=`<i style="top:${k*h}%;height:${h+0.6}%;width:100%;left:0;transform:scaleX(0);transform-origin:${k%2?'right':'left'};transition:transform ${dur}s ${ease};transition-delay:${k*30}ms"></i>`;
+      return o;
+    }
+    // mosaic grid
+    function mosaic({cols,rows,dur=.4,ease=BOUNCE,mode='rand'}){
+      const w=100/cols,h=100/rows; let o='';
+      for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+        const delay = mode==='diag'?(r+c)*45: mode==='rand'?rnd(260):0;
+        o+=`<i style="left:${c*w}%;top:${r*h}%;width:${w+0.6}%;height:${h+0.6}%;transform:scale(0);transform-origin:center;transition:transform ${dur}s ${ease};transition-delay:${delay}ms"></i>`;
+      } return o;
+    }
+
+    const V=[
+      ['56a Original (right, top-down)', hbars({count:5,side:'R',stagger:'down'})],
+      ['Mirror (from left)', hbars({count:5,side:'L',stagger:'down'})],
+      ['Alternating sides (zigzag in)', hbars({count:6,side:'alt',stagger:'down'})],
+      ['Many thin bars (right)', hbars({count:14,side:'R',stagger:'down',dur:.4})],
+      ['Few thick bars (left)', hbars({count:3,side:'L',stagger:'down',dur:.5})],
+      ['Staircase widths (left)', hbars({count:8,side:'L',width:'stair',stagger:'down'})],
+      ['Center-out stagger (right)', hbars({count:7,side:'R',stagger:'center'})],
+      ['Random order (right)', hbars({count:8,side:'R',stagger:'rand'})],
+      ['Jagged random widths (right)', hbars({count:9,side:'R',width:'rand',stagger:'rand'})],
+      ['Bounce overshoot (right)', hbars({count:5,side:'R',stagger:'down',ease:BOUNCE,dur:.55})],
+      ['Vertical columns up', vbars({count:8,side:'B',stagger:'lr'})],
+      ['Vertical columns down', vbars({count:8,side:'T',stagger:'rand'})],
+      ['Venetian blinds', blinds({count:7})],
+      ['Mosaic - random fill', mosaic({cols:6,rows:4,mode:'rand'})],
+      ['Mosaic - diagonal fill', mosaic({cols:6,rows:4,mode:'diag',ease:SNAP})],
+      ['Pixel grid (fine, random)', mosaic({cols:10,rows:6,mode:'rand',dur:.35})],
+    ];
+
+    document.getElementById('grid').innerHTML=V.map(([name,bars],i)=>{
+      const d=data[i%data.length];
+      return `<div class="cell"><div class="cap">${name}</div>
+        <a class="lc" style="--ac:${d.ic}"><div class="liquid">${bars}</div>
+          <div class="top"><span class="icon" style="background:${d.ic}">${d.t}</span>${ARROW}</div>
+          <div><div class="nm">${d.nm}</div><div class="dom">${d.dom}</div></div></a></div>`;
+    }).join('');
+  </script>
+</body>
+</html>

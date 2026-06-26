@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lenkekort - 30 hover-effekter</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Mono:wght@500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--body:'Space Grotesk',sans-serif;--mono:'IBM Plex Mono',monospace;--display:'Chakra Petch',sans-serif;
+        --ink:#0d0d11;--muted:#6b6a62;--line:rgba(13,13,17,.16);--e:cubic-bezier(.2,.85,.25,1);}
+  *{box-sizing:border-box;}
+  body{margin:0;background:#fff;color:var(--ink);font-family:var(--body);padding:36px 40px 120px;}
+  h1{font-family:var(--display);text-transform:uppercase;font-size:24px;margin:0 0 4px;}
+  .sub{color:var(--muted);margin:0 0 28px;font-size:14px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:22px 16px;}
+  .cell .cap{font-family:var(--mono);text-transform:uppercase;letter-spacing:.14em;font-size:.58rem;color:var(--muted);margin:0 0 7px;}
+
+  .lc{position:relative;width:100%;height:104px;padding:14px;background:#fff;border:1px solid var(--line);border-radius:2px;
+      overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;isolation:isolate;cursor:pointer;}
+  .lc .top{display:flex;justify-content:space-between;align-items:flex-start;}
+  .lc .nm{font-weight:600;font-size:14px;position:relative;z-index:3;transition:color .3s;}
+  .lc .dom{font-family:var(--mono);font-size:10px;color:var(--muted);position:relative;z-index:3;transition:color .3s;}
+  .icon{width:28px;height:28px;display:grid;place-items:center;font-weight:700;font-size:12px;color:#fff;flex:none;position:relative;z-index:3;}
+  .arrow{color:var(--muted);position:relative;z-index:3;}
+  .lc:hover .nm,.lc:hover .dom{color:#fff;}
+
+  /* liquid layer base */
+  .liquid{position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform,clip-path;}
+  .liquid.solid{background:var(--ac);}
+  .liquid svg{width:100%;height:100%;display:block;}
+  .liquid path{fill:var(--ac);}
+
+  /* ===== SVG wavy / blob (e1-e4) ===== */
+  .e1 .liquid{transform:translateY(46%);opacity:0;transition:opacity .25s,transform .55s var(--e);}
+  .e1 .lc:hover .liquid{opacity:1;transform:translateY(0);}
+  .e2 .liquid{transform:translateY(-46%);opacity:0;transition:opacity .25s,transform .55s var(--e);}
+  .e2 .liquid svg{transform:scaleY(-1);}
+  .e2 .lc:hover .liquid{opacity:1;transform:translateY(0);}
+  .e3 .liquid{transform:translate(-42%,42%) scale(.5);transform-origin:0 100%;opacity:0;transition:opacity .3s,transform .6s var(--e);}
+  .e3 .lc:hover .liquid{opacity:1;transform:translate(0,0) scale(1.15);}
+  .e4 .liquid{transform:translate(42%,-42%) scale(.5);transform-origin:100% 0;opacity:0;transition:opacity .3s,transform .6s var(--e);}
+  .e4 .lc:hover .liquid{opacity:1;transform:translate(0,0) scale(1.15);}
+
+  /* ===== clip wipes from edges (e5-e8) ===== */
+  .e5 .liquid{clip-path:inset(100% 0 0 0);transition:clip-path .5s var(--e);}      /* up from bottom */
+  .e5 .lc:hover .liquid{clip-path:inset(0 0 0 0);}
+  .e6 .liquid{clip-path:inset(0 0 100% 0);transition:clip-path .5s var(--e);}      /* down from top */
+  .e6 .lc:hover .liquid{clip-path:inset(0);}
+  .e7 .liquid{clip-path:inset(0 100% 0 0);transition:clip-path .5s var(--e);}      /* right from left */
+  .e7 .lc:hover .liquid{clip-path:inset(0);}
+  .e8 .liquid{clip-path:inset(0 0 0 100%);transition:clip-path .5s var(--e);}      /* left from right */
+  .e8 .lc:hover .liquid{clip-path:inset(0);}
+
+  /* ===== circle reveals from corners (e9-e12) ===== */
+  .e9 .liquid{clip-path:circle(0% at 0% 100%);transition:clip-path .55s var(--e);}
+  .e9 .lc:hover .liquid{clip-path:circle(150% at 0% 100%);}
+  .e10 .liquid{clip-path:circle(0% at 100% 100%);transition:clip-path .55s var(--e);}
+  .e10 .lc:hover .liquid{clip-path:circle(150% at 100% 100%);}
+  .e11 .liquid{clip-path:circle(0% at 0% 0%);transition:clip-path .55s var(--e);}
+  .e11 .lc:hover .liquid{clip-path:circle(150% at 0% 0%);}
+  .e12 .liquid{clip-path:circle(0% at 100% 0%);transition:clip-path .55s var(--e);}
+  .e12 .lc:hover .liquid{clip-path:circle(150% at 100% 0%);}
+
+  /* ===== triangle grows from corners (e13-e16) ===== */
+  .e13 .liquid{clip-path:polygon(0 100%,0 100%,0 100%);transition:clip-path .55s var(--e);}
+  .e13 .lc:hover .liquid{clip-path:polygon(0 -40%,0 100%,240% 100%);}
+  .e14 .liquid{clip-path:polygon(100% 100%,100% 100%,100% 100%);transition:clip-path .55s var(--e);}
+  .e14 .lc:hover .liquid{clip-path:polygon(100% -40%,100% 100%,-140% 100%);}
+  .e15 .liquid{clip-path:polygon(0 0,0 0,0 0);transition:clip-path .55s var(--e);}
+  .e15 .lc:hover .liquid{clip-path:polygon(0 0,240% 0,0 240%);}
+  .e16 .liquid{clip-path:polygon(100% 0,100% 0,100% 0);transition:clip-path .55s var(--e);}
+  .e16 .lc:hover .liquid{clip-path:polygon(100% 0,-140% 0,100% 240%);}
+
+  /* ===== shaped sweeps (clip-path edge + translate) (e17-e22) ===== */
+  /* zigzag from left */
+  .e17 .liquid{clip-path:polygon(0 0,86% 0,100% 12%,86% 25%,100% 37%,86% 50%,100% 62%,86% 75%,100% 87%,86% 100%,0 100%);
+    transform:translateX(-101%);transition:transform .5s var(--e);}
+  .e17 .lc:hover .liquid{transform:translateX(0);}
+  /* wavy block from right */
+  .e18 .liquid{clip-path:polygon(14% 0,100% 0,100% 100%,14% 100%,0 75%,18% 50%,0 25%);
+    transform:translateX(101%);transition:transform .5s var(--e);}
+  .e18 .lc:hover .liquid{transform:translateX(0);}
+  /* slant/skew wipe from left */
+  .e19 .liquid{clip-path:polygon(0 0,72% 0,100% 100%,0 100%);transform:translateX(-103%) skewX(0);transition:transform .5s var(--e);}
+  .e19 .lc:hover .liquid{transform:translateX(0);}
+  /* chevron from bottom */
+  .e20 .liquid{clip-path:polygon(0 22%,50% 0,100% 22%,100% 100%,0 100%);transform:translateY(101%);transition:transform .5s var(--e);}
+  .e20 .lc:hover .liquid{transform:translateY(0);}
+  /* arrow point sweep from left */
+  .e21 .liquid{clip-path:polygon(0 0,80% 0,100% 50%,80% 100%,0 100%);transform:translateX(-101%);transition:transform .55s var(--e);}
+  .e21 .lc:hover .liquid{transform:translateX(0);}
+  /* stair-steps from bottom-left */
+  .e22 .liquid{clip-path:polygon(0 100%,0 60%,33% 60%,33% 30%,66% 30%,66% 6%,100% 6%,100% 100%);
+    transform:translate(-101%,101%);transition:transform .6s var(--e);}
+  .e22 .lc:hover .liquid{transform:translate(0,0);}
+
+  /* ===== splits + bars (e23-e26) ===== */
+  /* split vertical: top+bottom meet */
+  .e23 .liquid{background:none;}
+  .e23 .liquid::before,.e23 .liquid::after{content:'';position:absolute;left:0;right:0;height:51%;background:var(--ac);transform:scaleY(0);transition:transform .5s var(--e);}
+  .e23 .liquid::before{top:0;transform-origin:top;} .e23 .liquid::after{bottom:0;transform-origin:bottom;}
+  .e23 .lc:hover .liquid::before,.e23 .lc:hover .liquid::after{transform:scaleY(1);}
+  /* split horizontal: left+right meet */
+  .e24 .liquid{background:none;}
+  .e24 .liquid::before,.e24 .liquid::after{content:'';position:absolute;top:0;bottom:0;width:51%;background:var(--ac);transform:scaleX(0);transition:transform .5s var(--e);}
+  .e24 .liquid::before{left:0;transform-origin:left;} .e24 .liquid::after{right:0;transform-origin:right;}
+  .e24 .lc:hover .liquid::before,.e24 .lc:hover .liquid::after{transform:scaleX(1);}
+  /* vertical bars rising from bottom */
+  .e25 .liquid{background:repeating-linear-gradient(90deg,var(--ac) 0 64%,transparent 64% 100%);background-size:24px 100%;transform:scaleY(0);transform-origin:bottom;transition:transform .5s var(--e);}
+  .e25 .lc:hover .liquid{transform:scaleY(1);}
+  /* horizontal bars sliding from left */
+  .e26 .liquid{background:repeating-linear-gradient(0deg,var(--ac) 0 64%,transparent 64% 100%);background-size:100% 22px;transform:scaleX(0);transform-origin:left;transition:transform .5s var(--e);}
+  .e26 .lc:hover .liquid{transform:scaleX(1);}
+
+  /* ===== creative (e27-e30) ===== */
+  /* quarter-disc grow from bottom-left */
+  .e27 .liquid{background:radial-gradient(circle at 0% 100%,var(--ac) 0 70%,transparent 71%);transform:scale(0);transform-origin:0 100%;transition:transform .55s var(--e);}
+  .e27 .lc:hover .liquid{transform:scale(1.7);}
+  /* concentric ripple rings from bottom-left */
+  .e28 .liquid{background:radial-gradient(circle at 0 100%,var(--ac) 0 22%,transparent 22% 36%,var(--ac) 36% 52%,transparent 52% 66%,var(--ac) 66% 82%,transparent 82%);transform:scale(0);transform-origin:0 100%;transition:transform .6s var(--e);}
+  .e28 .lc:hover .liquid{transform:scale(1.7);}
+  /* diagonal twin stripes sweeping from top-left */
+  .e29 .liquid{background:repeating-linear-gradient(135deg,var(--ac) 0 26px,transparent 26px 52px);transform:translate(-101%,-101%);transition:transform .55s var(--e);}
+  .e29 .lc:hover .liquid{transform:translate(0,0);}
+  /* dog-ear fold from top-right (two tones) */
+  .e30 .liquid{background:var(--ac);clip-path:polygon(100% 0,100% 0,100% 0);transition:clip-path .5s var(--e);}
+  .e30 .lc:hover .liquid{clip-path:polygon(100% 0,100% 130%,-30% 0);}
+</style>
+</head>
+<body>
+  <h1>Lenkekort - 30 hover-effekter</h1>
+  <p class="sub">Alle starter fra en kant eller et hjorne, solid aksentfarge. Hover hvert kort.</p>
+  <div class="grid" id="grid"></div>
+
+  <script>
+    const data = [
+      {nm:'YouTube',dom:'youtube.com',ic:'#ff0033',t:'YT'},
+      {nm:'NRK TV',dom:'tv.nrk.no',ic:'#1f6feb',t:'N'},
+      {nm:'Spotify',dom:'spotify.com',ic:'#1db954',t:'S'},
+    ];
+    const ARROW='<svg class="arrow" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M14 3l-1.41 1.41L18.17 10H4v2h14.17l-5.58 5.59L14 19l8-8z"/></svg>';
+    const WAVE=`<svg viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,40 C18,26 32,52 50,40 C68,30 82,54 100,40 L100,100 L0,100 Z"><animate attributeName="d" dur="4.5s" repeatCount="indefinite" values="M0,40 C18,26 32,52 50,40 C68,30 82,54 100,40 L100,100 L0,100 Z;M0,46 C18,58 34,34 50,48 C66,60 84,34 100,48 L100,100 L0,100 Z;M0,40 C18,26 32,52 50,40 C68,30 82,54 100,40 L100,100 L0,100 Z"/></path></svg>`;
+    const BLOB=`<svg viewBox="0 0 100 100"><path d="M52,14 C70,12 80,30 88,42 C96,50 88,64 78,72 C68,80 56,76 42,86 C30,94 16,82 14,66 C12,52 6,42 16,28 C24,16 36,16 52,14 Z"><animate attributeName="d" dur="5s" repeatCount="indefinite" values="M52,14 C70,12 80,30 88,42 C96,50 88,64 78,72 C68,80 56,76 42,86 C30,94 16,82 14,66 C12,52 6,42 16,28 C24,16 36,16 52,14 Z;M50,10 C68,16 86,24 86,44 C86,62 76,66 72,80 C68,94 50,92 38,88 C24,84 14,76 14,60 C14,44 8,34 22,24 C32,16 36,8 50,10 Z;M52,14 C70,12 80,30 88,42 C96,50 88,64 78,72 C68,80 56,76 42,86 C30,94 16,82 14,66 C12,52 6,42 16,28 C24,16 36,16 52,14 Z"/></path></svg>`;
+
+    const effects = [
+      ['e1','01 Wavy tide up',WAVE],['e2','02 Wavy tide down',WAVE],['e3','03 Wavy blob BL',BLOB],['e4','04 Wavy blob TR',BLOB],
+      ['e5','05 Wipe up'],['e6','06 Wipe down'],['e7','07 Wipe right'],['e8','08 Wipe left'],
+      ['e9','09 Circle BL'],['e10','10 Circle BR'],['e11','11 Circle TL'],['e12','12 Circle TR'],
+      ['e13','13 Triangle BL'],['e14','14 Triangle BR'],['e15','15 Triangle TL'],['e16','16 Triangle TR'],
+      ['e17','17 Zigzag from left'],['e18','18 Wave block from right'],['e19','19 Slant wipe'],['e20','20 Chevron up'],
+      ['e21','21 Arrow sweep'],['e22','22 Stair-steps'],['e23','23 Split vertical'],['e24','24 Split horizontal'],
+      ['e25','25 Bars rising'],['e26','26 Bars sliding'],['e27','27 Quarter-disc'],['e28','28 Ripple rings'],
+      ['e29','29 Diagonal stripes'],['e30','30 Dog-ear fold'],
+    ];
+    const grid=document.getElementById('grid');
+    grid.innerHTML = effects.map(([cls,name,svg])=>{
+      const d=data[(name.charCodeAt(3))%data.length];
+      const liquid = svg ? `<div class="liquid">${svg}</div>` : `<div class="liquid solid"></div>`;
+      return `<div class="cell ${cls}"><div class="cap">${name}</div>
+        <a class="lc" style="--ac:${d.ic}">${liquid}
+          <div class="top"><span class="icon" style="background:${d.ic}">${d.t}</span>${ARROW}</div>
+          <div><div class="nm">${d.nm}</div><div class="dom">${d.dom}</div></div></a></div>`;
+    }).join('');
+  </script>
+</body>
+</html>

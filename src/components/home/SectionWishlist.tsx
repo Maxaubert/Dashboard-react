@@ -67,8 +67,9 @@ export function WishlistSection({ handleProps }: { handleProps?: HandleProps }) 
 function WishlistCover({ game, onClick }: { game: WishlistGame; onClick: () => void }) {
   return (
     <button type="button" className="wishlist-cover" onClick={onClick} title={game.name}>
-      <div className="wishlist-cover-img">
+      <div className="wishlist-cover-inner">
         <img
+          className="wishlist-cover-bg"
           src={game.imgUrl}
           alt={game.name}
           loading="lazy"
@@ -78,19 +79,23 @@ function WishlistCover({ game, onClick }: { game: WishlistGame; onClick: () => v
             else img.style.display = 'none';
           }}
         />
-        {game.onSale && <span className="wishlist-cover-badge">-{game.discount}%</span>}
+        <div className="wishlist-cover-grad" />
       </div>
-      <div className="wishlist-cover-meta">
-        {game.isFree ? (
-          <span className="wishlist-price-now">Gratis</span>
-        ) : game.onSale ? (
-          <>
-            <span className="wishlist-price-was">{game.origPrice}</span>
-            <span className="wishlist-price-now sale">{game.price}</span>
-          </>
-        ) : (
-          game.price && <span className="wishlist-price-now">{game.price}</span>
-        )}
+      {game.onSale && <span className="wishlist-cover-badge">-{game.discount}%</span>}
+      <div className="wishlist-cover-panel">
+        <div className="wishlist-cover-eyebrow">{game.name}</div>
+        <div className="wishlist-cover-price">
+          {game.isFree ? (
+            'Gratis'
+          ) : (
+            <>
+              {game.price && <span>{game.price}</span>}
+              {game.onSale && game.origPrice && (
+                <span className="wishlist-price-was">{game.origPrice}</span>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </button>
   );

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lenkekort - staircase mer dekning</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Mono:wght@500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--body:'Space Grotesk',sans-serif;--mono:'IBM Plex Mono',monospace;--display:'Chakra Petch',sans-serif;
+        --ink:#0d0d11;--muted:#6b6a62;--line:rgba(13,13,17,.16);}
+  *{box-sizing:border-box;}
+  body{margin:0;background:#fff;color:var(--ink);font-family:var(--body);padding:36px 40px 120px;}
+  h1{font-family:var(--display);text-transform:uppercase;font-size:24px;margin:0 0 4px;}
+  .sub{color:var(--muted);margin:0 0 28px;font-size:14px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:22px 16px;}
+  .cell .cap{font-family:var(--mono);text-transform:uppercase;letter-spacing:.12em;font-size:.58rem;color:var(--muted);margin:0 0 7px;}
+
+  .lc{position:relative;width:100%;height:112px;padding:14px;background:#fff;border:1px solid var(--line);border-radius:2px;
+      overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;isolation:isolate;cursor:pointer;}
+  .lc .top{display:flex;justify-content:space-between;align-items:flex-start;}
+  .lc .nm{font-weight:600;font-size:14px;position:relative;z-index:3;transition:color .3s;}
+  .lc .dom{font-family:var(--mono);font-size:10px;color:var(--muted);position:relative;z-index:3;transition:color .3s;}
+  .icon{width:28px;height:28px;display:grid;place-items:center;font-weight:700;font-size:12px;color:#fff;flex:none;position:relative;z-index:3;}
+  .arrow{color:var(--muted);position:relative;z-index:3;transition:color .3s;}
+  .lc:hover .nm,.lc:hover .dom,.lc:hover .arrow{color:#fff;}
+
+  .liquid{position:absolute;inset:0;z-index:1;pointer-events:none;}
+  .liquid i{position:absolute;background:var(--ac);}
+  .liquid.solid{background:var(--ac);}
+  .lc:hover .liquid i{transform:none !important;}
+  .lc:hover .liquid.solid{transform:none !important;}
+</style>
+</head>
+<body>
+  <h1>Staircase / diagonal - mer dekning (85-100%)</h1>
+  <p class="sub">Hover hvert kort. Tekst blir hvit siden dekningen naar over teksten.</p>
+  <div class="grid" id="grid"></div>
+
+  <script>
+    const data=[{nm:'Spotify',dom:'spotify.com',ic:'#1db954',t:'S'},{nm:'YouTube',dom:'youtube.com',ic:'#ff0033',t:'YT'},{nm:'NRK TV',dom:'tv.nrk.no',ic:'#1f6feb',t:'N'}];
+    const ARROW='<svg class="arrow" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M14 3l-1.41 1.41L18.17 10H4v2h14.17l-5.58 5.59L14 19l8-8z"/></svg>';
+    const SNAP='cubic-bezier(.85,0,.15,1)',SMOOTH='cubic-bezier(.2,.85,.25,1)',BOUNCE='cubic-bezier(.34,1.56,.64,1)';
+
+    function stair({steps=8,maxCov=90,anchor='R',invert=false,stagger='down',dur=.5,ease=SNAP}){
+      const h=100/steps; let o='';
+      for(let k=0;k<steps;k++){
+        const frac = invert ? (steps-k)/steps : (k+1)/steps;
+        const w = Math.round(frac*maxCov);
+        const anc = anchor==='R'?'right:0;':'left:0;';
+        const tx = anchor==='R'?'translateX(120%)':'translateX(-120%)';
+        const delay = stagger==='down'?k*38 : stagger==='up'?(steps-1-k)*38 : 0;
+        o+=`<i style="top:${k*h}%;height:${h+0.6}%;width:${w}%;${anc}transform:${tx};transition:transform ${dur}s ${ease};transition-delay:${delay}ms"></i>`;
+      } return o;
+    }
+    const tri=(clip,from='R',dur=.5,ease=SMOOTH)=>{
+      const tx=from==='R'?'translateX(120%)':from==='L'?'translateX(-120%)':from==='B'?'translateY(120%)':'translateY(-120%)';
+      return `<div class="liquid solid" style="clip-path:${clip};transform:${tx};transition:transform ${dur}s ${ease}"></div>`;
+    };
+
+    const V=[
+      ['Staircase 85%', `<div class="liquid">${stair({steps:8,maxCov:85})}</div>`],
+      ['Staircase 92%', `<div class="liquid">${stair({steps:8,maxCov:92})}</div>`],
+      ['Staircase fine 90% (14)', `<div class="liquid">${stair({steps:14,maxCov:90})}</div>`],
+      ['Staircase coarse 90% (5)', `<div class="liquid">${stair({steps:5,maxCov:90})}</div>`],
+      ['Staircase 100% (full at base)', `<div class="liquid">${stair({steps:9,maxCov:100})}</div>`],
+      ['Staircase 92% bottom-up', `<div class="liquid">${stair({steps:10,maxCov:92,stagger:'up'})}</div>`],
+      ['Staircase 90% mirrored (left)', `<div class="liquid">${stair({steps:8,maxCov:90,anchor:'L'})}</div>`],
+      ['Staircase 90% inverted (top wide)', `<div class="liquid">${stair({steps:8,maxCov:90,invert:true})}</div>`],
+      ['Staircase 88% bounce', `<div class="liquid">${stair({steps:7,maxCov:88,ease:BOUNCE,dur:.6})}</div>`],
+      ['Clean diagonal 88%', tri('polygon(100% 0,100% 100%,12% 100%)','R')],
+      ['Clean diagonal 95%', tri('polygon(100% 0,100% 100%,5% 100%)','R')],
+      ['Clean diagonal full (BL->TR)', tri('polygon(0 100%,100% 100%,100% 0)','B')],
+      ['Clean diagonal full (TL->BR)', tri('polygon(0 0,100% 100%,0 100%)','B')],
+      ['Clean diagonal 90% top-heavy', tri('polygon(10% 0,100% 0,100% 100%)','R')],
+    ];
+
+    document.getElementById('grid').innerHTML=V.map(([name,liquid],i)=>{
+      const d=data[i%data.length];
+      return `<div class="cell"><div class="cap">${name}</div>
+        <a class="lc" style="--ac:${d.ic}">${liquid}
+          <div class="top"><span class="icon" style="background:${d.ic}">${d.t}</span>${ARROW}</div>
+          <div><div class="nm">${d.nm}</div><div class="dom">${d.dom}</div></div></a></div>`;
+    }).join('');
+  </script>
+</body>
+</html>

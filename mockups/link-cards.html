@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Eksterne lenker - kort-mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --display: 'Chakra Petch', sans-serif;
+    --body: 'Space Grotesk', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+    --ink: #0d0d11;
+    --muted: #6b6a62;
+    --crimson: #e8214e;
+    --line: rgba(13, 13, 17, 0.18);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #ffffff; color: var(--ink); font-family: var(--body); padding: 40px 48px 80px; }
+  h1 { font-family: var(--display); text-transform: uppercase; letter-spacing: 0.01em; font-size: 26px; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0 0 40px; }
+
+  .variant { margin-bottom: 48px; }
+  .variant-label {
+    font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.22em;
+    font-size: 0.66rem; color: var(--muted); margin-bottom: 4px;
+    border-bottom: 1px solid rgba(13,13,17,0.12); padding-bottom: 8px;
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .variant-note { color: var(--muted); font-size: 12px; font-family: var(--body); letter-spacing: 0; text-transform: none; }
+  .row { display: flex; gap: 14px; margin-top: 16px; flex-wrap: wrap; }
+
+  .icon { width: 30px; height: 30px; display: grid; place-items: center; font-weight: 700; font-size: 13px; color: #fff; flex: none; }
+  .ic-yt { background: #ff0033; } .ic-gh { background: #0d0d11; } .ic-nrk { background: #1f6feb; }
+  .ic-tw { background: #00b9f1; } .ic-ml { background: #6f57d8; }
+  .arrow { color: var(--muted); }
+
+  /* base card frame */
+  .lc { width: 168px; min-height: 104px; padding: 14px; background: #fff; border: 1px solid var(--line);
+        display: flex; flex-direction: column; justify-content: space-between; text-decoration: none; color: inherit;
+        position: relative; transition: all .15s; }
+
+  /* A — Notch + mono domain */
+  .a .lc {
+    --notch: 14px;
+    clip-path: polygon(0 0, calc(100% - var(--notch)) 0, 100% var(--notch), 100% 100%, 0 100%);
+    border-left: 3px solid var(--ac);
+  }
+  .a .lc .top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .a .lc .nm { font-weight: 600; font-size: 14px; margin-top: 14px; }
+  .a .lc .dom { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.08em; margin-top: 3px; }
+  .a .lc:hover { background: #faf7f4; }
+
+  /* B — Printed hard offset shadow */
+  .b .lc { transition: transform .12s, box-shadow .12s; }
+  .b .lc .top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .b .lc .nm { font-weight: 600; font-size: 14px; margin-top: 14px; }
+  .b .lc .dom { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px; }
+  .b .lc:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ac); border-color: var(--ink); }
+  .b .lc.is-hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ac); border-color: var(--ink); }
+
+  /* C — Indexed editorial */
+  .c .lc { padding: 13px 14px; }
+  .c .lc .idx { font-family: var(--mono); font-size: 11px; color: var(--ac); font-weight: 700; letter-spacing: 0.1em; }
+  .c .lc .nm { font-family: var(--display); text-transform: uppercase; font-weight: 600; font-size: 15px; line-height: 1.05; margin-top: 18px; }
+  .c .lc .rule { border-top: 1px dashed rgba(13,13,17,0.25); margin: 9px 0 7px; }
+  .c .lc .dom { font-family: var(--mono); font-size: 10px; color: var(--muted); display: flex; justify-content: space-between; }
+  .c .lc:hover { border-color: var(--ink); }
+
+  /* D — Hazard top bar */
+  .d .lc { padding: 0; overflow: hidden; }
+  .d .lc .haz { height: 7px; background: repeating-linear-gradient(-45deg, var(--ac) 0 8px, transparent 8px 16px); border-bottom: 1px solid var(--line); }
+  .d .lc .body { padding: 13px 14px; display: flex; flex-direction: column; justify-content: space-between; flex: 1; }
+  .d .lc .top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .d .lc .nm { font-weight: 600; font-size: 14px; margin-top: 12px; }
+  .d .lc .dom { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px; }
+  .d .lc:hover { border-color: var(--ink); }
+
+  /* E — Mono tag minimal (big type) */
+  .e .lc { justify-content: flex-end; }
+  .e .lc .nm { font-family: var(--display); text-transform: uppercase; font-weight: 700; font-size: 19px; line-height: 1; }
+  .e .lc .tag { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 8px; letter-spacing: 0.06em; }
+  .e .lc .corner { position: absolute; top: 12px; left: 14px; }
+  .e .lc .arrow { position: absolute; top: 12px; right: 14px; }
+  .e .lc:hover { background: var(--ac); color: #fff; border-color: var(--ac); }
+  .e .lc:hover .tag, .e .lc:hover .arrow { color: rgba(255,255,255,0.85); }
+</style>
+</head>
+<body>
+  <h1>Eksterne lenker - kort</h1>
+  <p class="sub">Fem retninger for lenkekortene i Frames-stilen. Hover for a se interaksjon. Aksentfargen kommer fra hver lenke.</p>
+
+  <!-- A -->
+  <div class="variant a">
+    <div class="variant-label"><span>A / Notch + mono-domene</span><span class="variant-note">notched hjorne, aksent venstrekant, domene i mono</span></div>
+    <div class="row" id="rowA"></div>
+  </div>
+
+  <!-- B -->
+  <div class="variant b">
+    <div class="variant-label"><span>B / Trykt skygge</span><span class="variant-note">flatt kort, hard offset-skygge ved hover (forste vist aktiv)</span></div>
+    <div class="row" id="rowB"></div>
+  </div>
+
+  <!-- C -->
+  <div class="variant c">
+    <div class="variant-label"><span>C / Indeksert redaksjonelt</span><span class="variant-note">mono-indeks, display-navn, stiplet linje</span></div>
+    <div class="row" id="rowC"></div>
+  </div>
+
+  <!-- D -->
+  <div class="variant d">
+    <div class="variant-label"><span>D / Hazard-topp</span><span class="variant-note">fareramme-stripe i aksent over kortet</span></div>
+    <div class="row" id="rowD"></div>
+  </div>
+
+  <!-- E -->
+  <div class="variant e">
+    <div class="variant-label"><span>E / Stor type, fyll ved hover</span><span class="variant-note">display-navn stort, fylles med aksent ved hover</span></div>
+    <div class="row" id="rowE"></div>
+  </div>
+
+  <script>
+    const data = [
+      { nm: 'YouTube', dom: 'youtube.com', sub: 'Video', ic: 'ic-yt', t: 'YT', ac: '#ff0033' },
+      { nm: 'GitHub', dom: 'github.com', sub: 'Kode', ic: 'ic-gh', t: 'GH', ac: '#0d0d11' },
+      { nm: 'NRK TV', dom: 'tv.nrk.no', sub: 'Video', ic: 'ic-nrk', t: 'N', ac: '#1f6feb' },
+      { nm: 'Telenor', dom: 'telenor.no', sub: 'Konto', ic: 'ic-tw', t: 'T', ac: '#00b9f1' },
+    ];
+    const ARROW = '<svg class="arrow" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M14 3l-1.41 1.41L18.17 10H4v2h14.17l-5.58 5.59L14 19l8-8z"/></svg>';
+    const icon = d => `<span class="icon ${d.ic}">${d.t}</span>`;
+
+    const render = (id, fn) => {
+      document.getElementById(id).innerHTML = data.map(fn).join('');
+    };
+
+    render('rowA', d => `<a class="lc" style="--ac:${d.ac}"><div class="top">${icon(d)}${ARROW}</div><div><div class="nm">${d.nm}</div><div class="dom">${d.dom}</div></div></a>`);
+    render('rowB', (d,i) => `<a class="lc ${i===0?'is-hover':''}" style="--ac:${d.ac}"><div class="top">${icon(d)}${ARROW}</div><div><div class="nm">${d.nm}</div><div class="dom">${d.dom}</div></div></a>`);
+    render('rowC', (d,i) => `<a class="lc" style="--ac:${d.ac}"><div class="idx">0${i+1}</div><div class="nm">${d.nm}</div><div class="rule"></div><div class="dom"><span>${d.dom}</span><span>&#8599;</span></div></a>`);
+    render('rowD', d => `<a class="lc" style="--ac:${d.ac}"><div class="haz"></div><div class="body"><div class="top">${icon(d)}${ARROW}</div><div><div class="nm">${d.nm}</div><div class="dom">${d.dom}</div></div></div></a>`);
+    render('rowE', d => `<a class="lc" style="--ac:${d.ac}"><span class="corner">${icon(d)}</span>${ARROW}<div class="nm">${d.nm}</div><div class="tag">[ ${d.sub.toUpperCase()} ]</div></a>`);
+  </script>
+</body>
+</html>

@@ -15,7 +15,6 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { Settings } from 'lucide-react';
-import { PageHeader } from '@/components/layout/PageHeader';
 import { HomeAccount } from '@/components/home/HomeAccount';
 import { SettingsModal } from '@/components/home/SettingsModal';
 import { useHome, useMutateHome } from '@/hooks/useHome';
@@ -84,8 +83,8 @@ export function HomePage() {
 
   return (
     <div className="page">
-      <div className="home-topbar">
-        <PageHeader eyebrow="Hjem" title="Dashboard" subtitle="Velg en kategori" />
+      <h1 className="home-title">Dashboard</h1>
+      <div className="home-topbar home-topbar--bare">
         <div className="home-topbar-actions">
           <button
             type="button"
@@ -123,6 +122,7 @@ export function HomePage() {
         order={order}
         hidden={hidden}
         onToggle={toggleSection}
+        onReorder={setStoredOrder}
       />
     </div>
   );

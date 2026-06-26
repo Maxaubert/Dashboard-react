@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Game card - title & price treatments</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Mono:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--body:'Space Grotesk',sans-serif;--mono:'IBM Plex Mono',monospace;--display:'Chakra Petch',sans-serif;
+        --ink:#0d0d11;--muted:#6b6a62;--crimson:#e8214e;--green:#22c55e;--e:cubic-bezier(.2,.85,.25,1);}
+  *{box-sizing:border-box;}
+  body{margin:0;background:#fff;color:var(--ink);font-family:var(--body);padding:34px 40px 120px;}
+  h1{font-family:var(--display);text-transform:uppercase;font-size:24px;margin:0 0 4px;}
+  .sub{color:var(--muted);margin:0 0 30px;font-size:14px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:26px 18px;}
+  .cap{font-family:var(--mono);text-transform:uppercase;letter-spacing:.14em;font-size:.6rem;color:var(--muted);margin:0 0 8px;}
+
+  .card{position:relative;height:155px;border-radius:10px;overflow:hidden;border:1px solid rgba(13,13,17,.16);}
+  .card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+  .grad{position:absolute;inset:0;background:linear-gradient(transparent 38%, rgba(8,8,12,.93));}
+  .gradL{position:absolute;inset:0;background:linear-gradient(100deg, rgba(8,8,12,.82) 14%, transparent 60%);}
+  .badge{position:absolute;top:9px;left:10px;background:#4c1d95;color:#fff;font-family:var(--mono);font-weight:700;font-size:.72rem;padding:3px 8px;border-radius:5px;z-index:3;}
+  .ttl{font-family:var(--display);font-weight:700;text-transform:uppercase;color:#fff;line-height:1;}
+  .price{font-family:var(--mono);font-weight:600;color:#fff;}
+  .was{font-family:var(--mono);text-decoration:line-through;opacity:.6;margin-right:7px;font-size:.82em;}
+  .now-green{color:#4ade80;}
+
+  /* V1 title + price pill */
+  .v1 .meta{position:absolute;left:13px;bottom:12px;right:13px;color:#fff;}
+  .v1 .ttl{font-size:15px;margin-bottom:8px;}
+  .v1 .pill{display:inline-flex;align-items:center;background:rgba(8,8,12,.72);border:1px solid rgba(255,255,255,.2);padding:4px 9px;border-radius:5px;}
+
+  /* V2 price only, no title */
+  .v2 .pill{position:absolute;left:13px;bottom:12px;display:inline-flex;align-items:center;background:rgba(8,8,12,.72);border:1px solid rgba(255,255,255,.2);padding:4px 10px;border-radius:5px;}
+
+  /* V3 full-width bottom bar: title left, price right */
+  .v3 .bar{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:space-between;
+    padding:9px 13px;background:rgba(8,8,12,.78);backdrop-filter:blur(2px);}
+  .v3 .ttl{font-size:13px;}
+  .v3 .price{font-size:13px;}
+
+  /* V4 title bottom-left, price bottom-right tag */
+  .v4 .ttl{position:absolute;left:13px;bottom:13px;font-size:14px;max-width:60%;}
+  .v4 .tag{position:absolute;right:11px;bottom:11px;background:var(--crimson);color:#fff;font-family:var(--mono);font-weight:700;padding:4px 9px;border-radius:5px;}
+
+  /* V5 tiny mono eyebrow + big price */
+  .v5 .meta{position:absolute;left:13px;bottom:11px;color:#fff;}
+  .v5 .eye{font-family:var(--mono);text-transform:uppercase;letter-spacing:.14em;font-size:.6rem;opacity:.85;margin-bottom:3px;}
+  .v5 .big{font-family:var(--display);font-weight:700;font-size:22px;}
+  .v5 .big .was{font-size:.5em;font-weight:500;}
+
+  /* V6 price solid accent bottom-left, no title */
+  .v6 .tag{position:absolute;left:0;bottom:14px;background:var(--crimson);color:#fff;font-family:var(--mono);font-weight:700;font-size:15px;padding:5px 12px 5px 13px;}
+  .v6 .was{color:#fff;}
+
+  /* V7 plain text, no box (shadow) */
+  .v7 .meta{position:absolute;left:13px;bottom:12px;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.9);}
+  .v7 .ttl{font-size:15px;margin-bottom:5px;}
+  .v7 .price{font-size:14px;}
+
+  /* V8 steam-style price block right */
+  .v8 .block{position:absolute;right:11px;bottom:11px;display:flex;align-items:stretch;border-radius:5px;overflow:hidden;}
+  .v8 .d{background:#4c1d95;color:#bff7c2;font-family:var(--mono);font-weight:700;padding:5px 8px;display:flex;align-items:center;}
+  .v8 .p{background:rgba(8,8,12,.85);padding:5px 9px;display:flex;flex-direction:column;line-height:1.1;}
+  .v8 .p .was{font-size:.62rem;}
+  .v8 .p .now{font-family:var(--mono);font-weight:700;color:#fff;font-size:.82rem;}
+
+  /* V9 title top, price pill bottom (split corners) */
+  .v9 .ttl{position:absolute;left:13px;top:12px;font-size:13px;max-width:70%;text-shadow:0 1px 6px rgba(0,0,0,.9);}
+  .v9 .pill{position:absolute;left:13px;bottom:12px;background:rgba(8,8,12,.72);border:1px solid rgba(255,255,255,.2);padding:4px 9px;border-radius:5px;}
+</style>
+</head>
+<body>
+  <h1>Game card - title & price</h1>
+  <p class="sub">Ulike maater a vise tittel + pris. Coveret har ofte sin egen logo, sa vurder ogsaa "kun pris".</p>
+  <div class="grid" id="grid"></div>
+
+  <script>
+    const hdr=(id)=>`https://cdn.cloudflare.steamstatic.com/steam/apps/${id}/header.jpg`;
+    const g={id:1245620,t:'Elden Ring',was:'599,00 kr',now:'479,00 kr',disc:'-20%'};
+    const cover=`<img src="${hdr(g.id)}" alt="">`;
+    const badge=`<span class="badge">${g.disc}</span>`;
+    const wasNow=`<span class="was">${g.was}</span><span class="price">${g.now}</span>`;
+    const wasNowG=`<span class="was">${g.was}</span><span class="price now-green">${g.now}</span>`;
+
+    const V=[
+      ['1 / Title + price pill (current)','v1',`${cover}<div class="grad"></div>${badge}<div class="meta"><div class="ttl">${g.t}</div><span class="pill">${wasNow}</span></div>`],
+      ['2 / Price only (no title)','v2',`${cover}<div class="grad"></div>${badge}<span class="pill">${wasNow}</span>`],
+      ['3 / Bottom bar: title + price','v3',`${cover}${badge}<div class="bar"><span class="ttl">${g.t}</span><span class="price">${g.now}</span></div>`],
+      ['4 / Title left, price tag right','v4',`${cover}<div class="grad"></div>${badge}<div class="ttl">${g.t}</div><span class="tag">${g.now}</span>`],
+      ['5 / Eyebrow + big price','v5',`${cover}<div class="grad"></div>${badge}<div class="meta"><div class="eye">${g.t}</div><div class="big">${g.now} <span class="was">${g.was}</span></div></div>`],
+      ['6 / Solid accent price (no title)','v6',`${cover}<div class="grad"></div>${badge}<span class="tag">${g.now}</span>`],
+      ['7 / Plain text, no box','v7',`${cover}<div class="grad"></div>${badge}<div class="meta"><div class="ttl">${g.t}</div><div class="price">${wasNow}</div></div>`],
+      ['8 / Steam-style price block','v8',`${cover}<div class="gradL"></div>${badge}<div class="block"><span class="d">${g.disc}</span><span class="p"><span class="was">${g.was}</span><span class="now">${g.now}</span></span></div>`],
+      ['9 / Title top, price bottom','v9',`${cover}<div class="grad"></div>${badge}<div class="ttl">${g.t}</div><span class="pill">${wasNowG}</span>`],
+    ];
+    document.getElementById('grid').innerHTML=V.map(([name,cls,inner])=>
+      `<div><div class="cap">${name}</div><div class="card ${cls}">${inner}</div></div>`).join('');
+  </script>
+</body>
+</html>
