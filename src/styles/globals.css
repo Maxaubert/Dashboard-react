@@ -3670,12 +3670,20 @@ body::after { background-image: none !important; animation: none !important; }
 .lm-content,
 .gaming-modal-panel,
 .page-overlay-panel {
-  background: #ffffff !important;
+  /* Warm off-white (was pure #fff) so surfaces read as a slightly lighter
+   * sheet on the Riso paper stock rather than punching out as stark white. */
+  background: #faf7f0 !important;
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
-  border: 1px solid rgba(13, 13, 17, 0.18) !important;
+  border: 1px solid rgba(13, 13, 17, 0.16) !important;
   border-radius: 2px !important;
   box-shadow: none !important;
+}
+
+/* Tint the game cover art a touch warm + slightly muted so the vibrant
+ * Steam capsules sit in the Riso palette instead of fighting the paper. */
+.wishlist-cover-bg {
+  filter: sepia(0.12) saturate(0.85) brightness(0.99);
 }
 
 /* Variant B: flat card prints a hard offset shadow in its own accent on
