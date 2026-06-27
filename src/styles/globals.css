@@ -3960,3 +3960,21 @@ html, body { overflow-x: hidden; }
 }
 .settings-row-grip:active { cursor: grabbing; }
 .settings-row-label { flex: 1; }
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Bento home dark canvas.
+ *
+ * The body background is forced light by the `@layer base body { ... }` rule
+ * above (a layered !important). To go dark on the bento home we must beat it
+ * with a rule that is ALSO inside `@layer base` and comes LATER in the layer,
+ * so the cascade resolves in our favour. An unlayered rule would NOT win here.
+ * `HomeBento` toggles `body.bento-active` for its lifetime.
+ * The `background` shorthand also clears the riso duotone gradients above.
+ * ───────────────────────────────────────────────────────────────────────── */
+@layer base {
+  body.bento-active {
+    background: #0c0c0d !important;
+  }
+  /* Drop the light-theme grid/sunbeam sweep on the dark bento canvas. */
+  body.bento-active::after { display: none; }
+}
