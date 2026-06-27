@@ -1,0 +1,329 @@
+/* ============================================================================
+ * Dark theme for the full-page pop-out OVERLAYS (Plan, Todo, Gaming, Links).
+ *
+ * The four pages are styled for the app's light "Riso paper" theme, but they
+ * open as full-page overlays over the DARK bento home, so they must read dark.
+ *
+ * EVERYTHING here is scoped under `.page-overlay-panel` so it can never leak
+ * into the light app, the bento home, or anything portaled elsewhere.
+ *
+ * Cascade notes:
+ *  - The page CSS in globals.css lives in `@layer components`. Unlayered rules
+ *    (like these) always beat layered rules, so most overrides need no
+ *    `!important`.
+ *  - The "Papir HUD" tail in globals.css forces light surfaces with single
+ *    class selectors + `!important` (e.g. `.card`, `.ext-link`,
+ *    `.page-overlay-panel`). To beat those we raise specificity: a doubled
+ *    class (`.page-overlay-panel.page-overlay-panel`) or a descendant pair
+ *    (`.page-overlay-panel .ext-link`) outranks their single class, so our
+ *    `!important` wins regardless of source order.
+ *
+ * Palette (matches the bento home): canvas #0c0c0d, cards #151517 / #1b1b1d,
+ * text #ededec, muted #9a9a98, dim #6f6f6d, hairline rgba(255,255,255,0.08-0.12).
+ * The per-page accents (crimson, cyan, blue, orange, green) are kept as-is.
+ * ========================================================================== */
+
+/* ── 1. Re-point the design tokens for the whole subtree. Fixes everything
+ *      that already reads var(--color-*). ─────────────────────────────────── */
+.page-overlay-panel {
+  --color-bg: #0c0c0d;
+  --color-surface: #151517;
+  --color-surface-2: #1b1b1d;
+  --color-border: rgba(255, 255, 255, 0.10);
+  --color-text: #ededec;
+  --color-text-muted: #9a9a98;
+  --color-text-dim: #6f6f6d;
+}
+
+/* ── 2. The panel + scroll container themselves. Doubled class beats the
+ *      Papir HUD single-class `!important` light surface. Keep its rounded
+ *      corners / shadow from globals.css. ─────────────────────────────────── */
+.page-overlay-panel.page-overlay-panel {
+  background: #0c0c0d !important;
+  color: #ededec;
+}
+
+/* ── 3. Override the Papir HUD light surfaces WITHIN the overlay so cards and
+ *      link tiles read dark, and fix their hover states (the Papir HUD hover
+ *      prints a hard light shadow / light accent wash). ─────────────────────*/
+.page-overlay-panel .card,
+.page-overlay-panel .ext-link,
+.page-overlay-panel .weather-card,
+.page-overlay-panel .prompt-launcher-card {
+  background: #151517 !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+}
+.page-overlay-panel .card:hover {
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  box-shadow: 6px 6px 0 var(--card-color, #e8214e) !important;
+}
+.page-overlay-panel .ext-link:hover {
+  /* Dark accent wash behind the staircase fill (Papir HUD used a light wash). */
+  background: color-mix(in srgb, var(--ext-color, #e8214e) 16%, #151517) !important;
+  border-color: var(--ext-color, #e8214e) !important;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* ── 4a. Links page ─────────────────────────────────────────────────────────
+ *  LinksLibrary section headers / rename input / category picker are already
+ *  dark-styled. We only fix the .ext-link tile text (it used dark-on-light
+ *  ink) and the right-click section menu (it was a white popover). */
+.page-overlay-panel .ext-link-name {
+  color: rgba(255, 255, 255, 0.92);
+}
+.page-overlay-panel .ext-link:hover .ext-link-name {
+  color: #fff;
+}
+.page-overlay-panel .ext-link-arrow {
+  color: rgba(255, 255, 255, 0.30);
+}
+.page-overlay-panel .ext-link-sub {
+  color: color-mix(in srgb, var(--ext-color, #9a9a98) 35%, #9a9a98);
+}
+/* Right-click "rename / delete section" menu (rendered inside the library). */
+.page-overlay-panel .section-context-menu {
+  background: #1b1b1d;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ededec;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+}
+.page-overlay-panel .section-context-menu div:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ── 4b. Plan page (week calendar) ───────────────────────────────────────── */
+.page-overlay-panel .week-toolbar {
+  background: rgba(12, 12, 13, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.page-overlay-panel .cal-header {
+  background: rgba(12, 12, 13, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+}
+.page-overlay-panel .cal-header-spacer,
+.page-overlay-panel .cal-day-header,
+.page-overlay-panel .cal-time-col {
+  border-right-color: rgba(255, 255, 255, 0.07);
+}
+.page-overlay-panel .cal-day-header {
+  border-bottom: none;
+}
+.page-overlay-panel .cal-day-col {
+  border-right-color: rgba(255, 255, 255, 0.06);
+}
+.page-overlay-panel .cal-time-slot,
+.page-overlay-panel .cal-hour-row {
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+.page-overlay-panel .cal-time-slot::after {
+  border-top-color: rgba(255, 255, 255, 0.05);
+}
+/* Nav buttons used dark-on-light translucent fills. */
+.page-overlay-panel .week-nav-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+.page-overlay-panel .week-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.10);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+/* Event chips can carry user colors; only the attached PDF link used dark ink. */
+.page-overlay-panel .cal-event .ev-pdf-link {
+  background: rgba(0, 0, 0, 0.45);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.88);
+}
+.page-overlay-panel .cal-event .ev-pdf-link:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+/* ── 4c. Todo page ──────────────────────────────────────────────────────── */
+.page-overlay-panel .todo-hero {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+.page-overlay-panel .todo-chip:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+}
+/* `.todo-chip.active` keeps its inverted white pill (high-contrast on dark). */
+.page-overlay-panel .todo-item {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+.page-overlay-panel .todo-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+.page-overlay-panel .todo-check {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+.page-overlay-panel .todo-check:hover {
+  border-color: rgba(255, 255, 255, 0.45);
+}
+.page-overlay-panel .todo-action-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.page-overlay-panel .col-header {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+.page-overlay-panel .col-add-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.page-overlay-panel .todo-list.empty {
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+/* ── 4d. Gaming page ────────────────────────────────────────────────────────
+ *  This page was authored for a dark theme; we only flip the dark-on-light
+ *  translucent fills/borders that go invisible on a dark canvas. */
+.page-overlay-panel .gaming-filter-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+.page-overlay-panel .gaming-filter-btn:hover {
+  border-color: rgba(255, 255, 255, 0.20);
+}
+.page-overlay-panel .game-card {
+  background: rgba(255, 255, 255, 0.015);
+  border-color: rgba(255, 255, 255, 0.07);
+}
+.page-overlay-panel .game-card:hover {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+.page-overlay-panel .game-tag {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+.page-overlay-panel .game-price-col {
+  border-left-color: rgba(255, 255, 255, 0.07);
+}
+.page-overlay-panel .gaming-event-card {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.page-overlay-panel .gaming-event-card:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+.page-overlay-panel .gaming-event-date-col {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+.page-overlay-panel .badge-upcoming {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* ── 5. Generic form controls that DO render inside the overlay (not portaled
+ *      modals). Dark field, light ink, readable placeholder. ─────────────── */
+.page-overlay-panel input:not([type='checkbox']):not([type='radio']):not([type='color']),
+.page-overlay-panel textarea,
+.page-overlay-panel select {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #ededec;
+}
+.page-overlay-panel input::placeholder,
+.page-overlay-panel textarea::placeholder {
+  color: #6f6f6d;
+}
+
+/* ============================================================================
+ * 6. Nested edit modals (Modal.tsx -> .lm-content).
+ *
+ * Todo edit, Plan event edit, Links "Ny lenke" + category picker all render
+ * through Radix `Dialog.Portal`, so their DOM lands on <body>, OUTSIDE
+ * `.page-overlay-panel`. They cannot be reached from the panel scope above.
+ *
+ * But they only ever open while the dark bento home is mounted, and the home
+ * sets `body.bento-active` on <body> itself, which IS an ancestor of the
+ * portaled modal. So we scope these rules under `body.bento-active`. They only
+ * apply on the dark home and never touch the light app (which has no such
+ * class). `body.bento-active .lm-content` (element + 2 classes) also outranks
+ * the single-class Papir HUD `!important` light-surface rules.
+ *
+ * The standalone GameModal (`.gaming-modal-panel`) is already dark and is left
+ * untouched.
+ * ========================================================================== */
+
+/* Re-point neutral tokens for the modal subtree (per-page accent tokens like
+ * --color-page-todo are intentionally left as-is so primary buttons keep their
+ * crimson / cyan accent). Fixes every label/title/field reading var(--color-*). */
+body.bento-active .lm-content {
+  --color-surface: #1b1b1d;
+  --color-surface-2: #222226;
+  --color-border: rgba(255, 255, 255, 0.10);
+  --color-text: #ededec;
+  --color-text-muted: #9a9a98;
+  --color-text-dim: #b3b3b1;
+}
+
+/* Panel itself: beat the Papir HUD light `!important` surface + add a hairline
+ * back (Papir HUD strips the border to none on light). */
+body.bento-active .lm-content {
+  background: #141418 !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  color: #ededec;
+}
+
+/* Inputs / selects / textareas: dark field, light ink, readable placeholder. */
+body.bento-active .lm-content input:not([type='checkbox']):not([type='radio']):not([type='color']),
+body.bento-active .lm-content textarea,
+body.bento-active .lm-content select {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #ededec;
+}
+body.bento-active .lm-content input::placeholder,
+body.bento-active .lm-content textarea::placeholder {
+  color: #6f6f6d;
+}
+body.bento-active .lm-content input[type='color'] {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+/* Color swatch + day selector "selected" ring used near-black ink. */
+body.bento-active .lm-content .modal-color-swatch.selected,
+body.bento-active .lm-content .plan-color-swatch.selected {
+  border-color: #fff;
+}
+
+/* Day-of-week + plan day chips (dark-on-light translucent fills). */
+body.bento-active .lm-content .modal-day-btn,
+body.bento-active .lm-content .plan-day-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+/* Todo modal priority buttons + deadline clear. Selected states keep their
+ * colored accent fills (low/medium/high), so only the base needs darkening. */
+body.bento-active .lm-content .pri-btn {
+  background: rgba(255, 255, 255, 0.04);
+}
+body.bento-active .lm-content .todo-deadline-clear {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Secondary / cancel buttons (compact + standard variants). Primary buttons
+ * keep their existing accent backgrounds, which read fine on dark. */
+body.bento-active .lm-content .modal-btn-cancel {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+body.bento-active .lm-content .modal-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+body.bento-active .lm-content .btn-cancel-todo:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+body.bento-active .lm-content .btn-cancel-std {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+body.bento-active .lm-content .btn-cancel-std:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Category picker rows (link edit modal) used dark-on-light ink + hover. */
+body.bento-active .lm-content .cat-picker-row {
+  color: #ededec;
+}
+body.bento-active .lm-content .cat-picker-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}

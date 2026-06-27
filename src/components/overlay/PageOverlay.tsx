@@ -5,6 +5,7 @@ import { PlanPage } from '@/pages/PlanPage';
 import { TodoPage } from '@/pages/TodoPage';
 import { GamingPage } from '@/pages/GamingPage';
 import { LinksPage } from '@/pages/LinksPage';
+import '@/styles/overlay-dark.css';
 
 const PAGES: Record<OverlayKey, ComponentType> = {
   plan: PlanPage,
