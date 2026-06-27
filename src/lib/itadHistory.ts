@@ -103,7 +103,7 @@ export function buildLineChartSvg(pts: HistoryPoint[]): string {
     const p = minP + ((maxP - minP) * i) / 4;
     const y = Y(p);
     yLines += `<line x1="${P.l}" y1="${y}" x2="${P.l + pw}" y2="${y}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>`;
-    yLines += `<text x="${P.l - 7}" y="${y + 4}" text-anchor="end" font-size="10" fill="#4a4a4a">${Math.round(p)} kr</text>`;
+    yLines += `<text x="${P.l - 7}" y="${y + 4}" text-anchor="end" font-size="10" fill="#8c8c8c">${Math.round(p)} kr</text>`;
   }
 
   // X-axis month labels — step varies by total span
@@ -121,7 +121,7 @@ export function buildLineChartSvg(pts: HistoryPoint[]): string {
       ? `${MONTHS_NB[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`
       : MONTHS_NB[d.getMonth()];
     xLines += `<line x1="${x}" y1="${P.t}" x2="${x}" y2="${P.t + ph}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>`;
-    xLines += `<text x="${x}" y="${H - 8}" text-anchor="middle" font-size="10" fill="#4a4a4a">${lbl}</text>`;
+    xLines += `<text x="${x}" y="${H - 8}" text-anchor="middle" font-size="10" fill="#8c8c8c">${lbl}</text>`;
   }
 
   // All-time-low marker (dashed yellow line)
