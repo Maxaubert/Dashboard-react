@@ -68,7 +68,13 @@ export function LinksLibrary() {
         .map((s) =>
           [
             s.category.id,
-            s.links.map((l) => `${l.id}#${l.favorite ? 1 : 0}#${l.category ?? '-'}`).join(','),
+            // Include updatedAt so an edit (colour, name, icon, ...) re-seeds
+            // the local mirror — handleSave bumps it on every save. Without it,
+            // editing only the colour leaves the card rendering stale because
+            // the key was unchanged.
+            s.links
+              .map((l) => `${l.id}#${l.favorite ? 1 : 0}#${l.category ?? '-'}#${l.updatedAt ?? 0}`)
+              .join(','),
           ].join(':'),
         )
         .join('|');
