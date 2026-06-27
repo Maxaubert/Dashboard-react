@@ -309,15 +309,27 @@
 }
 
 /* ── Vær (dynamic weather scene) ─────────────────────────────────────── */
+/* The whole weather widget is one "display": a rounded, darkened box that
+ * holds the sun scene (hero) plus the wind bar, sun times, graph and
+ * forecast (body), all on the per-scene background. */
 .bento-home .viz {
   position: relative;
   flex: 1;
-  min-height: 140px;
   border-radius: 16px;
-  margin-bottom: 16px;
   overflow: hidden;
   border: 1px solid var(--line-2);
+  display: flex;
+  flex-direction: column;
   transition: background 0.4s;
+}
+.bento-home .viz-hero { position: relative; flex: 1; min-height: 144px; }
+.bento-home .viz-body {
+  flex: none;
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-top: 1px solid var(--line);
 }
 /* sunny/partly: glow now lives inside the SVG (behind the sun) so it tracks
  * the sun wherever `meet` places it; the card just gets a warm dark base. */
@@ -416,7 +428,6 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 14px;
 }
 .bento-home .meter .lab { color: var(--dim); font-size: 0.84rem; white-space: nowrap; }
 .bento-home .meter .track {
@@ -436,8 +447,6 @@
 .bento-home .fc {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  border-top: 1px solid var(--line);
-  padding-top: 12px;
   gap: 4px;
 }
 .bento-home .fc > div { text-align: center; }
@@ -456,8 +465,6 @@
 .bento-home .suntimes {
   display: flex;
   gap: 20px;
-  padding: 12px 2px;
-  border-top: 1px solid var(--line);
 }
 .bento-home .suntime {
   display: flex;
@@ -478,7 +485,7 @@
 }
 
 /* ── Temperature graph ────────────────────────────────────────────────── */
-.bento-home .tgraph { margin: 2px 0 10px; }
+.bento-home .tgraph { margin: 0; }
 .bento-home .tgraph-plot { position: relative; height: 62px; }
 .bento-home .tgraph-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .bento-home .tgraph-temp {
