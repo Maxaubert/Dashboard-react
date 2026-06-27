@@ -1,6 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useHome } from '@/hooks/useHome';
-import { useWeather } from '@/hooks/useWeather';
 import type { SectionId } from '@/lib/home';
 import { LinksBentoCard } from './LinksBentoCard';
 import { WishlistBentoCard } from './WishlistBentoCard';
@@ -8,6 +7,7 @@ import { WeatherBentoCard } from './WeatherBentoCard';
 import { PlanBentoCard } from './PlanBentoCard';
 import { TodoBentoCard } from './TodoBentoCard';
 import { NewsBentoCard } from './NewsBentoCard';
+import { PromptLauncher } from '@/components/launcher/PromptLauncher';
 import '@/styles/bento.css';
 
 /**
@@ -20,7 +20,6 @@ import '@/styles/bento.css';
  */
 export function HomeBento({ topActions }: { topActions?: ReactNode }) {
   const { data: home } = useHome();
-  const { location } = useWeather();
   const hidden = (home?.hidden ?? []) as SectionId[];
   const show = (id: SectionId) => !hidden.includes(id);
 
@@ -45,11 +44,16 @@ export function HomeBento({ topActions }: { topActions?: ReactNode }) {
         <div className="bento-top-right">
           <div className="bento-clock">
             <b>{clock}</b>
-            <span>{location.name}</span>
           </div>
           {topActions && <div className="bento-actions">{topActions}</div>}
         </div>
       </div>
+
+      {show('prompt-launcher') && (
+        <div className="bento-launcher">
+          <PromptLauncher />
+        </div>
+      )}
 
       <div className="bento">
         {show('ext-lenker') && <LinksBentoCard />}

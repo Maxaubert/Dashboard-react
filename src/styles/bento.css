@@ -716,3 +716,35 @@
   transition: color 0.2s, border-color 0.2s;
 }
 .bento-home .bento-settings-btn:hover { color: var(--ink); border-color: var(--dim); }
+
+/* ── Hurtigsøk (prompt launcher) — dark variant, full-width above the grid.
+ * The launcher's base style is dark, but the Papir HUD forces it light; we
+ * override that within the bento and hide its "Prompt" section header. */
+.bento-home .bento-launcher { margin-bottom: 16px; }
+.bento-home .bento-launcher section { margin: 0; }
+.bento-home .bento-launcher .section-header { display: none; }
+.bento-home .prompt-launcher-card {
+  background: #141418 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+.bento-home .prompt-launcher-textarea { color: var(--ink); }
+.bento-home .prompt-launcher-textarea::placeholder { color: rgba(255, 255, 255, 0.34); }
+.bento-home .prompt-launcher-engine-menu {
+  background: #1b1b1d;
+  border-color: rgba(255, 255, 255, 0.10);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.bento-home .prompt-launcher-engine-option { color: rgba(255, 255, 255, 0.85); }
+.bento-home .prompt-launcher-engine-option:hover { background: rgba(255, 255, 255, 0.06); }
+.bento-home .prompt-launcher-help {
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.5);
+}
+.bento-home .prompt-launcher-help:hover {
+  color: rgba(255, 255, 255, 0.85);
+  border-color: rgba(255, 255, 255, 0.22);
+}
