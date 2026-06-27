@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useTodos } from '@/hooks/useTodos';
+import { useTodos, useSaveTodos } from '@/hooks/useTodos';
 import { usePageOverlay } from '@/context/PageOverlayContext';
 import { topOpenTodos } from '@/lib/todoPreview';
 import type { Todo } from '@/api/types';
@@ -8,7 +8,12 @@ import type { Todo } from '@/api/types';
 export function TodoBentoCard() {
   const { data: todos } = useTodos();
   const { openOverlay } = usePageOverlay();
+  const saveTodos = useSaveTodos();
   const list = todos ?? [];
+
+  function toggle(todo: Todo) {
+    saveTodos.mutate(list.map((t) => (t.id === todo.id ? { ...t, done: !t.done } : t)));
+  }
 
   const total = list.length;
   const done = list.filter((t) => t.done).length;
@@ -42,16 +47,18 @@ export function TodoBentoCard() {
           <div className="todo-empty">Ingen gjøremål enda.</div>
         ) : (
           preview.map((todo) => (
-            <button
-              key={todo.id}
-              type="button"
-              className={`torow${todo.done ? ' done' : ''}`}
-              onClick={() => openOverlay('todo')}
-            >
-              <span className="tobox" />
+            <div key={todo.id} className={`torow${todo.done ? ' done' : ''}`}>
+              <button
+                type="button"
+                className="tobox"
+                aria-label={todo.done ? 'Marker som ikke fullført' : 'Marker som fullført'}
+                onClick={() => toggle(todo)}
+              />
               <span className={`pdotS prio-${todo.priority}`} />
-              <span className="tt">{todo.text}</span>
-            </button>
+              <button type="button" className="tt" onClick={() => openOverlay('todo')}>
+                {todo.text}
+              </button>
+            </div>
           ))
         )}
       </div>

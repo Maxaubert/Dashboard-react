@@ -3978,3 +3978,34 @@ html, body { overflow-x: hidden; }
   /* Drop the light-theme grid/sunbeam sweep on the dark bento canvas. */
   body.bento-active::after { display: none; }
 }
+
+/* ============================================================
+ * Game price-history modal — dark variant (it opens from the dark
+ * bento home). The chart SVG, hero gradient and end-dot are already
+ * built for a dark theme; we only darken the panel chrome and lighten
+ * the text. Appended last so it overrides the light Papir HUD rules.
+ * ============================================================ */
+.gaming-modal-panel {
+  background: #141418 !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  color: #ededec;
+}
+.gaming-modal-name { color: #f3f2ef; }
+.gaming-modal-chart-label,
+.gaming-modal-chart-empty,
+.gaming-modal-chart-loading { color: #9a9a98; }
+.gaming-modal-body .game-price { color: #ededec; }
+.gaming-modal-body .game-orig-price { color: #8a8a86; }
+.gaming-modal-steam-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #ededec;
+}
+.gaming-modal-steam-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+.gaming-modal-panel .chart-spinner {
+  border-color: rgba(255, 255, 255, 0.12);
+  border-top-color: #aaa;
+}
