@@ -733,6 +733,9 @@
 }
 .bento-home .prompt-launcher-textarea { color: var(--ink); }
 .bento-home .prompt-launcher-textarea::placeholder { color: rgba(255, 255, 255, 0.34); }
+/* The engine/model pill text was dark orange, which reads as greyed-out on
+ * the dark bar; make it white. */
+.bento-home .prompt-launcher-engine-pill { color: #fff; }
 .bento-home .prompt-launcher-engine-menu {
   background: #1b1b1d;
   border-color: rgba(255, 255, 255, 0.10);
