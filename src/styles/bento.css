@@ -335,6 +335,11 @@
   background: radial-gradient(220px 180px at 60% 34%, rgba(170, 195, 220, 0.2), transparent 65%),
     linear-gradient(180deg, #121419, #0c0e11);
 }
+/* night: cool deep-blue base; the moon glow lives in the SVG. */
+.bento-home .viz.moon,
+.bento-home .viz.moon-partly {
+  background: linear-gradient(180deg, #0e1422, #080a12);
+}
 .bento-home .wsky { position: absolute; inset: 0; width: 100%; height: 100%; }
 .bento-home .rays {
   /* Rotate around the rays' own bounding-box centre (= the sun centre,
@@ -431,14 +436,65 @@
   padding-top: 12px;
   gap: 4px;
 }
-.bento-home .fc div { text-align: center; }
+.bento-home .fc > div { text-align: center; }
 .bento-home .fc .d {
   color: var(--dim);
   font-size: 0.68rem;
   font-family: var(--font-mono);
   letter-spacing: 0.06em;
 }
-.bento-home .fc .t { margin-top: 7px; font-size: 1.02rem; font-variant-numeric: tabular-nums; }
+.bento-home .fc .fc-ic { font-size: 1.15rem; margin: 6px 0 4px; line-height: 1; }
+.bento-home .fc .fc-temps { font-size: 0.92rem; font-variant-numeric: tabular-nums; }
+.bento-home .fc .fc-temps strong { font-weight: 600; }
+.bento-home .fc .fc-temps span { color: var(--dim); margin-left: 5px; }
+
+/* ── Sunrise / sunset row ─────────────────────────────────────────────── */
+.bento-home .suntimes {
+  display: flex;
+  gap: 20px;
+  padding: 12px 2px;
+  border-top: 1px solid var(--line);
+}
+.bento-home .suntime {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.82rem;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+.bento-home .suntime svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: #e8b13a;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ── Temperature graph ────────────────────────────────────────────────── */
+.bento-home .tgraph { margin: 4px 0 14px; }
+.bento-home .tgraph-plot { position: relative; height: 96px; }
+.bento-home .tgraph-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.bento-home .tgraph-temp {
+  position: absolute;
+  transform: translate(-50%, -150%);
+  font-size: 0.72rem;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.bento-home .tgraph-hours { position: relative; height: 16px; margin-top: 8px; }
+.bento-home .tgraph-hours span {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 0.62rem;
+  font-family: var(--font-mono);
+  color: var(--faint);
+  letter-spacing: 0.04em;
+}
 
 /* ── Dagens plan ─────────────────────────────────────────────────────── */
 .bento-home .plist { display: flex; flex-direction: column; }
