@@ -5,13 +5,34 @@ import { LinkIconRender } from '@/components/links/LinkCard';
 import type { LinkItem } from '@/api/types';
 import { useBentoCarousel } from './useBentoCarousel';
 
-/** Eksterne lenker — horizontal row of favourite link cards. */
+/** Eksterne lenker — circular (infinite-loop) row of favourite link cards. */
 export function LinksBentoCard() {
   const { openOverlay } = usePageOverlay();
   const { data: envelope } = useLinks();
   const links = envelope?.links ?? [];
   const favorites = useMemo(() => links.filter((l: LinkItem) => l.favorite), [links]);
-  const scrollerRef = useBentoCarousel<HTMLDivElement>();
+
+  // Render N identical copies so the row can loop seamlessly. Target ~3500px
+  // of items so the wrap zone has room even on wide screens; more copies when
+  // there are few favourites (mirrors the legacy home favourites carousel).
+  const copyCount = useMemo(() => {
+    if (favorites.length === 0) return 0;
+    const TARGET_WIDTH = 3500;
+    const ESTIMATED_ITEM_W = 188; // ~176 card + 12 gap
+    return Math.min(20, Math.max(5, Math.ceil(TARGET_WIDTH / (favorites.length * ESTIMATED_ITEM_W))));
+  }, [favorites.length]);
+
+  const looped = useMemo(() => {
+    if (favorites.length === 0) return [];
+    return Array.from({ length: copyCount }, (_, c) =>
+      favorites.map((l, i) => ({ ...l, _k: `${c}-${i}-${l.id}` })),
+    ).flat();
+  }, [favorites, copyCount]);
+
+  const scrollerRef = useBentoCarousel<HTMLDivElement>({
+    infinite: favorites.length > 0,
+    copies: copyCount || 3,
+  });
 
   return (
     <section className="bento-card area-lenk">
@@ -25,7 +46,7 @@ export function LinksBentoCard() {
         {favorites.length === 0 ? (
           <div className="row-empty">Ingen favoritter enda.</div>
         ) : (
-          favorites.map((link) => <LinkBentoTile key={link.id} link={link} />)
+          looped.map((link) => <LinkBentoTile key={link._k} link={link} />)
         )}
       </div>
     </section>

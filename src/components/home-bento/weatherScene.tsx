@@ -99,7 +99,7 @@ function Snowflakes({ x, y }: { x: number; y: number }) {
 /** The animated sky SVG for a given scene. */
 export function WeatherScene({ scene }: { scene: SceneKey }) {
   return (
-    <svg className="wsky" viewBox="0 0 220 200" preserveAspectRatio="xMidYMid slice">
+    <svg className="wsky" viewBox="0 0 220 200" preserveAspectRatio="xMidYMid meet">
       {scene === 'sunny' && <Sun cx={132} cy={70} r={30} rays />}
       {scene === 'partly' && (
         <>
