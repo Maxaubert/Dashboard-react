@@ -45,62 +45,66 @@ export function WeatherBentoCard() {
           <div className="viz-msg">Laster værdata…</div>
         ) : (
           <>
-            <WeatherScene scene={scene} />
-            <div className="cond">{desc.label}</div>
-            <div className="wloc">{location.name}</div>
-            <div className="temp">{Math.round(current.temperature)}&deg;</div>
-            <div className="wind">Vind {wind} m/s</div>
+            <div className="viz-hero">
+              <WeatherScene scene={scene} />
+              <div className="cond">{desc.label}</div>
+              <div className="wloc">{location.name}</div>
+              <div className="temp">{Math.round(current.temperature)}&deg;</div>
+              <div className="wind">Vind {wind} m/s</div>
+            </div>
+
+            <div className="viz-body">
+              <div className="meter">
+                <span className="lab">Vind</span>
+                <span className="track">
+                  <i style={{ width: `${windPct}%` }} />
+                </span>
+                <span className="val">{wind} m/s</span>
+              </div>
+
+              {today && (
+                <div className="suntimes">
+                  <span className="suntime">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <circle cx="12" cy="14" r="4" />
+                      <path d="M12 4v3M5 14H2M22 14h-3M6 8l-2-2M18 8l2-2M3 20h18" />
+                    </svg>
+                    Opp {hhmm(today.sunrise)}
+                  </span>
+                  <span className="suntime">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <circle cx="12" cy="14" r="4" />
+                      <path d="M12 10V3M5 14H2M22 14h-3M6 8l-2-2M18 8l2-2M3 20h18M8 6l4 4 4-4" />
+                    </svg>
+                    Ned {hhmm(today.sunset)}
+                  </span>
+                </div>
+              )}
+
+              {graphPoints.length > 1 && <TempGraph points={graphPoints} />}
+
+              {days.length > 0 && (
+                <div className="fc">
+                  {days.map((d) => {
+                    const dt = new Date(d.date + 'T12:00:00');
+                    const di = describeWeather(d.weatherCode);
+                    return (
+                      <div key={d.date}>
+                        <div className="d">{DAY_SHORT[dt.getDay()]}</div>
+                        <div className="fc-ic">{di.icon}</div>
+                        <div className="fc-temps">
+                          <strong>{Math.round(d.tempMax)}&deg;</strong>
+                          <span>{Math.round(d.tempMin)}&deg;</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>
-
-      <div className="meter">
-        <span className="lab">Vind</span>
-        <span className="track">
-          <i style={{ width: `${windPct}%` }} />
-        </span>
-        <span className="val">{wind} m/s</span>
-      </div>
-
-      {today && (
-        <div className="suntimes">
-          <span className="suntime">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="14" r="4" />
-              <path d="M12 4v3M5 14H2M22 14h-3M6 8l-2-2M18 8l2-2M3 20h18" />
-            </svg>
-            Opp {hhmm(today.sunrise)}
-          </span>
-          <span className="suntime">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="14" r="4" />
-              <path d="M12 10V3M5 14H2M22 14h-3M6 8l-2-2M18 8l2-2M3 20h18M8 6l4 4 4-4" />
-            </svg>
-            Ned {hhmm(today.sunset)}
-          </span>
-        </div>
-      )}
-
-      {graphPoints.length > 1 && <TempGraph points={graphPoints} />}
-
-      {days.length > 0 && (
-        <div className="fc">
-          {days.map((d) => {
-            const dt = new Date(d.date + 'T12:00:00');
-            const di = describeWeather(d.weatherCode);
-            return (
-              <div key={d.date}>
-                <div className="d">{DAY_SHORT[dt.getDay()]}</div>
-                <div className="fc-ic">{di.icon}</div>
-                <div className="fc-temps">
-                  <strong>{Math.round(d.tempMax)}&deg;</strong>
-                  <span>{Math.round(d.tempMin)}&deg;</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
     </section>
   );
 }
