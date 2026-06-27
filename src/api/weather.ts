@@ -27,6 +27,8 @@ export interface DailyForecast {
   tempMin: number;
   precipitation: number; // mm
   windSpeedMax: number;
+  sunrise: string; // ISO local datetime, e.g. "2026-06-27T04:12"
+  sunset: string; // ISO local datetime
 }
 
 export interface HourlyForecast {
@@ -60,7 +62,7 @@ export async function fetchForecast(lat: number, lon: number): Promise<Forecast>
     longitude: String(lon),
     current: 'temperature_2m,weather_code,wind_speed_10m,is_day',
     hourly: 'temperature_2m,weather_code',
-    daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max',
+    daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,sunrise,sunset',
     timezone: 'auto',
     forecast_days: '7',
   });
@@ -91,6 +93,8 @@ export async function fetchForecast(lat: number, lon: number): Promise<Forecast>
       tempMin: json.daily.temperature_2m_min[i],
       precipitation: json.daily.precipitation_sum[i],
       windSpeedMax: json.daily.wind_speed_10m_max[i],
+      sunrise: json.daily.sunrise[i],
+      sunset: json.daily.sunset[i],
     })),
   };
 }

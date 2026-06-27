@@ -7,12 +7,16 @@
  * background class in bento.css.
  */
 
-export type SceneKey = 'sunny' | 'partly' | 'cloudy' | 'rain' | 'snow';
+export type SceneKey = 'sunny' | 'partly' | 'cloudy' | 'rain' | 'snow' | 'moon' | 'moon-partly';
 
-/** Map an open-meteo WMO weather code to a scene key. */
-export function sceneForCode(code: number): SceneKey {
-  if (code === 0) return 'sunny';
-  if (code === 1 || code === 2) return 'partly';
+/**
+ * Map an open-meteo WMO weather code to a scene key. When `isDay` is false
+ * the clear / mostly-clear scenes swap the sun for a moon; cloud, rain and
+ * snow look the same day or night.
+ */
+export function sceneForCode(code: number, isDay = true): SceneKey {
+  if (code === 0) return isDay ? 'sunny' : 'moon';
+  if (code === 1 || code === 2) return isDay ? 'partly' : 'moon-partly';
   if (code === 3 || code === 45 || code === 48) return 'cloudy';
   if (code >= 71 && code <= 77) return 'snow';
   if (code === 85 || code === 86) return 'snow';
@@ -53,6 +57,38 @@ function Sun({ cx, cy, r, rays }: { cx: number; cy: number; r: number; rays: boo
           {lines}
         </g>
       )}
+    </>
+  );
+}
+
+function Moon({ cx, cy, r }: { cx: number; cy: number; r: number }) {
+  // Crescent: a lit disc with an offset disc masked out of its upper-right.
+  return (
+    <>
+      <defs>
+        <radialGradient id="bento-moon" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#eaf0ff" />
+          <stop offset="70%" stopColor="#c3d0f2" />
+          <stop offset="100%" stopColor="#9aabd8" />
+        </radialGradient>
+        <radialGradient id="bento-moonglow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#aebfe8" stopOpacity={0.4} />
+          <stop offset="60%" stopColor="#7d8fc0" stopOpacity={0.12} />
+          <stop offset="100%" stopColor="#7d8fc0" stopOpacity={0} />
+        </radialGradient>
+        <mask id="bento-crescent">
+          <rect x={cx - r * 2} y={cy - r * 2} width={r * 4} height={r * 4} fill="white" />
+          <circle cx={cx + r * 0.6} cy={cy - r * 0.32} r={r * 0.96} fill="black" />
+        </mask>
+      </defs>
+      <circle cx={cx} cy={cy} r={r * 2.6} fill="url(#bento-moonglow)" />
+      <circle cx={cx} cy={cy} r={r} fill="url(#bento-moon)" mask="url(#bento-crescent)" />
+      {/* a couple of faint stars */}
+      <g fill="#cdd6f0">
+        <circle cx={cx - r * 2.4} cy={cy - r * 1.1} r={1.4} opacity={0.7} />
+        <circle cx={cx - r * 1.5} cy={cy + r * 1.6} r={1.1} opacity={0.5} />
+        <circle cx={cx + r * 1.9} cy={cy + r * 1.2} r={1.2} opacity={0.6} />
+      </g>
     </>
   );
 }
@@ -112,6 +148,13 @@ export function WeatherScene({ scene }: { scene: SceneKey }) {
         <>
           <Sun cx={150} cy={52} r={22} rays />
           <Cloud x={70} y={86} s={1.05} fill="#c7ccd4" />
+        </>
+      )}
+      {scene === 'moon' && <Moon cx={130} cy={72} r={26} />}
+      {scene === 'moon-partly' && (
+        <>
+          <Moon cx={148} cy={54} r={20} />
+          <Cloud x={70} y={88} s={1.05} fill="#aeb6c8" />
         </>
       )}
       {scene === 'cloudy' && (
