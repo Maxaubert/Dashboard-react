@@ -34,10 +34,6 @@ export function WeatherBentoCard() {
 
   return (
     <section className="bento-card area-vaer">
-      <div className="ch">
-        <h2>Vær</h2>
-      </div>
-
       <div className={`viz ${scene}`}>
         {error ? (
           <div className="viz-msg">Kunne ikke hente vær.</div>
