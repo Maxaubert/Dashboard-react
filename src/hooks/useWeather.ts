@@ -73,6 +73,10 @@ export function useWeather() {
     queryFn: () => fetchForecast(location.latitude, location.longitude),
     staleTime: 10 * 60_000, // 10 minutes
     gcTime: 30 * 60_000,
+    // Auto-refresh so the temperature updates without a manual reload:
+    // poll every 10 minutes, and refetch when the tab regains focus.
+    refetchInterval: 10 * 60_000,
+    refetchOnWindowFocus: true,
   });
 
   return {
