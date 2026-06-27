@@ -73,25 +73,11 @@ export function LinkCard({ link, onToggleFavorite, onContextMenu }: LinkCardProp
   );
 }
 
-/** Hover fill: a left-anchored staircase of accent bars that slides in and
- *  steps up toward the top-right. Shared by the Lenker cards and the home
- *  favorites carousel so both animate identically. */
+/** Hover fill: a single accent panel that wipes across and covers the whole
+ *  card (a slight skew gives the leading edge a diagonal sweep). The styling
+ *  lives in `.ext-fill` in globals.css. */
 export function ExtLinkFill() {
-  return (
-    <span className="ext-fill" aria-hidden="true">
-      {Array.from({ length: 8 }, (_, k) => (
-        <i
-          key={k}
-          style={{
-            top: `${(k / 8) * 100}%`,
-            height: `${100 / 8 + 0.6}%`,
-            width: `${Math.round(((k + 1) / 8) * 100)}%`,
-            transitionDelay: `${k * 19}ms`,
-          }}
-        />
-      ))}
-    </span>
-  );
+  return <span className="ext-fill" aria-hidden="true" />;
 }
 
 /* ── Sortable link card ──────────────────────────────────────────────────── */
