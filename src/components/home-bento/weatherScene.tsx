@@ -39,7 +39,14 @@ function Sun({ cx, cy, r, rays }: { cx: number; cy: number; r: number; rays: boo
           <stop offset="55%" stopColor="#ffc861" />
           <stop offset="100%" stopColor="#f0a23a" />
         </radialGradient>
+        <radialGradient id="bento-glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#ffce6e" stopOpacity={0.55} />
+          <stop offset="55%" stopColor="#ffb347" stopOpacity={0.16} />
+          <stop offset="100%" stopColor="#ffb347" stopOpacity={0} />
+        </radialGradient>
       </defs>
+      {/* Soft halo behind the sun, centred on it so it always sits behind. */}
+      <circle cx={cx} cy={cy} r={r * 2.8} fill="url(#bento-glow)" />
       <circle cx={cx} cy={cy} r={r} fill="url(#bento-sg)" />
       {rays && (
         <g className="rays" stroke="#ffce6e" strokeWidth={3} strokeLinecap="round">

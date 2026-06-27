@@ -315,13 +315,13 @@
   border: 1px solid var(--line-2);
   transition: background 0.4s;
 }
+/* sunny/partly: glow now lives inside the SVG (behind the sun) so it tracks
+ * the sun wherever `meet` places it; the card just gets a warm dark base. */
 .bento-home .viz.sunny {
-  background: radial-gradient(160px 160px at 64% 36%, rgba(255, 200, 90, 0.42), transparent 62%),
-    linear-gradient(180deg, #1a160d, #0e0c08);
+  background: linear-gradient(180deg, #1a160d, #0e0c08);
 }
 .bento-home .viz.partly {
-  background: radial-gradient(150px 150px at 70% 32%, rgba(255, 206, 110, 0.3), transparent 60%),
-    linear-gradient(180deg, #15160f, #0e0f0b);
+  background: linear-gradient(180deg, #15160f, #0e0f0b);
 }
 .bento-home .viz.cloudy {
   background: radial-gradient(220px 180px at 60% 40%, rgba(150, 160, 175, 0.16), transparent 65%),
@@ -337,7 +337,11 @@
 }
 .bento-home .wsky { position: absolute; inset: 0; width: 100%; height: 100%; }
 .bento-home .rays {
-  transform-origin: 142px 46px;
+  /* Rotate around the rays' own bounding-box centre (= the sun centre,
+   * since the 8 rays are symmetric around it) so they spin in place
+   * instead of orbiting a fixed point. */
+  transform-box: fill-box;
+  transform-origin: center;
   animation: bento-spin 60s linear infinite;
 }
 @keyframes bento-spin { to { transform: rotate(360deg); } }
