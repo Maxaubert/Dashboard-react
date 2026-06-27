@@ -1,0 +1,641 @@
+/* ─────────────────────────────────────────────────────────────────────────
+ * Bento home page — dark "bento grid" dashboard.
+ *
+ * Every rule is scoped under `.bento-home` so these dark styles can NEVER
+ * leak into the light pop-out overlays (Lenker / Gaming / Todo / Plan) that
+ * the home opens. The dark canvas itself is set on `body.bento-active` from
+ * an appended `@layer base` rule in globals.css (a layered !important wins).
+ * ───────────────────────────────────────────────────────────────────────── */
+
+.bento-home {
+  --bg: #0c0c0d;
+  --card: #151517;
+  --inset: #101012;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-2: rgba(255, 255, 255, 0.05);
+  --ink: #ededec;
+  --dim: #8d8d8b;
+  --faint: #5b5b5c;
+  --sage: #d9e3c8;
+  --sage-2: #e2ead6;
+  --sage-ink: #171a12;
+  --sage-dim: #5b6147;
+  --grn: #9fd07a;
+
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  padding: clamp(16px, 2vw, 30px);
+  min-height: 100vh;
+}
+
+/* ── Top bar ─────────────────────────────────────────────────────────── */
+.bento-home .bento-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 6px 6px 20px;
+  gap: 16px;
+}
+.bento-home .bento-top h1 {
+  font-size: clamp(1.5rem, 2.4vw, 2.1rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.bento-home .bento-top-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.bento-home .bento-clock {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.bento-home .bento-clock b {
+  font-size: clamp(1.4rem, 2.2vw, 1.9rem);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.bento-home .bento-clock span {
+  color: var(--dim);
+  font-size: 0.92rem;
+}
+.bento-home .bento-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ── Grid ────────────────────────────────────────────────────────────── */
+.bento-home .bento {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+}
+.bento-home .bento-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: clamp(18px, 1.5vw, 24px);
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.bento-home .bento-card.sage {
+  background: var(--sage);
+  color: var(--sage-ink);
+  border-color: transparent;
+}
+
+.bento-home .area-lenk { grid-column: 1 / 9; grid-row: 1; }
+.bento-home .area-wish { grid-column: 1 / 9; grid-row: 2; }
+.bento-home .area-vaer { grid-column: 9 / 13; grid-row: 1 / 4; }
+.bento-home .area-plan { grid-column: 1 / 5; grid-row: 3; }
+.bento-home .area-todo { grid-column: 5 / 9; grid-row: 3; }
+.bento-home .area-news { grid-column: 1 / 13; grid-row: 4; }
+@media (max-width: 920px) {
+  .bento-home .bento > * {
+    grid-column: 1 / 13 !important;
+    grid-row: auto !important;
+  }
+}
+
+/* ── Card header ─────────────────────────────────────────────────────── */
+.bento-home .ch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 12px;
+}
+.bento-home .ch h2 {
+  font-size: 1.18rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.bento-home .ch-link {
+  color: var(--dim);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: none;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: color 0.2s;
+}
+.bento-home .ch-link:hover { color: var(--ink); }
+.bento-home .sage .ch-link { color: var(--sage-dim); }
+.bento-home .sage .ch-link:hover { color: var(--sage-ink); }
+.bento-home .ch-note {
+  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ── Eksterne lenker (horizontal row of full cards) ──────────────────── */
+.bento-home .lrow {
+  display: flex;
+  gap: 12px;
+  overflow: hidden;
+  cursor: grab;
+  padding: 14px 2px;
+  margin: -14px 0;
+}
+.bento-home .lcard {
+  position: relative;
+  flex: 0 0 176px;
+  min-height: 112px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  text-decoration: none;
+  color: inherit;
+  overflow: hidden;
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.25s;
+}
+.bento-home .lcard:hover {
+  transform: translateY(-3px);
+  border-color: var(--lc);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.42), 0 0 28px -8px var(--lc);
+}
+.bento-home .lcard > * { position: relative; z-index: 1; }
+.bento-home .ltop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.bento-home .lic {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  background: color-mix(in srgb, var(--lc) 16%, var(--inset));
+  color: var(--ink);
+  overflow: hidden;
+}
+.bento-home .lic img { display: block; }
+.bento-home .larr {
+  color: var(--faint);
+  transition: color 0.2s, transform 0.2s;
+}
+.bento-home .lcard:hover .larr {
+  color: var(--ink);
+  transform: translate(3px, -3px);
+}
+.bento-home .ln {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bento-home .ls {
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  color: var(--dim);
+  margin-top: 3px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bento-home .row-empty {
+  color: var(--dim);
+  font-size: 0.84rem;
+  padding: 8px 2px;
+}
+
+/* ── Ønskeliste tiles ────────────────────────────────────────────────── */
+.bento-home .gscroll {
+  display: flex;
+  gap: 12px;
+  overflow: hidden;
+  cursor: grab;
+  padding: 14px 2px;
+  margin: -14px 0;
+}
+.bento-home .gtile {
+  position: relative;
+  flex: 0 0 196px;
+  height: 158px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #1c1f27;
+  cursor: pointer;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.bento-home .gtile:hover { transform: translateY(-4px); }
+.bento-home .gtile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: saturate(0.92);
+}
+.bento-home .gtile .gg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(8, 9, 12, 0.92), transparent 58%);
+}
+.bento-home .gtile .gb {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: var(--grn);
+  color: #10140c;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.66rem;
+  padding: 3px 7px;
+  border-radius: 6px;
+}
+.bento-home .gtile .gm {
+  position: absolute;
+  left: 13px;
+  right: 13px;
+  bottom: 12px;
+}
+.bento-home .gtile .gn {
+  font-size: 0.82rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink);
+}
+.bento-home .gtile .gp {
+  margin-top: 5px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  color: var(--ink);
+}
+.bento-home .gtile .gp s { color: var(--dim); font-size: 0.66rem; }
+.bento-home .gskel {
+  flex: 0 0 196px;
+  height: 158px;
+  border-radius: 14px;
+  background: linear-gradient(100deg, #1a1d24 30%, #23262f 50%, #1a1d24 70%);
+  background-size: 200% 100%;
+  animation: bento-shimmer 1.3s linear infinite;
+}
+@keyframes bento-shimmer {
+  to { background-position: -200% 0; }
+}
+
+/* ── Vær (dynamic weather scene) ─────────────────────────────────────── */
+.bento-home .viz {
+  position: relative;
+  flex: 1;
+  min-height: 200px;
+  border-radius: 16px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  border: 1px solid var(--line-2);
+  transition: background 0.4s;
+}
+.bento-home .viz.sunny {
+  background: radial-gradient(160px 160px at 64% 36%, rgba(255, 200, 90, 0.42), transparent 62%),
+    linear-gradient(180deg, #1a160d, #0e0c08);
+}
+.bento-home .viz.partly {
+  background: radial-gradient(150px 150px at 70% 32%, rgba(255, 206, 110, 0.3), transparent 60%),
+    linear-gradient(180deg, #15160f, #0e0f0b);
+}
+.bento-home .viz.cloudy {
+  background: radial-gradient(220px 180px at 60% 40%, rgba(150, 160, 175, 0.16), transparent 65%),
+    linear-gradient(180deg, #121316, #0d0e10);
+}
+.bento-home .viz.rain {
+  background: radial-gradient(220px 180px at 60% 30%, rgba(95, 140, 190, 0.22), transparent 65%),
+    linear-gradient(180deg, #0f1318, #0b0d10);
+}
+.bento-home .viz.snow {
+  background: radial-gradient(220px 180px at 60% 34%, rgba(170, 195, 220, 0.2), transparent 65%),
+    linear-gradient(180deg, #121419, #0c0e11);
+}
+.bento-home .wsky { position: absolute; inset: 0; width: 100%; height: 100%; }
+.bento-home .rays {
+  transform-origin: 142px 46px;
+  animation: bento-spin 60s linear infinite;
+}
+@keyframes bento-spin { to { transform: rotate(360deg); } }
+.bento-home .drop { animation: bento-fall 1s linear infinite; }
+@keyframes bento-fall {
+  0% { transform: translateY(-6px); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translateY(34px); opacity: 0; }
+}
+.bento-home .flake { animation: bento-snowfall 3s linear infinite; }
+@keyframes bento-snowfall {
+  0% { transform: translateY(-6px); opacity: 0; }
+  20% { opacity: 0.9; }
+  100% { transform: translateY(40px); opacity: 0; }
+}
+.bento-home .viz .temp {
+  position: absolute;
+  left: 16px;
+  bottom: 14px;
+  font-size: 3.2rem;
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  z-index: 2;
+}
+.bento-home .viz .cond {
+  position: absolute;
+  left: 18px;
+  top: 16px;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #dfe6d2;
+  z-index: 2;
+}
+.bento-home .viz .wind {
+  position: absolute;
+  left: 18px;
+  bottom: 8px;
+  color: var(--dim);
+  font-size: 0.72rem;
+  z-index: 2;
+}
+.bento-home .viz .wloc {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  font-size: 0.78rem;
+  color: var(--dim);
+  z-index: 2;
+}
+.bento-home .viz-msg {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--dim);
+  font-size: 0.84rem;
+  z-index: 2;
+}
+
+.bento-home .meter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.bento-home .meter .lab { color: var(--dim); font-size: 0.84rem; white-space: nowrap; }
+.bento-home .meter .track {
+  flex: 1;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.14);
+  position: relative;
+}
+.bento-home .meter .track i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  height: 100%;
+  background: var(--ink);
+  transition: width 0.4s;
+}
+.bento-home .meter .val { font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.bento-home .fc {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  gap: 4px;
+}
+.bento-home .fc div { text-align: center; }
+.bento-home .fc .d {
+  color: var(--dim);
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.06em;
+}
+.bento-home .fc .t { margin-top: 7px; font-size: 1.02rem; font-variant-numeric: tabular-nums; }
+
+/* ── Dagens plan ─────────────────────────────────────────────────────── */
+.bento-home .plist { display: flex; flex-direction: column; }
+.bento-home .prow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line-2);
+  background: none;
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+.bento-home .prow:last-child { border-bottom: 0; }
+.bento-home .prow.past { opacity: 0.4; }
+.bento-home .pdot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.bento-home .ptime {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--dim);
+  min-width: 96px;
+}
+.bento-home .ptitle {
+  font-size: 0.92rem;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bento-home .ploc { font-size: 0.72rem; color: var(--faint); }
+.bento-home .pnow {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--grn);
+  border: 1px solid color-mix(in srgb, var(--grn) 50%, transparent);
+  padding: 2px 8px;
+  border-radius: 20px;
+  flex: none;
+}
+.bento-home .plan-empty {
+  color: var(--dim);
+  font-size: 0.84rem;
+  padding: 8px 0;
+}
+.bento-home .plan-add {
+  background: none;
+  border: 1px dashed var(--line);
+  color: var(--dim);
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-family: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.bento-home .plan-add:hover { color: var(--ink); border-color: var(--dim); }
+
+/* ── Todo (sage) ─────────────────────────────────────────────────────── */
+.bento-home .tohead {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.bento-home .tohead .big {
+  font-size: 2.8rem;
+  font-weight: 400;
+  line-height: 0.85;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.bento-home .tohead .lab { color: var(--sage-dim); font-size: 0.84rem; padding-bottom: 6px; }
+.bento-home .tolist { display: flex; flex-direction: column; }
+.bento-home .torow {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(23, 26, 18, 0.12);
+  font-size: 0.9rem;
+  background: none;
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+.bento-home .torow:last-child { border-bottom: 0; }
+.bento-home .tobox {
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  border: 1.5px solid var(--sage-ink);
+  flex: none;
+  position: relative;
+}
+.bento-home .torow.done .tobox { background: var(--sage-ink); }
+.bento-home .torow.done .tobox::after {
+  content: '✓';
+  position: absolute;
+  inset: 0;
+  color: var(--sage);
+  font-size: 11px;
+  display: grid;
+  place-items: center;
+}
+.bento-home .torow.done .tt { text-decoration: line-through; opacity: 0.5; }
+.bento-home .tt {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bento-home .pdotS { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.bento-home .pdotS.prio-high { background: #e8896b; }
+.bento-home .pdotS.prio-medium { background: #d8c06b; }
+.bento-home .pdotS.prio-low { background: #7aa9d0; }
+.bento-home .todo-empty { color: var(--sage-dim); font-size: 0.84rem; padding: 8px 0; }
+
+/* ── Nyhetssaker ─────────────────────────────────────────────────────── */
+.bento-home .nswitch { display: flex; gap: 6px; }
+.bento-home .nswitch button {
+  border: 1px solid var(--line);
+  background: none;
+  color: var(--dim);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.bento-home .nswitch button:hover { color: var(--ink); }
+.bento-home .nswitch button.on {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+.bento-home .nscroll {
+  display: flex;
+  gap: 12px;
+  overflow: hidden;
+  cursor: grab;
+  padding: 14px 2px;
+  margin: -14px 0;
+}
+.bento-home .ncard {
+  position: relative;
+  flex: 0 0 168px;
+  height: 210px;
+  border-radius: 14px;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  background: #1c1f27;
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.bento-home .ncard:hover { transform: translateY(-3px); }
+.bento-home .ncard img { width: 100%; height: 100%; object-fit: cover; filter: saturate(0.95); }
+.bento-home .ncard .ng {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(8, 9, 12, 0.92), transparent 55%);
+}
+.bento-home .ncard .nt {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--ink);
+}
+.bento-home .news-msg { color: var(--dim); font-size: 0.84rem; padding: 8px 2px; }
+
+/* ── Settings button (dark variant) ──────────────────────────────────── */
+.bento-home .bento-settings-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--dim);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.bento-home .bento-settings-btn:hover { color: var(--ink); border-color: var(--dim); }
