@@ -16,6 +16,7 @@ export function WeatherBentoCard() {
   const isDay = current?.isDay ?? true;
   const scene = current ? sceneForCode(current.weatherCode, isDay) : 'cloudy';
   const wind = current ? Math.round(current.windSpeed) : 0;
+  const windPct = Math.min(100, Math.round((wind / 15) * 100));
 
   const today = forecast?.daily?.[0];
   const days = (forecast?.daily ?? []).slice(0, 5);
@@ -35,7 +36,6 @@ export function WeatherBentoCard() {
     <section className="bento-card area-vaer">
       <div className="ch">
         <h2>Vær</h2>
-        <span className="ch-note">Open-Meteo</span>
       </div>
 
       <div className={`viz ${scene}`}>
@@ -52,6 +52,14 @@ export function WeatherBentoCard() {
             <div className="wind">Vind {wind} m/s</div>
           </>
         )}
+      </div>
+
+      <div className="meter">
+        <span className="lab">Vind</span>
+        <span className="track">
+          <i style={{ width: `${windPct}%` }} />
+        </span>
+        <span className="val">{wind} m/s</span>
       </div>
 
       {today && (

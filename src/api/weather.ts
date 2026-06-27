@@ -10,7 +10,6 @@
 
 const FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
 const GEOCODING_URL = 'https://geocoding-api.open-meteo.com/v1/search';
-const REVERSE_URL = 'https://geocoding-api.open-meteo.com/v1/reverse';
 
 export interface GeoLocation {
   latitude: number;
@@ -122,29 +121,33 @@ export async function searchLocation(query: string): Promise<GeoLocation | null>
   };
 }
 
-/** Reverse geocoding — coords → place name (used after browser geolocation). */
+/**
+ * Reverse geocoding — coords → place name (used after browser geolocation).
+ *
+ * Uses BigDataCloud's free, key-less, CORS-enabled client endpoint, which
+ * resolves a real city/locality reliably. Open-Meteo's reverse endpoint
+ * frequently returns no result, which is why this used to fall back to the
+ * generic "Min posisjon".
+ */
 export async function reverseLocation(lat: number, lon: number): Promise<GeoLocation | null> {
-  const params = new URLSearchParams({
-    latitude: String(lat),
-    longitude: String(lon),
-    language: 'no',
-    format: 'json',
-  });
+  const fallback: GeoLocation = { latitude: lat, longitude: lon, name: 'Min posisjon' };
   try {
-    const res = await fetch(`${REVERSE_URL}?${params}`);
-    if (!res.ok) return null;
+    const res = await fetch(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=no`,
+    );
+    if (!res.ok) return fallback;
     const json = await res.json();
-    const hit = json.results?.[0];
-    if (!hit) return { latitude: lat, longitude: lon, name: 'Min posisjon' };
+    const name = json.city || json.locality || json.principalSubdivision;
+    if (!name) return fallback;
     return {
       latitude: lat,
       longitude: lon,
-      name: hit.name,
-      country: hit.country,
-      admin1: hit.admin1,
+      name,
+      country: json.countryName,
+      admin1: json.principalSubdivision,
     };
   } catch {
-    return { latitude: lat, longitude: lon, name: 'Min posisjon' };
+    return fallback;
   }
 }
 

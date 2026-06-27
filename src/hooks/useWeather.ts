@@ -41,9 +41,10 @@ export function useWeather() {
   useEffect(() => {
     if (didTryGeo) return;
     setDidTryGeo(true);
-    // Skip if the user has already explicitly chosen something other
-    // than the default Halden fallback.
-    if (location.name !== DEFAULT_LOCATION.name) return;
+    // Try geolocation when we're still on the Halden default, or when a
+    // previous attempt only produced the generic "Min posisjon" fallback
+    // (so an unresolved name gets a real city once reverse-geocoding works).
+    if (location.name !== DEFAULT_LOCATION.name && location.name !== 'Min posisjon') return;
     if (typeof navigator === 'undefined' || !navigator.geolocation) return;
 
     navigator.geolocation.getCurrentPosition(
