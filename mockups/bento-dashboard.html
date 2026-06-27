@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dashboard — bento with real content</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c0c0d; --card:#151517; --inset:#101012;
+    --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.05);
+    --ink:#ededec; --dim:#8d8d8b; --faint:#5b5b5c;
+    --sage:#d9e3c8; --sage-2:#e2ead6; --sage-ink:#171a12; --sage-dim:#5b6147;
+    --grn:#9fd07a;
+    --sans:'Space Grotesk',sans-serif; --mono:'IBM Plex Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{min-height:100%;}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;
+    padding:clamp(16px,2vw,30px);overflow-x:hidden;}
+
+  .top{display:flex;align-items:baseline;justify-content:space-between;padding:6px 6px 20px;}
+  .top h1{font-size:clamp(1.5rem,2.4vw,2.1rem);font-weight:600;letter-spacing:-.01em;}
+  .top .time{display:flex;align-items:baseline;gap:10px;}
+  .top .time b{font-size:clamp(1.4rem,2.2vw,1.9rem);font-weight:500;font-variant-numeric:tabular-nums;}
+  .top .time span{color:var(--dim);font-size:.92rem;}
+
+  .bento{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:clamp(18px,1.5vw,24px);
+    position:relative;overflow:hidden;min-width:0;display:flex;flex-direction:column;}
+  .card.sage{background:var(--sage);color:var(--sage-ink);border-color:transparent;}
+
+  .lenk{grid-column:1/9;grid-row:1;}
+  .wish{grid-column:1/9;grid-row:2;}
+  .vaer{grid-column:9/13;grid-row:1/4;}
+  .plan{grid-column:1/5;grid-row:3;}
+  .todo{grid-column:5/9;grid-row:3;}
+  .news{grid-column:1/13;grid-row:4;}
+  @media(max-width:920px){
+    .bento>*{grid-column:1/13 !important;grid-row:auto !important;}
+  }
+
+  .ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .ch h2{font-size:1.18rem;font-weight:500;letter-spacing:-.01em;}
+  .link{color:var(--dim);font-family:var(--mono);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;
+    text-decoration:none;display:flex;align-items:center;gap:5px;transition:color .2s;}
+  .link:hover{color:var(--ink);}
+  .sage .link{color:var(--sage-dim);} .sage .link:hover{color:var(--sage-ink);}
+  .dots{color:var(--faint);font-size:1.05rem;cursor:pointer;line-height:0;}
+  .sage .dots{color:var(--sage-dim);}
+
+  /* ── Eksterne lenker (horizontal row of full cards, like the live page) ── */
+  /* overflow:hidden = no native scrollbar ever; scrolling is JS-driven
+   * (drag + wheel). Vertical padding+negative margin gives the hover lift
+   * room inside the clip without shifting layout. */
+  .lrow{display:flex;gap:12px;overflow:hidden;cursor:grab;padding:14px 2px;margin:-14px 0;}
+  .lcard{position:relative;flex:0 0 176px;min-height:112px;display:flex;flex-direction:column;justify-content:space-between;
+    padding:16px;border:1px solid var(--line);border-radius:16px;text-decoration:none;color:inherit;overflow:hidden;
+    transition:border-color .2s,transform .2s,box-shadow .25s;}
+  .lcard:hover{transform:translateY(-3px);border-color:var(--lc);
+    box-shadow:0 12px 28px rgba(0,0,0,.42),0 0 28px -8px var(--lc);}
+  .lcard > *{position:relative;z-index:1;}
+  .ltop{display:flex;align-items:flex-start;justify-content:space-between;}
+  .lic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:12px;font-family:var(--mono);flex:none;}
+  .larr{color:var(--faint);transition:color .2s,transform .2s;}
+  .lcard:hover .larr{color:var(--ink);transform:translate(3px,-3px);}
+  .ln{font-size:.95rem;font-weight:600;letter-spacing:-.01em;}
+  .ls{font-family:var(--mono);font-size:.64rem;color:var(--dim);margin-top:3px;letter-spacing:.02em;}
+
+  /* ── Ønskeliste tiles ──────────────────────────────────────────── */
+  .gscroll{display:flex;gap:12px;overflow:hidden;cursor:grab;padding:14px 2px;margin:-14px 0;}
+  .gtile{position:relative;flex:0 0 196px;height:158px;border-radius:14px;overflow:hidden;background:#1c1f27;
+    cursor:pointer;transition:transform .3s cubic-bezier(.2,.8,.2,1);}
+  .gtile:hover{transform:translateY(-4px);}
+  .gtile img{width:100%;height:100%;object-fit:cover;display:block;filter:saturate(.92);}
+  .gtile .gg{position:absolute;inset:0;background:linear-gradient(0deg,rgba(8,9,12,.92),transparent 58%);}
+  .gtile .gb{position:absolute;top:10px;left:10px;background:var(--grn);color:#10140c;font-family:var(--mono);
+    font-weight:500;font-size:.66rem;padding:3px 7px;border-radius:6px;}
+  .gtile .gm{position:absolute;left:13px;right:13px;bottom:12px;}
+  .gtile .gn{font-size:.82rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .gtile .gp{margin-top:5px;font-family:var(--mono);font-size:.78rem;display:flex;gap:8px;align-items:baseline;}
+  .gtile .gp s{color:var(--dim);font-size:.66rem;}
+
+  /* ── Vær (dynamic weather scene) ───────────────────────────────── */
+  .viz{position:relative;flex:1;min-height:200px;border-radius:16px;margin-bottom:16px;overflow:hidden;
+    border:1px solid var(--line-2);transition:background .4s;}
+  .viz.sunny{background:radial-gradient(160px 160px at 64% 36%,rgba(255,200,90,.42),transparent 62%),linear-gradient(180deg,#1a160d,#0e0c08);}
+  .viz.partly{background:radial-gradient(150px 150px at 70% 32%,rgba(255,206,110,.30),transparent 60%),linear-gradient(180deg,#15160f,#0e0f0b);}
+  .viz.cloudy{background:radial-gradient(220px 180px at 60% 40%,rgba(150,160,175,.16),transparent 65%),linear-gradient(180deg,#121316,#0d0e10);}
+  .viz.rain{background:radial-gradient(220px 180px at 60% 30%,rgba(95,140,190,.22),transparent 65%),linear-gradient(180deg,#0f1318,#0b0d10);}
+  .viz.snow{background:radial-gradient(220px 180px at 60% 34%,rgba(170,195,220,.20),transparent 65%),linear-gradient(180deg,#121419,#0c0e11);}
+  .wsky{position:absolute;inset:0;width:100%;height:100%;}
+  .rays{transform-origin:142px 46px;animation:spin 60s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .drop{animation:fall 1s linear infinite;}
+  @keyframes fall{0%{transform:translateY(-6px);opacity:0;}20%{opacity:1;}100%{transform:translateY(34px);opacity:0;}}
+  .flake{animation:snowfall 3s linear infinite;}
+  @keyframes snowfall{0%{transform:translateY(-6px);opacity:0;}20%{opacity:.9;}100%{transform:translateY(40px);opacity:0;}}
+  .viz .temp{position:absolute;left:16px;bottom:14px;font-size:3.2rem;font-weight:400;letter-spacing:-.03em;z-index:2;}
+  .viz .cond{position:absolute;left:18px;top:16px;font-family:var(--mono);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:#dfe6d2;z-index:2;}
+  .viz .wind{position:absolute;left:18px;bottom:8px;color:var(--dim);font-size:.72rem;z-index:2;}
+
+  .meter{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+  .meter .lab{color:var(--dim);font-size:.84rem;white-space:nowrap;}
+  .meter .track{flex:1;height:2px;background:rgba(255,255,255,.14);position:relative;}
+  .meter .track i{position:absolute;inset:0 auto 0 0;height:100%;background:var(--ink);transition:width .4s;}
+  .meter .val{font-size:1.25rem;font-variant-numeric:tabular-nums;}
+  .fc{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--line);padding-top:12px;gap:4px;margin-bottom:14px;}
+  .fc div{text-align:center;} .fc .d{color:var(--dim);font-size:.68rem;font-family:var(--mono);letter-spacing:.06em;}
+  .fc .t{margin-top:7px;font-size:1.02rem;font-variant-numeric:tabular-nums;}
+  .wswitch{display:flex;gap:6px;flex-wrap:wrap;}
+  .wswitch button{flex:1;min-width:0;border:1px solid var(--line);background:none;color:var(--dim);border-radius:9px;
+    padding:7px 4px;font-family:var(--mono);font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:.2s;}
+  .wswitch button:hover{color:var(--ink);}
+  .wswitch button.on{background:rgba(255,255,255,.08);color:var(--ink);border-color:rgba(255,255,255,.25);}
+
+  /* ── Dagens plan ───────────────────────────────────────────────── */
+  .prow{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line-2);}
+  .prow:last-child{border-bottom:0;}
+  .prow.past{opacity:.4;}
+  .pdot{width:8px;height:8px;border-radius:50%;flex:none;}
+  .ptime{font-family:var(--mono);font-size:.74rem;color:var(--dim);min-width:96px;}
+  .ptitle{font-size:.92rem;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .ploc{font-size:.72rem;color:var(--faint);}
+  .pnow{font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--grn);
+    border:1px solid color-mix(in srgb,var(--grn) 50%,transparent);padding:2px 8px;border-radius:20px;}
+
+  /* ── Todo (sage) ───────────────────────────────────────────────── */
+  .tohead{display:flex;align-items:flex-end;gap:14px;margin-bottom:16px;}
+  .tohead .big{font-size:2.8rem;font-weight:400;line-height:.85;letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
+  .tohead .lab{color:var(--sage-dim);font-size:.84rem;padding-bottom:6px;}
+  .torow{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid rgba(23,26,18,.12);font-size:.9rem;}
+  .torow:last-child{border-bottom:0;}
+  .tobox{width:16px;height:16px;border-radius:5px;border:1.5px solid var(--sage-ink);flex:none;position:relative;}
+  .torow.done .tobox{background:var(--sage-ink);}
+  .torow.done .tobox::after{content:'✓';position:absolute;inset:0;color:var(--sage);font-size:11px;display:grid;place-items:center;}
+  .torow.done .tt{text-decoration:line-through;opacity:.5;}
+  .tt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .pdotS{width:7px;height:7px;border-radius:50%;flex:none;}
+
+  /* ── Nyhetssaker ───────────────────────────────────────────────── */
+  .nscroll{display:flex;gap:12px;overflow:hidden;cursor:grab;padding:14px 2px;margin:-14px 0;}
+  .ncard{position:relative;flex:0 0 168px;height:210px;border-radius:14px;overflow:hidden;text-decoration:none;color:inherit;
+    transition:transform .3s cubic-bezier(.2,.8,.2,1);}
+  .ncard:hover{transform:translateY(-3px);}
+  .ncard img{width:100%;height:100%;object-fit:cover;filter:saturate(.95);}
+  .ncard .ng{position:absolute;inset:0;background:linear-gradient(0deg,rgba(8,9,12,.92),transparent 55%);}
+  .ncard .nk{position:absolute;top:11px;left:11px;font-family:var(--mono);font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;color:var(--grn);}
+  .ncard .nt{position:absolute;left:12px;right:12px;bottom:12px;font-size:.82rem;font-weight:500;line-height:1.3;}
+</style>
+</head>
+<body>
+  <div class="top"><h1>Dashboard</h1><div class="time"><b id="clock">--:--</b><span>Oslo</span></div></div>
+
+  <div class="bento">
+    <!-- Eksterne lenker (horizontal, above games) -->
+    <section class="card lenk">
+      <div class="ch"><h2>Eksterne lenker</h2><a class="link" href="#">Alle</a></div>
+      <div class="lrow" id="links"></div>
+    </section>
+
+    <!-- Ønskeliste -->
+    <section class="card wish">
+      <div class="ch"><h2>Ønskeliste</h2><a class="link" href="#">Alle <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z"/></svg></a></div>
+      <div class="gscroll" id="games"></div>
+    </section>
+
+    <!-- Vær (tall, dynamic) -->
+    <section class="card vaer">
+      <div class="ch"><h2>Vær</h2><span class="dots">•••</span></div>
+      <div class="viz" id="viz"></div>
+      <div class="meter"><span class="lab" id="mlab">Sol i dag</span><span class="track"><i id="mbar" style="width:83%"></i></span><span class="val" id="mval">83%</span></div>
+      <div class="fc" id="fc"></div>
+      <div class="wswitch" id="wswitch"></div>
+    </section>
+
+    <!-- Dagens plan -->
+    <section class="card plan">
+      <div class="ch"><h2>Dagens plan</h2><a class="link" href="#">Vis alle</a></div>
+      <div id="plan"></div>
+    </section>
+
+    <!-- Todo (sage) -->
+    <section class="card sage todo">
+      <div class="ch"><h2>Todo</h2><span class="dots">•••</span></div>
+      <div class="tohead"><span class="big" id="tobig">25%</span><span class="lab" id="tolab">1 av 4 fullfort</span></div>
+      <div id="todo"></div>
+    </section>
+
+    <!-- Nyhetssaker -->
+    <section class="card news">
+      <div class="ch"><h2>Nyhetssaker</h2><a class="link" href="#">VG</a></div>
+      <div class="nscroll" id="news"></div>
+    </section>
+  </div>
+
+<script>
+  const steam=id=>`https://cdn.cloudflare.steamstatic.com/steam/apps/${id}/header.jpg`;
+  function tick(){const d=new Date(),p=n=>String(n).padStart(2,'0');document.getElementById('clock').textContent=`${p(d.getHours())}:${p(d.getMinutes())}`;}
+  setInterval(tick,1000);tick();
+
+  /* ── Eksterne lenker ── */
+  const LINKS=[
+    {ic:"YT",name:"YouTube",sub:"youtube.com",c:"#ff0033"},{ic:"GH",name:"GitHub",sub:"github.com",c:"#888"},
+    {ic:"NRK",name:"NRK",sub:"nrk.no",c:"#1f6feb"},{ic:"ML",name:"Proton",sub:"proton.me",c:"#6f57d8"},
+    {ic:"TW",name:"Twitch",sub:"twitch.tv",c:"#9146ff"},{ic:"SP",name:"Spotify",sub:"spotify",c:"#1db954"},
+    {ic:"RE",name:"Reddit",sub:"reddit.com",c:"#ff4500"},{ic:"ST",name:"Steam",sub:"steam",c:"#1387d9"},
+  ];
+  document.getElementById('links').innerHTML=LINKS.map(l=>`
+    <a class="lcard" href="#" style="--lc:${l.c}">
+      <div class="ltop"><span class="lic" style="background:${l.c}">${l.ic}</span>
+        <svg class="larr" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M14 3l-1.41 1.41L18.17 10H4v2h14.17l-5.58 5.59L14 19l8-8z"/></svg></div>
+      <div><div class="ln">${l.name}</div><div class="ls">${l.sub}</div></div></a>`).join('');
+
+  /* ── Ønskeliste ── */
+  const GAMES=[
+    {id:1145350,name:"Hades II",price:"99,-",was:"299,-",disc:67},
+    {id:1030300,name:"Hollow Knight: Silksong",price:"149,-",was:"299,-",disc:50},
+    {id:632470,name:"Disco Elysium",price:"79,-",was:"395,-",disc:80},
+    {id:1086940,name:"Baldur's Gate 3",price:"399,-",was:"599,-",disc:33},
+    {id:1245620,name:"Elden Ring",price:"479,-",was:"599,-",disc:20},
+    {id:1091500,name:"Cyberpunk 2077",price:"209,-",was:"599,-",disc:65},
+  ];
+  document.getElementById('games').innerHTML=GAMES.map(g=>`
+    <div class="gtile" title="${g.name}"><img loading="lazy" src="${steam(g.id)}" onerror="this.style.display='none'"><div class="gg"></div>
+      <span class="gb">-${g.disc}%</span><div class="gm"><div class="gn">${g.name}</div><div class="gp">${g.price} <s>${g.was}</s></div></div></div>`).join('');
+
+  /* ── Vær: dynamic weather scenes ── */
+  const SUN=(cx,cy,r,rays)=>`
+    <defs><radialGradient id="sg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffe6a8"/><stop offset="55%" stop-color="#ffc861"/><stop offset="100%" stop-color="#f0a23a"/>
+    </radialGradient></defs>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#sg)"/>
+    ${rays?`<g class="rays" stroke="#ffce6e" stroke-width="3" stroke-linecap="round">${
+      Array.from({length:8},(_,i)=>{const a=i*Math.PI/4,x1=cx+Math.cos(a)*(r+8),y1=cy+Math.sin(a)*(r+8),x2=cx+Math.cos(a)*(r+18),y2=cy+Math.sin(a)*(r+18);return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`}).join('')
+    }</g>`:''}`;
+  const CLOUD=(x,y,s,fill)=>`<g transform="translate(${x} ${y}) scale(${s})" fill="${fill}">
+    <circle cx="18" cy="20" r="16"/><circle cx="40" cy="12" r="22"/><circle cx="66" cy="20" r="16"/><rect x="14" y="20" width="56" height="20" rx="10"/></g>`;
+  const RAINDROPS=(x,y)=>`<g stroke="#8fb6e0" stroke-width="2.5" stroke-linecap="round">${
+    Array.from({length:7},(_,i)=>`<line class="drop" style="animation-delay:${(i*0.13).toFixed(2)}s" x1="${x+i*16}" y1="${y}" x2="${x+i*16-4}" y2="${y+10}"/>`).join('')}</g>`;
+  const SNOW=(x,y)=>`<g fill="#cfe0f2">${
+    Array.from({length:7},(_,i)=>`<circle class="flake" style="animation-delay:${(i*0.4).toFixed(2)}s" cx="${x+i*16}" cy="${y}" r="2.6"/>`).join('')}</g>`;
+
+  const COND={
+    sunny:{label:"Klart",temp:24,wind:"Vind 3 m/s",mlab:"Sol i dag",mval:92,
+      sky:`<svg class="wsky" viewBox="0 0 220 200" preserveAspectRatio="xMidYMid slice">${SUN(132,70,30,true)}</svg>`},
+    partly:{label:"Lett skyet",temp:20,wind:"Vind 8 m/s",mlab:"Sol i dag",mval:83,
+      sky:`<svg class="wsky" viewBox="0 0 220 200" preserveAspectRatio="xMidYMid slice">${SUN(150,52,22,true)}${CLOUD(70,86,1.05,"#c7ccd4")}</svg>`},
+    cloudy:{label:"Skyet",temp:17,wind:"Vind 6 m/s",mlab:"Skydekke",mval:64,
+      sky:`<svg class="wsky" viewBox="0 0 220 200" preserveAspectRatio="xMidYMid slice">${CLOUD(40,52,0.8,"#9aa0ab")}${CLOUD(78,90,1.1,"#c2c7cf")}</svg>`},
+    rain:{label:"Regn",temp:13,wind:"Vind 9 m/s",mlab:"Nedbor",mval:78,
+      sky:`<svg class="wsky" viewBox="0 0 220 200" preserveAspectRatio="xMidYMid slice">${CLOUD(66,66,1.15,"#9098a4")}${RAINDROPS(78,128)}</svg>`},
+    snow:{label:"Sno",temp:-2,wind:"Vind 4 m/s",mlab:"Nedbor",mval:60,
+      sky:`<svg class="wsky" viewBox="0 0 220 200" preserveAspectRatio="xMidYMid slice">${CLOUD(66,66,1.15,"#aab4c2")}${SNOW(78,128)}</svg>`},
+  };
+  const viz=document.getElementById('viz');
+  function setWeather(key){
+    const w=COND[key];
+    viz.className='viz '+key;
+    viz.innerHTML=`${w.sky}<div class="cond">${w.label}</div><div class="temp">${w.temp}&deg;</div><div class="wind">${w.wind}</div>`;
+    document.getElementById('mlab').textContent=w.mlab;
+    document.getElementById('mval').textContent=w.mval+'%';
+    document.getElementById('mbar').style.width=w.mval+'%';
+    [...document.querySelectorAll('.wswitch button')].forEach(b=>b.classList.toggle('on',b.dataset.k===key));
+  }
+  document.getElementById('wswitch').innerHTML=Object.entries(COND).map(([k,w])=>`<button data-k="${k}">${w.label}</button>`).join('');
+  document.querySelectorAll('.wswitch button').forEach(b=>b.addEventListener('click',()=>setWeather(b.dataset.k)));
+  const FC=[["Tor",21],["Fre",23],["Lor",19],["Son",17],["Man",20]];
+  document.getElementById('fc').innerHTML=FC.map(d=>`<div><div class="d">${d[0]}</div><div class="t">${d[1]}&deg;</div></div>`).join('');
+  setWeather('partly');
+
+  /* ── Dagens plan ── */
+  const PLAN=[
+    {time:"08:00–08:45",title:"Morgenrutine",color:"#7aa9d0",past:true},
+    {time:"13:00–14:30",title:"Design-gjennomgang",color:"#9fd07a",now:true},
+    {time:"16:00–17:00",title:"Trening",color:"#d0b27a",loc:"SATS"},
+    {time:"20:30–22:00",title:"Gaming kveld",color:"#c27ad0"},
+  ];
+  document.getElementById('plan').innerHTML=PLAN.map(e=>`
+    <div class="prow ${e.past?'past':''}"><span class="pdot" style="background:${e.color}"></span>
+      <span class="ptime">${e.time}</span><span class="ptitle">${e.title}</span>
+      ${e.loc?`<span class="ploc">${e.loc}</span>`:''}${e.now?'<span class="pnow">Na</span>':''}</div>`).join('');
+
+  /* ── Todo (sage) ── */
+  const PRIO={high:"#e8896b",medium:"#d8c06b",low:"#7aa9d0"};
+  const TODO=[
+    {p:"high",t:"Velg tema og oppdater globals.css",done:true},
+    {p:"medium",t:"Deploy til Vercel og test pa mobil"},
+    {p:"low",t:"Rydde i mockups-mappa"},
+    {p:"medium",t:"Skrive om hover-effekt pa lenkekort"},
+  ];
+  const done=TODO.filter(t=>t.done).length, pct=Math.round(done/TODO.length*100);
+  document.getElementById('tobig').textContent=pct+'%';
+  document.getElementById('tolab').textContent=`${done} av ${TODO.length} fullfort`;
+  document.getElementById('todo').innerHTML=TODO.map(t=>`
+    <div class="torow ${t.done?'done':''}"><span class="tobox"></span><span class="pdotS" style="background:${PRIO[t.p]}"></span><span class="tt">${t.t}</span></div>`).join('');
+
+  /* ── Nyhetssaker ── */
+  const NEWS=[
+    {k:"Innenriks",t:"Regjeringen legger fram nytt budsjett",s:"news-a"},
+    {k:"Sport",t:"Norge til finalen etter dramatisk omspill",s:"news-b"},
+    {k:"Teknologi",t:"Ny AI-modell setter rekord pa tester",s:"news-c"},
+    {k:"Kultur",t:"Festivalsommeren er offisielt i gang",s:"news-d"},
+    {k:"Verden",t:"Historisk toppmote uten enighet",s:"news-e"},
+  ];
+  document.getElementById('news').innerHTML=NEWS.map(n=>`
+    <a class="ncard" href="#"><img loading="lazy" src="https://picsum.photos/seed/${n.s}/340/440"><div class="ng"></div>
+      <span class="nk">${n.k}</span><span class="nt">${n.t}</span></a>`).join('');
+
+  /* drag- and wheel-scroll the horizontal carousels (scrollbars hidden) */
+  document.querySelectorAll('.gscroll,.nscroll,.lrow').forEach(el=>{
+    let d=false,x=0,s=0;
+    el.addEventListener('mousedown',e=>{d=true;x=e.pageX;s=el.scrollLeft;el.style.cursor='grabbing';});
+    window.addEventListener('mouseup',()=>{d=false;el.style.cursor='grab';});
+    el.addEventListener('mousemove',e=>{if(!d)return;e.preventDefault();el.scrollLeft=s-(e.pageX-x);});
+    el.addEventListener('wheel',e=>{
+      if(el.scrollWidth<=el.clientWidth)return;
+      const delta=Math.abs(e.deltaY)>=Math.abs(e.deltaX)?e.deltaY:e.deltaX;
+      const atStart=el.scrollLeft<=0, atEnd=el.scrollLeft>=el.scrollWidth-el.clientWidth-1;
+      if((delta<0&&atStart)||(delta>0&&atEnd))return; // let the page scroll at the edges
+      el.scrollLeft+=delta; e.preventDefault();
+    },{passive:false});
+  });
+</script>
+</body>
+</html>

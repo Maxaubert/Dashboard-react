@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,900;1,700&family=Barlow:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #101418;
+      --surface: #16191f;
+      --card:    #1a1d25;
+      --card-h:  #1e2230;
+      --red:     #ff4655;
+      --cream:   #ece8e1;
+      --teal:    #19e0c8;
+      --amber:   #f59e0b;
+      --blue:    #3b82f6;
+      --dim:     #7a8a9e;
+      --muted:   #3a4558;
+      --line:    rgba(236,232,225,0.07);
+      --line-h:  rgba(236,232,225,0.14);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--cream);
+      font-family: 'Barlow', sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding-bottom: 100px;
+    }
+
+    /* ===============================================
+       GRAIN OVERLAY
+       =============================================== */
+    .grain {
+      position: fixed;
+      inset: -120px;
+      z-index: 9999;
+      pointer-events: none;
+      width: calc(100% + 240px);
+      height: calc(100% + 240px);
+      opacity: 0.038;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      animation: grain 0.38s steps(2) infinite;
+    }
+    @keyframes grain {
+      0%   { transform: translate(0, 0); }
+      25%  { transform: translate(-3px, 2px); }
+      50%  { transform: translate(2px, -3px); }
+      75%  { transform: translate(-2px, 3px); }
+      100% { transform: translate(3px, -1px); }
+    }
+
+    /* ===============================================
+       BACKGROUND DIAGONAL ACCENTS
+       =============================================== */
+    .bg-accents {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    /* Large diagonal slash - top right, red tinted */
+    .bg-accents::before {
+      content: '';
+      position: absolute;
+      top: -20%;
+      right: -15%;
+      width: 55%;
+      height: 130%;
+      background: linear-gradient(
+        162deg,
+        transparent 25%,
+        rgba(255, 70, 85, 0.038) 50%,
+        transparent 75%
+      );
+      transform: skewX(-10deg);
+    }
+
+    /* Smaller accent - bottom left, teal tinted */
+    .bg-accents::after {
+      content: '';
+      position: absolute;
+      bottom: -10%;
+      left: -8%;
+      width: 45%;
+      height: 55%;
+      background: linear-gradient(
+        162deg,
+        transparent 30%,
+        rgba(25, 224, 200, 0.022) 60%,
+        transparent 85%
+      );
+      transform: skewX(-10deg);
+    }
+
+    /* Triangle corner accent */
+    .bg-tri {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 0;
+      height: 0;
+      border-top: 280px solid rgba(255, 70, 85, 0.04);
+      border-left: 400px solid transparent;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ===============================================
+       LAYOUT WRAPPER
+       =============================================== */
+    .wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 1340px;
+      margin: 0 auto;
+      padding: 0 52px;
+    }
+
+    /* ===============================================
+       PAGE HEADER
+       =============================================== */
+    .page-hd {
+      position: relative;
+      z-index: 1;
+      padding: 44px 0 30px;
+    }
+
+    .page-hd-inner {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .hd-left { display: flex; flex-direction: column; }
+
+    .hd-eye {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .hd-eye::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      background: var(--red);
+      clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+    }
+
+    .hd-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 900;
+      font-size: clamp(54px, 8.5vw, 92px);
+      text-transform: uppercase;
+      letter-spacing: -0.01em;
+      line-height: 0.87;
+      color: var(--cream);
+    }
+    .hd-title .dot { color: var(--red); }
+    .hd-title .sub {
+      font-weight: 400;
+      font-style: italic;
+      color: rgba(236,232,225,0.25);
+      font-size: 0.52em;
+      letter-spacing: 0.08em;
+      display: block;
+      margin-top: 2px;
+    }
+
+    .hd-right {
+      text-align: right;
+      padding-bottom: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+    }
+
+    .hd-date {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--dim);
+      line-height: 1.9;
+    }
+
+    .hd-status {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(25, 224, 200, 0.07);
+      border: 1px solid rgba(25, 224, 200, 0.18);
+      padding: 4px 10px;
+      clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+    }
+    .hd-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--teal);
+      box-shadow: 0 0 7px var(--teal);
+      animation: blink 2s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; box-shadow: 0 0 7px var(--teal); }
+      50% { opacity: 0.45; box-shadow: 0 0 3px var(--teal); }
+    }
+    .hd-status-txt {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--teal);
+    }
+
+    /* Animated header bar */
+    .hd-bar {
+      position: relative;
+      overflow: hidden;
+      height: 1px;
+      margin-top: 26px;
+      background: linear-gradient(
+        90deg,
+        var(--red) 0%,
+        rgba(255,70,85,0.8) 20%,
+        var(--teal) 45%,
+        rgba(25,224,200,0.3) 65%,
+        rgba(236,232,225,0.06) 100%
+      );
+      width: 0%;
+      animation: bar-draw 1s 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    @keyframes bar-draw { to { width: 100%; } }
+
+    /* Shimmer that runs across the bar after it draws in */
+    .hd-bar::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255,255,255,0.85) 50%,
+        transparent 100%
+      );
+      animation: bar-shim 3.5s 1.4s ease-in-out infinite;
+    }
+    @keyframes bar-shim {
+      0%   { transform: translateX(-300%); }
+      100% { transform: translateX(500%); }
+    }
+
+    /* ===============================================
+       SECTION SHELL
+       =============================================== */
+    .sec {
+      padding: 38px 0;
+      border-bottom: 1px solid var(--line);
+      opacity: 0;
+      animation: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0);   }
+    }
+
+    .sec-hd {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .sec-label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--cream);
+      display: flex;
+      align-items: center;
+      gap: 11px;
+    }
+    .sec-label::before {
+      content: '';
+      display: block;
+      width: 3px;
+      height: 16px;
+      background: var(--red);
+      /* Slight skew for diagonal feel */
+      clip-path: polygon(1px 0, 100% 6%, 100% 94%, 1px 100%);
+      flex-shrink: 0;
+    }
+
+    .sec-all {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--dim);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: color 0.15s;
+    }
+    .sec-all svg { transition: transform 0.18s; }
+    .sec-all:hover { color: var(--red); }
+    .sec-all:hover svg { transform: translateX(3px); }
+
+    /* ===============================================
+       HORIZONTAL SCROLL TRACK
+       =============================================== */
+    .track {
+      display: flex;
+      gap: 14px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      cursor: grab;
+      padding-bottom: 6px;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .track::-webkit-scrollbar { display: none; }
+    .track.dragging { cursor: grabbing; }
+
+    /* ===============================================
+       GAME CARDS
+       =============================================== */
+    .gc {
+      flex: 0 0 214px;
+      background: var(--card);
+      /* Clipped top-right + bottom-left corners = esports look */
+      clip-path: polygon(
+        0 0,
+        calc(100% - 14px) 0,
+        100% 14px,
+        100% 100%,
+        14px 100%,
+        0 calc(100% - 14px)
+      );
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+      transition:
+        transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .gc:hover {
+      transform: translateY(-8px);
+      box-shadow:
+        0 28px 52px rgba(0, 0, 0, 0.65),
+        0 0 0 1px rgba(255, 70, 85, 0.22);
+    }
+
+    /* Top accent bar that draws in on hover */
+    .gc::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--red), rgba(255,70,85,0.4));
+      transform: scaleX(0);
+      transform-origin: left center;
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 3;
+    }
+    .gc:hover::before { transform: scaleX(1); }
+
+    .gc-img-wrap {
+      position: relative;
+      width: 214px;
+      height: 100px;
+      overflow: hidden;
+      background: var(--surface);
+    }
+    .gc-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.45s ease;
+    }
+    .gc:hover .gc-img { transform: scale(1.07); }
+
+    /* Sheen sweep -- the hero hover effect */
+    .gc-img-wrap::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        108deg,
+        transparent 20%,
+        rgba(255, 255, 255, 0.22) 50%,
+        transparent 80%
+      );
+      transform: translateX(-130%);
+      transition: transform 0.58s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .gc:hover .gc-img-wrap::after { transform: translateX(130%); }
+
+    .gc-body { padding: 11px 13px 14px; }
+
+    .gc-disc {
+      display: inline-block;
+      background: var(--teal);
+      color: #071a18;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      padding: 2px 8px;
+      margin-bottom: 7px;
+      clip-path: polygon(
+        0 0,
+        calc(100% - 4px) 0,
+        100% 4px,
+        100% 100%,
+        4px 100%,
+        0 calc(100% - 4px)
+      );
+    }
+
+    .gc-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--cream);
+      line-height: 1.2;
+      margin-bottom: 9px;
+    }
+
+    .gc-prices {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .gc-price {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 21px;
+      color: var(--cream);
+      line-height: 1;
+    }
+    .gc-was {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      color: var(--muted);
+      text-decoration: line-through;
+      letter-spacing: 0.02em;
+    }
+
+    /* ===============================================
+       LINK CARDS
+       =============================================== */
+    .links-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+      gap: 10px;
+    }
+
+    .lc {
+      background: var(--card);
+      border: 1px solid var(--line);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      text-decoration: none;
+      /* Clipped top-right corner */
+      clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+      transition:
+        transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 0.18s;
+    }
+    .lc:hover {
+      transform: translateY(-3px);
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    /* Color accent edge -- scaleY from bottom on hover */
+    .lc::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 2px;
+      background: var(--color, var(--red));
+      transform: scaleY(0);
+      transform-origin: bottom center;
+      transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .lc:hover::before { transform: scaleY(1); }
+
+    .lc-chip {
+      width: 30px;
+      height: 30px;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 900;
+      font-size: 11px;
+      letter-spacing: -0.03em;
+      flex-shrink: 0;
+    }
+
+    .lc-info { flex: 1; min-width: 0; }
+    .lc-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--cream);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .lc-sub {
+      font-family: 'Space Mono', monospace;
+      font-size: 8px;
+      color: var(--dim);
+      letter-spacing: 0.02em;
+      margin-top: 1px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .lc-arrow {
+      font-size: 13px;
+      color: var(--muted);
+      flex-shrink: 0;
+      transition: color 0.15s, transform 0.18s;
+    }
+    .lc:hover .lc-arrow {
+      color: var(--red);
+      transform: translateX(3px);
+    }
+
+    /* ===============================================
+       TWO-COLUMN LAYOUT (Plan + Todo)
+       =============================================== */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 52px;
+      padding: 38px 0;
+      border-bottom: 1px solid var(--line);
+      opacity: 0;
+      animation: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* ===============================================
+       PLAN LIST
+       =============================================== */
+    .plan-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .plan-row {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      padding: 11px 12px;
+      border-left: 2px solid transparent;
+      position: relative;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .plan-row:hover { background: rgba(255,255,255,0.025); }
+    .plan-row.now {
+      background: rgba(255, 70, 85, 0.055);
+      border-left-color: var(--red);
+    }
+    .plan-row.past { opacity: 0.36; }
+
+    .plan-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .plan-row.now .plan-dot {
+      background: var(--red);
+      box-shadow: 0 0 8px rgba(255, 70, 85, 0.8);
+    }
+    .plan-row.past .plan-dot { background: var(--muted); }
+    .plan-row:not(.now):not(.past) .plan-dot { background: var(--cream); opacity: 0.6; }
+
+    .plan-time {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      color: var(--dim);
+      letter-spacing: 0.04em;
+      flex-shrink: 0;
+      min-width: 84px;
+    }
+
+    .plan-meta { flex: 1; min-width: 0; }
+    .plan-title {
+      font-size: 13px;
+      color: var(--cream);
+      font-weight: 500;
+      line-height: 1.35;
+    }
+    .plan-row.past .plan-title { color: var(--dim); }
+    .plan-loc {
+      font-family: 'Space Mono', monospace;
+      font-size: 8px;
+      color: var(--dim);
+      margin-top: 2px;
+      letter-spacing: 0.03em;
+    }
+
+    .plan-badge {
+      background: var(--red);
+      color: #fff;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      flex-shrink: 0;
+      /* Parallelogram badge */
+      clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
+    }
+
+    /* ===============================================
+       TODO LIST
+       =============================================== */
+    .todo-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .todo-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+      padding: 11px 12px;
+      border-left: 2px solid transparent;
+      cursor: default;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .todo-row:hover {
+      background: rgba(255,255,255,0.025);
+      border-left-color: var(--muted);
+    }
+
+    .todo-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 5px;
+    }
+    .todo-dot.high   { background: var(--red);   box-shadow: 0 0 6px rgba(255,70,85,0.55); }
+    .todo-dot.medium { background: var(--amber); }
+    .todo-dot.low    { background: var(--blue);  }
+
+    .todo-body { flex: 1; }
+    .todo-text {
+      font-size: 13px;
+      color: var(--cream);
+      line-height: 1.45;
+    }
+    .todo-due {
+      font-family: 'Space Mono', monospace;
+      font-size: 8px;
+      color: var(--dim);
+      margin-top: 3px;
+      letter-spacing: 0.04em;
+    }
+    .todo-due.hot { color: var(--red); }
+
+    /* ===============================================
+       NEWS CARDS
+       =============================================== */
+    .nc {
+      flex: 0 0 170px;
+      height: 256px;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      /* Clipped top-right corner */
+      clip-path: polygon(
+        0 0,
+        calc(100% - 14px) 0,
+        100% 14px,
+        100% 100%,
+        0 100%
+      );
+      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .nc:hover { transform: translateY(-8px); }
+
+    /* Accent frame border that appears on hover */
+    .nc-frame {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+      border: 1px solid transparent;
+      clip-path: polygon(
+        0 0,
+        calc(100% - 14px) 0,
+        100% 14px,
+        100% 100%,
+        0 100%
+      );
+      transition: border-color 0.22s;
+    }
+    .nc:hover .nc-frame { border-color: rgba(255, 70, 85, 0.55); }
+
+    /* Red top corner indicator */
+    .nc-corner {
+      position: absolute;
+      top: 0; right: 0;
+      width: 14px; height: 14px;
+      background: var(--red);
+      clip-path: polygon(100% 0, 0 0, 100% 100%);
+      z-index: 4;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .nc:hover .nc-corner { opacity: 1; }
+
+    .nc img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.45s ease;
+    }
+    .nc:hover img { transform: scale(1.07); }
+
+    .nc-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background: linear-gradient(
+        to top,
+        rgba(10, 12, 18, 0.97) 0%,
+        rgba(10, 12, 18, 0.6) 40%,
+        rgba(10, 12, 18, 0.15) 70%,
+        transparent 100%
+      );
+    }
+
+    .nc-body {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 14px 12px;
+      z-index: 2;
+    }
+
+    .nc-kicker {
+      font-family: 'Space Mono', monospace;
+      font-size: 8px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-bottom: 5px;
+    }
+
+    .nc-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      line-height: 1.3;
+      color: var(--cream);
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    /* ===============================================
+       FAB CLUSTER (bottom-right)
+       =============================================== */
+    .fab {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      z-index: 200;
+    }
+
+    .fab-btn {
+      width: 44px;
+      height: 44px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      color: var(--dim);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      clip-path: polygon(
+        0 0,
+        calc(100% - 8px) 0,
+        100% 8px,
+        100% 100%,
+        0 100%
+      );
+      transition:
+        background 0.15s,
+        color 0.15s,
+        border-color 0.15s,
+        transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .fab-btn:hover {
+      background: var(--card-h);
+      color: var(--red);
+      border-color: rgba(255, 70, 85, 0.28);
+      transform: translateY(-3px);
+    }
+
+    /* ===============================================
+       RESPONSIVE
+       =============================================== */
+    @media (max-width: 860px) {
+      .wrap { padding: 0 24px; }
+      .two-col { grid-template-columns: 1fr; gap: 32px; }
+      .page-hd-inner { flex-direction: column; align-items: flex-start; }
+      .hd-right { text-align: left; align-items: flex-start; }
+    }
+
+    @media (max-width: 600px) {
+      .links-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Atmosphere layers -->
+  <div class="grain"></div>
+  <div class="bg-accents"></div>
+  <div class="bg-tri"></div>
+
+  <!-- ============================================================
+       PAGE HEADER
+       ============================================================ -->
+  <header class="page-hd">
+    <div class="wrap">
+      <div class="page-hd-inner">
+        <div class="hd-left">
+          <div class="hd-eye">// Personlig oversikt 2026</div>
+          <h1 class="hd-title">
+            DASH<span class="dot">.</span>BOARD
+            <span class="sub">Personal command center</span>
+          </h1>
+        </div>
+        <div class="hd-right">
+          <div class="hd-date">
+            Torsdag<br>26. Juni / 2026
+          </div>
+          <div class="hd-status">
+            <div class="hd-dot"></div>
+            <span class="hd-status-txt">Online</span>
+          </div>
+        </div>
+      </div>
+      <div class="hd-bar"></div>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <!-- ============================================================
+         SECTION 1: STEAM WISHLIST
+         ============================================================ -->
+    <section class="sec" style="animation-delay: 0.12s">
+      <div class="sec-hd">
+        <span class="sec-label">Steam Ønskeliste</span>
+        <a href="#" class="sec-all">
+          Vis alle
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </a>
+      </div>
+      <div class="track" id="wl-track"></div>
+    </section>
+
+    <!-- ============================================================
+         SECTION 2: EXTERNAL LINKS
+         ============================================================ -->
+    <section class="sec" style="animation-delay: 0.22s">
+      <div class="sec-hd">
+        <span class="sec-label">Eksterne Lenker</span>
+        <a href="#" class="sec-all">
+          Alle
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </a>
+      </div>
+      <div class="links-grid" id="links-grid"></div>
+    </section>
+
+    <!-- ============================================================
+         SECTION 3+4: PLAN + TODO (two-column)
+         ============================================================ -->
+    <div class="two-col" style="animation-delay: 0.32s">
+      <div>
+        <div class="sec-hd">
+          <span class="sec-label">Dagens Plan</span>
+          <a href="#" class="sec-all">
+            Alle
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </a>
+        </div>
+        <div class="plan-list" id="plan-list"></div>
+      </div>
+      <div>
+        <div class="sec-hd">
+          <span class="sec-label">Todo</span>
+          <a href="#" class="sec-all">
+            Alle
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </a>
+        </div>
+        <div class="todo-list" id="todo-list"></div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         SECTION 5: NEWS
+         ============================================================ -->
+    <section class="sec" style="animation-delay: 0.44s; border-bottom: none;">
+      <div class="sec-hd">
+        <span class="sec-label">Nyhetssaker</span>
+        <a href="#" class="sec-all">
+          Vis alle
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </a>
+      </div>
+      <div class="track" id="news-track"></div>
+    </section>
+
+  </main>
+
+  <!-- ============================================================
+       FAB CLUSTER
+       ============================================================ -->
+  <div class="fab">
+    <button class="fab-btn" title="Innstillinger">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M12 2v2m0 16v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M2 12h2m16 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+      </svg>
+    </button>
+    <button class="fab-btn" title="Logg ut">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+        <polyline points="16 17 21 12 16 7"/>
+        <line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- ============================================================
+       DATA + RENDER SCRIPT
+       ============================================================ -->
+  <script>
+    // ---- DATA ----
+
+    const games = [
+      { id: 1145350, name: 'Hades II',                 price: '99,-',  was: '299,-', disc: 67 },
+      { id: 1030300, name: 'Hollow Knight: Silksong',  price: '149,-', was: '299,-', disc: 50 },
+      { id: 632470,  name: 'Disco Elysium',            price: '79,-',  was: '395,-', disc: 80 },
+      { id: 1086940, name: "Baldur's Gate 3",          price: '399,-', was: '599,-', disc: 33 },
+      { id: 1245620, name: 'Elden Ring',               price: '479,-', was: '599,-', disc: 20 },
+      { id: 1091500, name: 'Cyberpunk 2077',           price: '209,-', was: '599,-', disc: 65 },
+    ];
+
+    const links = [
+      { ic: 'YT',  name: 'YouTube',    sub: 'youtube.com',    color: '#ff0033' },
+      { ic: 'GH',  name: 'GitHub',     sub: 'github.com',     color: '#6e76ae' },
+      { ic: 'NRK', name: 'NRK',        sub: 'nrk.no',         color: '#1f6feb' },
+      { ic: 'ML',  name: 'Proton Mail',sub: 'proton.me',      color: '#6f57d8' },
+      { ic: 'TW',  name: 'Twitch',     sub: 'twitch.tv',      color: '#9146ff' },
+      { ic: 'SP',  name: 'Spotify',    sub: 'open.spotify',   color: '#1db954' },
+      { ic: 'RE',  name: 'Reddit',     sub: 'reddit.com',     color: '#ff4500' },
+      { ic: 'ST',  name: 'Steam',      sub: 'store.steam',    color: '#1387d9' },
+    ];
+
+    const plan = [
+      { time: '08:00-08:45', title: 'Morgenrutine',                           past: true  },
+      { time: '13:00-14:30', title: 'Design-gjennomgang: bakgrunner',         now:  true  },
+      { time: '16:00-17:00', title: 'Trening',  loc: 'SATS Bislett'                       },
+      { time: '20:30-22:00', title: 'Gaming kveld'                                         },
+    ];
+
+    const todos = [
+      { pri: 'high',   text: 'Velg bakgrunns-tema og oppdater globals.css', due: 'i dag',    hot: true },
+      { pri: 'medium', text: 'Deploy til Vercel og test pa mobil',          due: 'i morgen'            },
+      { pri: 'low',    text: 'Rydde i mockups-mappa'                                                    },
+      { pri: 'medium', text: 'Skrive om hover-effekt pa lenkekort'                                      },
+    ];
+
+    const news = [
+      { kicker: 'Innenriks',  title: 'Regjeringen legger fram nytt budsjett i dag', seed: 'news-a' },
+      { kicker: 'Sport',      title: 'Norge til finalen etter dramatisk omspill',   seed: 'news-b' },
+      { kicker: 'Teknologi',  title: 'Ny AI-modell setter rekord pa alle tester',   seed: 'news-c' },
+      { kicker: 'Kultur',     title: 'Festivalsommeren er offisielt i gang',         seed: 'news-d' },
+      { kicker: 'Verden',     title: 'Historisk toppmote avsluttet uten enighet',   seed: 'news-e' },
+    ];
+
+    // ---- RENDER: WISHLIST ----
+
+    const wlTrack = document.getElementById('wl-track');
+    games.forEach(g => {
+      const imgSrc  = `https://cdn.cloudflare.steamstatic.com/steam/apps/${g.id}/header.jpg`;
+      const fallback = `https://placehold.co/460x215/1a1d25/ece8e1?text=${encodeURIComponent(g.name)}`;
+      const card = document.createElement('div');
+      card.className = 'gc';
+      card.innerHTML = `
+        <div class="gc-img-wrap">
+          <img class="gc-img"
+               src="${imgSrc}"
+               alt="${g.name}"
+               onerror="this.onerror=null;this.src='${fallback}'">
+        </div>
+        <div class="gc-body">
+          <div class="gc-disc">-${g.disc}%</div>
+          <div class="gc-name">${g.name}</div>
+          <div class="gc-prices">
+            <span class="gc-price">${g.price}</span>
+            <span class="gc-was">${g.was}</span>
+          </div>
+        </div>`;
+      wlTrack.appendChild(card);
+    });
+
+    // ---- RENDER: LINKS ----
+
+    const linksGrid = document.getElementById('links-grid');
+    links.forEach(l => {
+      const a = document.createElement('a');
+      a.className = 'lc';
+      a.href = '#';
+      a.style.setProperty('--color', l.color);
+      a.innerHTML = `
+        <div class="lc-chip" style="background:${l.color}1a;color:${l.color}">${l.ic}</div>
+        <div class="lc-info">
+          <div class="lc-name">${l.name}</div>
+          <div class="lc-sub">${l.sub}</div>
+        </div>
+        <span class="lc-arrow">›</span>`;
+      linksGrid.appendChild(a);
+    });
+
+    // ---- RENDER: PLAN ----
+
+    const planList = document.getElementById('plan-list');
+    plan.forEach(p => {
+      const row = document.createElement('div');
+      row.className = 'plan-row' + (p.now ? ' now' : '') + (p.past ? ' past' : '');
+      row.innerHTML = `
+        <div class="plan-dot"></div>
+        <div class="plan-time">${p.time}</div>
+        <div class="plan-meta">
+          <div class="plan-title">${p.title}</div>
+          ${p.loc ? `<div class="plan-loc">${p.loc}</div>` : ''}
+        </div>
+        ${p.now ? '<div class="plan-badge">Na</div>' : ''}`;
+      planList.appendChild(row);
+    });
+
+    // ---- RENDER: TODO ----
+
+    const todoList = document.getElementById('todo-list');
+    todos.forEach(t => {
+      const row = document.createElement('div');
+      row.className = 'todo-row';
+      row.innerHTML = `
+        <div class="todo-dot ${t.pri}"></div>
+        <div class="todo-body">
+          <div class="todo-text">${t.text}</div>
+          ${t.due ? `<div class="todo-due${t.hot ? ' hot' : ''}">${t.due}</div>` : ''}
+        </div>`;
+      todoList.appendChild(row);
+    });
+
+    // ---- RENDER: NEWS ----
+
+    const newsTrack = document.getElementById('news-track');
+    news.forEach(n => {
+      const card = document.createElement('div');
+      card.className = 'nc';
+      card.innerHTML = `
+        <img src="https://picsum.photos/seed/${n.seed}/320/480"
+             alt="${n.title}"
+             loading="lazy">
+        <div class="nc-overlay"></div>
+        <div class="nc-frame"></div>
+        <div class="nc-corner"></div>
+        <div class="nc-body">
+          <div class="nc-kicker">${n.kicker}</div>
+          <div class="nc-title">${n.title}</div>
+        </div>`;
+      newsTrack.appendChild(card);
+    });
+
+    // ---- DRAG SCROLL ----
+
+    function makeDraggable(el) {
+      let active = false, startX = 0, scrollLeft = 0;
+
+      el.addEventListener('mousedown', e => {
+        active = true;
+        el.classList.add('dragging');
+        startX = e.pageX - el.offsetLeft;
+        scrollLeft = el.scrollLeft;
+      });
+
+      const stop = () => {
+        active = false;
+        el.classList.remove('dragging');
+      };
+
+      window.addEventListener('mouseup', stop);
+      el.addEventListener('mouseleave', stop);
+
+      el.addEventListener('mousemove', e => {
+        if (!active) return;
+        e.preventDefault();
+        const x = e.pageX - el.offsetLeft;
+        el.scrollLeft = scrollLeft - (x - startX);
+      });
+
+      // Prevent accidental link/card clicks after a drag
+      el.addEventListener('click', e => {
+        if (Math.abs(el.scrollLeft - scrollLeft) > 4) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }, true);
+    }
+
+    makeDraggable(document.getElementById('wl-track'));
+    makeDraggable(document.getElementById('news-track'));
+  </script>
+</body>
+</html>

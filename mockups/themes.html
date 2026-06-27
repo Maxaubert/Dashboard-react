@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dashboard — gamer theme mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;overflow:hidden;font-family:'Space Grotesk',sans-serif;background:#05060a;}
+  .shell{display:flex;flex-direction:column;height:100%;}
+
+  .bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 16px;
+    background:linear-gradient(180deg,#0c0e16,#070810);border-bottom:1px solid rgba(255,255,255,.08);z-index:10;}
+  .brand{font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.24em;text-transform:uppercase;color:#7c89b5;margin-right:6px;}
+  .brand b{color:#fff;font-weight:700;}
+  .sw{cursor:pointer;border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:8px 13px;
+    font-family:'IBM Plex Mono',monospace;font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;
+    background:rgba(255,255,255,.03);color:#dfe3f1;display:flex;align-items:center;gap:8px;transition:transform .12s,border-color .15s,background .15s;}
+  .sw:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.45);}
+  .sw[aria-pressed="true"]{background:rgba(255,255,255,.12);border-color:#fff;box-shadow:0 0 0 1px #fff inset;}
+  .dot{width:14px;height:14px;border-radius:4px;border:1px solid rgba(0,0,0,.35);flex:none;}
+  .spacer{flex:1;}
+  .meta{font-family:'IBM Plex Mono',monospace;font-size:.58rem;letter-spacing:.05em;color:#8c93b0;text-transform:uppercase;text-align:right;line-height:1.5;}
+  .openbtn{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:#aeb6d8;
+    text-decoration:none;border:1px solid rgba(255,255,255,.14);border-radius:7px;padding:8px 12px;transition:border-color .15s,color .15s;}
+  .openbtn:hover{border-color:#fff;color:#fff;}
+
+  .frame-wrap{position:relative;flex:1;background:#05060a;}
+  iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#05060a;}
+  .loading{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;
+    font-family:'IBM Plex Mono',monospace;font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:#4a4f6b;
+    transition:opacity .3s;}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="bar">
+    <span class="brand"><b>DASHBOARD</b> · theme mockups</span>
+    <button class="sw" data-key="esports"><span class="dot" style="background:linear-gradient(135deg,#16191f,#ff4655)"></span>Esports</button>
+    <button class="sw" data-key="hud"><span class="dot" style="background:linear-gradient(135deg,#060a12,#38f5ff)"></span>Tactical HUD</button>
+    <button class="sw" data-key="outrun"><span class="dot" style="background:linear-gradient(135deg,#2a0a4a,#ff2d95 60%,#ff7a00)"></span>Outrun</button>
+    <button class="sw" data-key="arcade"><span class="dot" style="background:radial-gradient(circle at 30% 30%,#ff2e88,#07070d 70%)"></span>CRT Arcade</button>
+    <button class="sw" data-key="riso"><span class="dot" style="background:#f4efe6"></span>Riso Paper</button>
+    <span class="spacer"></span>
+    <div class="meta" id="meta"></div>
+    <a class="openbtn" id="open" href="#" target="_blank" rel="noopener">Åpne ↗</a>
+  </div>
+  <div class="frame-wrap">
+    <div class="loading" id="loading">Laster…</div>
+    <iframe id="frame" title="theme preview"></iframe>
+  </div>
+</div>
+<script>
+  const THEMES={
+    esports:{file:"theme-esports.html",note:"Modern AAA-launcher · skrå aksenter · kinetiske hovers"},
+    hud:{file:"theme-hud.html",note:"Sci-fi HUD · hjørnebraketter · telemetri + scan-sweep"},
+    outrun:{file:"theme-outrun.html",note:"80-talls synthwave · neon perspektivrutenett + solnedgang"},
+    arcade:{file:"theme-arcade.html",note:"CRT arkade · skannelinjer · RGB-split neon"},
+    riso:{file:"theme-riso.html",note:"Riso-papir · varm duotone halftone (den dempede)"},
+  };
+  const frame=document.getElementById('frame'), meta=document.getElementById('meta'),
+        loading=document.getElementById('loading'), open=document.getElementById('open'),
+        btns=[...document.querySelectorAll('.sw')];
+  function set(k){
+    const t=THEMES[k]; if(!t) return;
+    loading.style.opacity='1';
+    frame.src=t.file;
+    open.href=t.file;
+    meta.textContent=t.note;
+    btns.forEach(b=>b.setAttribute('aria-pressed',b.dataset.key===k));
+    location.hash=k;
+  }
+  frame.addEventListener('load',()=>{loading.style.opacity='0';});
+  btns.forEach(b=>b.addEventListener('click',()=>set(b.dataset.key)));
+  const start=(location.hash||'').replace('#','');
+  set(THEMES[start]?start:'esports');
+</script>
+</body>
+</html>

@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Background pop — faithful dashboard mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+JP:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  /* ════════════════════════════════════════════════════════════════
+   * Faithful reproduction of the live Dashboard home page so the
+   * background treatments can be judged in context. Component CSS is
+   * ported from src/styles/globals.css; only the *themeable* surfaces
+   * (canvas, link cards, todo/plan rows, section rules, title, glyphs)
+   * read theme vars so each background "flows" with the content rather
+   * than punching white boxes onto a flat color. Image-based cards
+   * (wishlist covers, news) stay constant and anchor the palette.
+   * ════════════════════════════════════════════════════════════════ */
+
+  :root{
+    --display:'Chakra Petch',sans-serif;      /* stand-in for Xirod (not on Google Fonts) */
+    --body:'Space Grotesk',sans-serif;
+    --mono:'IBM Plex Mono',monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;overflow-x:hidden;}
+
+  body{
+    font-family:var(--body);
+    min-height:100vh;
+    color:var(--ink);
+    background:var(--canvas);
+    background-attachment:fixed;
+    transition:background .4s ease, color .3s ease;
+  }
+
+  /* ── THEME DEFINITIONS ───────────────────────────────────────────
+   * Every theme sets the same variable contract. Panels/rows/cards
+   * derive from these so the surfaces belong to the same color world. */
+
+  /* 1 · Midnight Cobalt — the cohesive version of the flat-blue idea */
+  body[data-bg="cobalt"]{
+    --canvas:
+      radial-gradient(1100px 700px at 12% -10%, rgba(43,160,255,.22), transparent 60%),
+      radial-gradient(1000px 800px at 100% 8%, rgba(132,99,255,.20), transparent 60%),
+      linear-gradient(160deg,#06122f 0%,#0a1c4d 55%,#081232 100%);
+    --ink:#eaf1ff; --ink-dim:#aebbe0; --ink-mute:#7f8cb8;
+    --panel:rgba(20,40,86,.46); --panel-2:rgba(120,160,255,.06);
+    --edge:rgba(120,165,255,.16); --edge-strong:rgba(120,165,255,.34);
+    --rule:rgba(150,180,255,.18); --accent:#2bc4de; --accent2:#8b7bff;
+  }
+  /* 2 · Plasma — violet → magenta */
+  body[data-bg="plasma"]{
+    --canvas:
+      radial-gradient(1000px 700px at 8% -8%, rgba(190,60,255,.26), transparent 60%),
+      radial-gradient(1100px 800px at 105% 20%, rgba(255,40,140,.22), transparent 60%),
+      linear-gradient(155deg,#1a0a2e 0%,#3a0f53 55%,#220a36 100%);
+    --ink:#f6ecff; --ink-dim:#d3b8ec; --ink-mute:#a081c4;
+    --panel:rgba(60,24,92,.48); --panel-2:rgba(210,130,255,.07);
+    --edge:rgba(210,130,255,.18); --edge-strong:rgba(230,120,210,.40);
+    --rule:rgba(210,150,255,.20); --accent:#ff3d8b; --accent2:#b06bff;
+  }
+  /* 3 · Crimson Noir — warm near-black + crimson glow (most "Frames") */
+  body[data-bg="noir"]{
+    --canvas:
+      radial-gradient(1000px 720px at 14% -10%, rgba(232,33,78,.20), transparent 58%),
+      radial-gradient(900px 760px at 102% 14%, rgba(43,196,222,.10), transparent 60%),
+      linear-gradient(160deg,#140609 0%,#0d0d11 60%,#100509 100%);
+    --ink:#f4ecee; --ink-dim:#c9b8bd; --ink-mute:#8f8086;
+    --panel:rgba(36,18,24,.5); --panel-2:rgba(232,33,78,.05);
+    --edge:rgba(232,33,78,.16); --edge-strong:rgba(232,33,78,.42);
+    --rule:rgba(232,33,78,.18); --accent:#e8214e; --accent2:#2bc4de;
+  }
+  /* 4 · Synthwave Mesh — black with multi-glow, tinted glass */
+  body[data-bg="mesh"]{
+    --canvas:
+      radial-gradient(640px 460px at 10% -6%, rgba(232,33,78,.30), transparent 60%),
+      radial-gradient(720px 520px at 106% 16%, rgba(43,196,222,.26), transparent 60%),
+      radial-gradient(760px 560px at 56% 120%, rgba(139,123,255,.24), transparent 60%),
+      #08080d;
+    --ink:#eef0f6; --ink-dim:#b9bdcf; --ink-mute:#83889c;
+    --panel:rgba(22,24,38,.52); --panel-2:rgba(160,170,255,.05);
+    --edge:rgba(150,160,220,.16); --edge-strong:rgba(43,196,222,.42);
+    --rule:rgba(150,160,220,.16); --accent:#2bc4de; --accent2:#e8214e;
+  }
+  /* 5 · Acid Editorial — bold light: ink panels on a lime field (duotone) */
+  body[data-bg="acid"]{
+    --canvas:
+      linear-gradient(160deg,#d8ff34 0%,#c6f51a 55%,#b9e80f 100%);
+    --ink:#0d0d11; --ink-dim:#2c2f17; --ink-mute:#5a5e34;
+    --panel:rgba(13,13,17,.92); --panel-2:rgba(13,13,17,.07);
+    --edge:rgba(13,13,17,.85); --edge-strong:#0d0d11;
+    --rule:rgba(13,13,17,.30); --accent:#0d0d11; --accent2:#e8214e;
+    --on-panel:#eafc9a; /* text that sits on the dark ink panels */
+  }
+  /* 6 · Riso Paper — warm paper + duotone halftone (the subtle option) */
+  body[data-bg="riso"]{
+    --canvas:
+      radial-gradient(closest-side at 16% 18%, rgba(232,33,78,.16), transparent 70%),
+      radial-gradient(closest-side at 86% 64%, rgba(43,196,222,.18), transparent 70%),
+      #f4efe6;
+    --ink:#0d0d11; --ink-dim:#4a463d; --ink-mute:#6b6a62;
+    --panel:rgba(255,255,255,.66); --panel-2:rgba(13,13,17,.035);
+    --edge:rgba(13,13,17,.16); --edge-strong:rgba(232,33,78,.55);
+    --rule:rgba(13,13,17,.14); --accent:#e8214e; --accent2:#2bc4de;
+  }
+  /* 0 · Current — the live blank-white theme, for A/B */
+  body[data-bg="paper"]{
+    --canvas:#ffffff;
+    --ink:#0d0d11; --ink-dim:#8a897f; --ink-mute:#6b6a62;
+    --panel:#ffffff; --panel-2:rgba(13,13,17,.02);
+    --edge:rgba(13,13,17,.18); --edge-strong:#0d0d11;
+    --rule:rgba(13,13,17,.12); --accent:#e8214e; --accent2:#2bc4de;
+  }
+
+  /* ── swatch toolbar ─────────────────────────────────────────────── */
+  .bar{
+    position:sticky; top:0; z-index:80; display:flex; gap:7px; align-items:center; flex-wrap:wrap;
+    padding:11px 16px; background:rgba(8,10,20,.55); backdrop-filter:blur(14px) saturate(130%);
+    border-bottom:1px solid rgba(255,255,255,.08);
+  }
+  .bar b{font-family:var(--mono);text-transform:uppercase;letter-spacing:.2em;font-size:.6rem;color:#cdd3e6;margin-right:4px;}
+  .sw{cursor:pointer;border:1px solid rgba(255,255,255,.16);border-radius:7px;padding:7px 10px;
+    font-family:var(--mono);font-size:.62rem;letter-spacing:.05em;text-transform:uppercase;
+    background:rgba(255,255,255,.04);color:#e7eaf4;display:flex;align-items:center;gap:7px;transition:transform .1s,border-color .15s;}
+  .sw:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.4);}
+  .sw[aria-pressed="true"]{outline:2px solid #fff;outline-offset:1px;background:rgba(255,255,255,.12);}
+  .dot{width:13px;height:13px;border-radius:3px;border:1px solid rgba(0,0,0,.3);}
+  .barnote{margin-left:auto;font-family:var(--mono);font-size:.58rem;letter-spacing:.04em;color:#9aa0b8;text-transform:uppercase;}
+
+  /* ── page shell (ported: .page padding-top 18px, full width) ─────── */
+  .page{max-width:none;padding:26px clamp(20px,3vw,52px) 90px;position:relative;z-index:1;}
+
+  /* faint vertical CJK side glyphs (ported .side-glyph) */
+  .side-glyph{position:fixed;top:0;bottom:0;z-index:0;display:none;align-items:center;
+    writing-mode:vertical-rl;text-orientation:upright;font-family:'Noto Sans JP',sans-serif;font-weight:800;
+    font-size:clamp(96px,11vw,196px);line-height:1;letter-spacing:.06em;
+    color:color-mix(in srgb,var(--ink) 8%,transparent);user-select:none;pointer-events:none;white-space:nowrap;}
+  .side-glyph-left{left:clamp(8px,2vw,40px);} .side-glyph-right{right:clamp(8px,2vw,40px);}
+  @media(min-width:1480px){ .side-glyph{display:flex;} }
+
+  /* title (ported .home-title — small, display face, top-left) */
+  .home-title{font-family:var(--display);font-weight:600;font-size:clamp(1.4rem,2.6vw,2rem);
+    line-height:1.2;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);margin:0 0 22px;padding-top:6px;}
+
+  .sections-container > section + section{margin-top:26px;}
+
+  /* section header (ported: label hidden, hairline rule + right "ALLE →") */
+  .section-header{display:flex;align-items:center;justify-content:flex-end;
+    margin-bottom:14px;padding-bottom:9px;border-bottom:1px solid var(--rule);}
+  .section-header .lbl{margin-right:auto;font-family:var(--mono);font-size:.66rem;font-weight:500;
+    letter-spacing:.22em;text-transform:uppercase;color:var(--ink-mute);}
+  .section-header-link{display:flex;align-items:center;gap:5px;color:var(--ink-mute);
+    font-family:var(--mono);font-size:.62rem;font-weight:500;letter-spacing:.18em;text-transform:uppercase;
+    text-decoration:none;transition:color .15s;}
+  .section-header-link:hover{color:var(--ink);}
+  .section-header-link svg{fill:currentColor;}
+
+  /* carousels (ported .ext-grid) */
+  .ext-grid{display:flex;flex-direction:row;gap:12px;overflow-x:auto;padding:16px 2px 20px;margin:-16px 0 -20px;
+    scrollbar-width:none;cursor:grab;}
+  .ext-grid::-webkit-scrollbar{display:none;}
+
+  /* ── wishlist parallelogram covers (ported verbatim; self-contained) */
+  .wishlist-cover{position:relative;flex:0 0 280px;height:150px;border:0;background:transparent;padding:0;
+    cursor:pointer;overflow:hidden;
+    clip-path:polygon(0 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%);
+    transform:skewX(-7deg);transition:transform .35s cubic-bezier(.2,.85,.25,1);}
+  .wishlist-cover:hover{transform:skewX(-7deg) translateY(-4px);}
+  .wishlist-cover-inner{position:absolute;inset:0;transform:skewX(7deg) scale(1.2);background:#1a1d27;}
+  .wishlist-cover-bg{width:100%;height:100%;object-fit:cover;display:block;}
+  .wishlist-cover-grad{position:absolute;inset:0;background:linear-gradient(105deg,rgba(8,8,12,.78) 16%,transparent 62%);}
+  .wishlist-cover-badge{position:absolute;top:8px;left:10px;z-index:2;transform:skewX(7deg);background:#4c1d95;color:#fff;
+    font-family:var(--mono);font-weight:700;font-size:.74rem;padding:3px 8px;border-radius:5px;}
+  .wishlist-cover-panel{position:absolute;left:20px;bottom:12px;z-index:2;transform:skewX(7deg);color:#fff;}
+  .wishlist-cover-eyebrow{font-family:var(--mono);text-transform:uppercase;letter-spacing:.14em;font-size:.6rem;
+    opacity:.85;margin-bottom:4px;max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .wishlist-cover-price{display:flex;align-items:baseline;gap:8px;font-family:var(--display);font-weight:700;font-size:21px;line-height:1;}
+  .wishlist-price-was{font-family:var(--mono);font-weight:500;font-size:.5em;text-decoration:line-through;opacity:.6;}
+
+  /* ── link cards (ported .ext-link, now THEMED so they flow) ──────── */
+  .ext-link{position:relative;flex:0 0 152px;min-height:104px;display:flex;flex-direction:column;justify-content:space-between;
+    padding:15px 15px 13px;background:var(--panel);border:1px solid var(--edge);border-radius:10px;text-decoration:none;
+    overflow:hidden;backdrop-filter:blur(6px);transition:transform .16s,border-color .2s,box-shadow .25s,background .2s;}
+  .ext-link::after{content:'';position:absolute;bottom:0;left:15px;right:15px;height:1px;
+    background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--ext-color) 70%,transparent) 50%,transparent);
+    opacity:.5;transition:opacity .2s,left .25s,right .25s;}
+  .ext-link:hover{transform:translateY(-3px);border-color:var(--ext-color);
+    box-shadow:0 12px 30px rgba(0,0,0,.45),0 0 30px -6px color-mix(in srgb,var(--ext-color) 45%,transparent);}
+  .ext-link:hover::after{opacity:.95;left:0;right:0;}
+  .ext-fill{position:absolute;inset:0;z-index:0;pointer-events:none;}
+  .ext-fill i{position:absolute;left:0;background:var(--ext-color);transform:translateX(-120%);
+    transition:transform .25s cubic-bezier(.85,0,.15,1);}
+  .ext-link:hover .ext-fill i{transform:translateX(0);}
+  .ext-link > div{position:relative;z-index:1;}
+  .ext-link-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;}
+  .ext-link-icon{width:30px;height:30px;border-radius:6px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:12px;font-family:var(--mono);flex:none;}
+  .ext-link-arrow{color:color-mix(in srgb,var(--ink) 35%,transparent);transition:color .15s,opacity .15s;margin-top:1px;}
+  .ext-link:hover .ext-link-arrow{opacity:0;}
+  .ext-link-name{font-size:.84rem;font-weight:700;color:var(--ink);letter-spacing:-.02em;line-height:1.2;transition:color .2s;}
+  .ext-link-sub{font-size:.69rem;font-weight:500;color:var(--ink-mute);margin-top:3px;transition:color .2s;}
+  .ext-link:hover .ext-link-name,.ext-link:hover .ext-link-sub{color:#fff;}
+  body[data-bg="acid"] .ext-link-name{color:var(--on-panel);} /* dark ink panel needs light text */
+  body[data-bg="acid"] .ext-link-sub{color:#9aa861;}
+  body[data-bg="acid"] .ext-link-arrow{color:rgba(234,252,154,.5);}
+
+  /* ── today / dagens plan rows (ported .today-*, themed) ─────────── */
+  .today-list{display:flex;flex-direction:column;gap:6px;}
+  .today-item{background:var(--panel-2);border-radius:8px;padding:10px 13px;transition:background .12s;}
+  .today-item:hover{background:color-mix(in srgb,var(--accent) 12%,var(--panel-2));}
+  .today-item.past{opacity:.32;filter:grayscale(1);}
+  .today-item-inner{display:flex;align-items:center;gap:12px;}
+  .today-dot{width:8px;height:8px;border-radius:50%;flex:none;}
+  .today-time{font-size:.78rem;font-weight:600;color:var(--ink-dim);min-width:96px;flex:none;font-variant-numeric:tabular-nums;}
+  .today-title{font-size:.88rem;font-weight:600;color:var(--ink);flex:1;min-width:0;}
+  .today-loc{font-size:.74rem;color:var(--ink-mute);white-space:nowrap;}
+  .today-now-badge{font-size:.65rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:20px;
+    background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent);
+    border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);flex:none;}
+
+  /* ── todo preview rows (ported .todo-preview-*, themed) ─────────── */
+  .todo-preview-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;}
+  .todo-preview-item{display:flex;align-items:center;gap:11px;padding:9px 13px;border-radius:8px;cursor:pointer;background:var(--panel-2);transition:background .12s;}
+  .todo-preview-item:hover{background:color-mix(in srgb,var(--accent) 10%,var(--panel-2));}
+  .todo-preview-dot{width:8px;height:8px;border-radius:50%;flex:none;background:#71717a;}
+  .todo-preview-dot.prio-high{background:#f87171;} .todo-preview-dot.prio-medium{background:#fbbf24;} .todo-preview-dot.prio-low{background:#60a5fa;}
+  .todo-preview-text{flex:1;min-width:0;font-size:.88rem;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .todo-preview-deadline{color:var(--ink-mute);font-size:.78rem;flex:none;font-family:var(--mono);}
+
+  /* ── news cards (ported .news-*; self-contained image cards) ────── */
+  .news-list{display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;cursor:grab;}
+  .news-list::-webkit-scrollbar{display:none;}
+  .news-item{position:relative;flex:0 0 160px;height:240px;border:1px solid var(--edge);border-radius:12px;overflow:hidden;
+    transition:transform .15s,box-shadow .15s,border-color .15s;}
+  .news-item:hover{transform:translateY(-2px);border-color:var(--edge-strong);box-shadow:0 10px 28px rgba(0,0,0,.5);}
+  .news-item img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+  .news-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.9) 0%,rgba(0,0,0,.2) 55%,transparent 100%);}
+  .news-kicker{position:absolute;top:10px;left:10px;font-family:var(--mono);font-size:.54rem;letter-spacing:.16em;text-transform:uppercase;
+    color:#fff;background:rgba(0,0,0,.45);padding:3px 7px;border-radius:4px;}
+  .news-title{position:absolute;bottom:0;left:0;right:0;padding:12px 11px;font-size:.78rem;font-weight:700;color:#fff;line-height:1.35;}
+
+  /* fixed account cluster (ported .home-topbar--bare, bottom-right) */
+  .acct{position:fixed;bottom:16px;right:clamp(10px,1.6vw,30px);z-index:60;display:flex;gap:8px;}
+  .acct button{width:34px;height:34px;border-radius:6px;display:grid;place-items:center;cursor:pointer;
+    background:var(--panel);border:1px solid var(--edge);color:var(--ink-dim);backdrop-filter:blur(6px);}
+  .acct button:hover{color:var(--ink);border-color:var(--edge-strong);}
+  .acct svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;}
+</style>
+</head>
+<body data-bg="cobalt">
+  <div class="bar">
+    <b>Background</b>
+    <button class="sw" data-set="cobalt"><span class="dot" style="background:linear-gradient(135deg,#0a1c4d,#2ba0ff)"></span>Midnight Cobalt</button>
+    <button class="sw" data-set="plasma"><span class="dot" style="background:linear-gradient(135deg,#3a0f53,#ff3d8b)"></span>Plasma</button>
+    <button class="sw" data-set="noir"><span class="dot" style="background:linear-gradient(135deg,#0d0d11,#e8214e)"></span>Crimson Noir</button>
+    <button class="sw" data-set="mesh"><span class="dot" style="background:radial-gradient(circle at 30% 30%,#e8214e,#08080d 70%)"></span>Synthwave Mesh</button>
+    <button class="sw" data-set="acid"><span class="dot" style="background:#c6f51a"></span>Acid Editorial</button>
+    <button class="sw" data-set="riso"><span class="dot" style="background:#f4efe6"></span>Riso Paper</button>
+    <button class="sw" data-set="paper"><span class="dot" style="background:#fff"></span>Current (white)</button>
+    <span class="barnote" id="note"></span>
+  </div>
+
+  <div class="side-glyph side-glyph-left">ダッシュボード</div>
+  <div class="side-glyph side-glyph-right">ハローマックス</div>
+
+  <div class="page">
+    <h1 class="home-title">Dashboard</h1>
+    <div class="sections-container">
+
+      <!-- STEAM ØNSKELISTE -->
+      <section>
+        <div class="section-header"><span class="lbl">Steam ønskeliste</span>
+          <a class="section-header-link" href="#">Alle <svg width="12" height="12" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z"/></svg></a></div>
+        <div class="ext-grid" id="games"></div>
+      </section>
+
+      <!-- EKSTERNE LENKER -->
+      <section>
+        <div class="section-header"><span class="lbl">Eksterne lenker</span>
+          <a class="section-header-link" href="#">Alle <svg width="12" height="12" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z"/></svg></a></div>
+        <div class="ext-grid" id="links"></div>
+      </section>
+
+      <!-- DAGENS PLAN -->
+      <section>
+        <div class="section-header"><span class="lbl">Dagens plan</span>
+          <a class="section-header-link" href="#">Vis alle <svg width="12" height="12" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z"/></svg></a></div>
+        <div class="today-list">
+          <div class="today-item past"><div class="today-item-inner"><span class="today-dot" style="background:#2bc4de"></span><span class="today-time">08:00–08:45</span><span class="today-title">Morgenrutine</span></div></div>
+          <div class="today-item"><div class="today-item-inner"><span class="today-dot" style="background:#9485c8"></span><span class="today-time">13:00–14:30</span><span class="today-title">Design-gjennomgang: bakgrunner</span><span class="today-now-badge">Nå</span></div></div>
+          <div class="today-item"><div class="today-item-inner"><span class="today-dot" style="background:#1f9d57"></span><span class="today-time">16:00–17:00</span><span class="today-title">Trening</span><span class="today-loc">SATS Bislett</span></div></div>
+          <div class="today-item"><div class="today-item-inner"><span class="today-dot" style="background:#c2410c"></span><span class="today-time">20:30–22:00</span><span class="today-title">Gaming kveld</span></div></div>
+        </div>
+      </section>
+
+      <!-- TODO -->
+      <section>
+        <div class="section-header"><span class="lbl">Todo</span>
+          <a class="section-header-link" href="#">Vis alle <svg width="12" height="12" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z"/></svg></a></div>
+        <ul class="todo-preview-list">
+          <li class="todo-preview-item"><span class="todo-preview-dot prio-high"></span><span class="todo-preview-text">Velg bakgrunns-tema og oppdater globals.css</span><span class="todo-preview-deadline">i dag</span></li>
+          <li class="todo-preview-item"><span class="todo-preview-dot prio-medium"></span><span class="todo-preview-text">Deploy til Vercel og test på mobil</span><span class="todo-preview-deadline">i morgen</span></li>
+          <li class="todo-preview-item"><span class="todo-preview-dot prio-low"></span><span class="todo-preview-text">Rydde i mockups-mappa</span></li>
+          <li class="todo-preview-item"><span class="todo-preview-dot prio-medium"></span><span class="todo-preview-text">Skrive om hover-effekt på lenkekort</span></li>
+        </ul>
+      </section>
+
+      <!-- NYHETSSAKER -->
+      <section>
+        <div class="section-header"><span class="lbl">Nyhetssaker</span>
+          <a class="section-header-link" href="#">VG <svg width="12" height="12" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z"/></svg></a></div>
+        <div class="news-list" id="news"></div>
+      </section>
+
+    </div>
+  </div>
+
+  <div class="acct">
+    <button title="Innstillinger"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+    <button title="Logg ut"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+  </div>
+
+<script>
+  /* ── real Steam cover art (header.jpg) for faithful wishlist covers ── */
+  const GAMES=[
+    {appid:1145350,name:"Hades II",price:"99,-",was:"299,-",disc:67},
+    {appid:1030300,name:"Hollow Knight: Silksong",price:"149,-",was:"299,-",disc:50},
+    {appid:632470,name:"Disco Elysium",price:"79,-",was:"395,-",disc:80},
+    {appid:1086940,name:"Baldur's Gate 3",price:"399,-",was:"599,-",disc:33},
+    {appid:1245620,name:"Elden Ring",price:"479,-",was:"599,-",disc:20},
+    {appid:1091500,name:"Cyberpunk 2077",price:"209,-",was:"599,-",disc:65},
+  ];
+  document.getElementById('games').innerHTML=GAMES.map(g=>`
+    <button class="wishlist-cover" title="${g.name}">
+      <div class="wishlist-cover-inner">
+        <img class="wishlist-cover-bg" loading="lazy"
+             src="https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/header.jpg"
+             onerror="this.style.display='none'">
+        <div class="wishlist-cover-grad"></div>
+      </div>
+      <span class="wishlist-cover-badge">-${g.disc}%</span>
+      <div class="wishlist-cover-panel">
+        <div class="wishlist-cover-eyebrow">${g.name}</div>
+        <div class="wishlist-cover-price"><span>${g.price}</span><span class="wishlist-price-was">${g.was}</span></div>
+      </div>
+    </button>`).join('');
+
+  /* ── link cards (icon chip keeps brand color; surface is themed) ── */
+  const LINKS=[
+    {ic:"YT",name:"YouTube",sub:"youtube.com",c:"#ff0033"},
+    {ic:"GH",name:"GitHub",sub:"github.com",c:"#5b5b66"},
+    {ic:"NRK",name:"NRK",sub:"nrk.no",c:"#1f6feb"},
+    {ic:"ML",name:"Proton Mail",sub:"proton.me",c:"#6f57d8"},
+    {ic:"TW",name:"Twitch",sub:"twitch.tv",c:"#9146ff"},
+    {ic:"SP",name:"Spotify",sub:"open.spotify",c:"#1db954"},
+    {ic:"RE",name:"Reddit",sub:"reddit.com",c:"#ff4500"},
+    {ic:"ST",name:"Steam",sub:"store.steam",c:"#1387d9"},
+  ];
+  const fillBars=Array.from({length:8},(_,k)=>`<i style="top:${(k/8)*100}%;height:${100/8+0.6}%;width:${Math.round(((k+1)/8)*100)}%;transition-delay:${k*19}ms"></i>`).join('');
+  document.getElementById('links').innerHTML=LINKS.map(l=>`
+    <a class="ext-link" href="#" style="--ext-color:${l.c}">
+      <span class="ext-fill">${fillBars}</span>
+      <div class="ext-link-top">
+        <span class="ext-link-icon" style="background:${l.c}">${l.ic}</span>
+        <svg class="ext-link-arrow" width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M14 3l-1.41 1.41L18.17 10H4v2h14.17l-5.58 5.59L14 19l8-8z"/></svg>
+      </div>
+      <div><div class="ext-link-name">${l.name}</div><div class="ext-link-sub">${l.sub}</div></div>
+    </a>`).join('');
+
+  /* ── news cards (Picsum stand-in imagery) ── */
+  const NEWS=[
+    {k:"Innenriks",t:"Regjeringen legger fram nytt budsjett i dag",s:"news-a"},
+    {k:"Sport",t:"Norge til finalen etter dramatisk omspill",s:"news-b"},
+    {k:"Teknologi",t:"Ny AI-modell setter rekord på alle tester",s:"news-c"},
+    {k:"Kultur",t:"Festivalsommeren er offisielt i gang",s:"news-d"},
+    {k:"Verden",t:"Historisk toppmøte avsluttet uten enighet",s:"news-e"},
+  ];
+  document.getElementById('news').innerHTML=NEWS.map(n=>`
+    <a class="news-item" href="#">
+      <img loading="lazy" src="https://picsum.photos/seed/${n.s}/320/480">
+      <div class="news-overlay"></div>
+      <span class="news-kicker">${n.k}</span>
+      <div class="news-title">${n.t}</div>
+    </a>`).join('');
+
+  /* ── theme switching + drag-scroll for the carousels ── */
+  const NOTES={
+    cobalt:"Deep blue gradient · navy glass panels · cyan/violet edges",
+    plasma:"Violet→magenta · violet glass · pink accent",
+    noir:"Warm near-black + crimson glow · the most 'Frames'",
+    mesh:"Black + multi-glow · tinted glass float",
+    acid:"Bold light · ink panels on lime (duotone)",
+    riso:"Warm paper + duotone halftone · subtle",
+    paper:"The live blank-white theme, for A/B"
+  };
+  const body=document.body, btns=[...document.querySelectorAll('.sw')], note=document.getElementById('note');
+  function set(v){body.dataset.bg=v;btns.forEach(b=>b.setAttribute('aria-pressed',b.dataset.set===v));note.textContent=NOTES[v]||"";}
+  btns.forEach(b=>b.addEventListener('click',()=>set(b.dataset.set)));
+  set('cobalt');
+
+  // simple click-drag horizontal scroll on the carousels (like useDragScroll)
+  document.querySelectorAll('.ext-grid,.news-list').forEach(el=>{
+    let down=false,x=0,sl=0;
+    el.addEventListener('mousedown',e=>{down=true;x=e.pageX;sl=el.scrollLeft;});
+    window.addEventListener('mouseup',()=>down=false);
+    el.addEventListener('mousemove',e=>{if(!down)return;e.preventDefault();el.scrollLeft=sl-(e.pageX-x);});
+  });
+</script>
+</body>
+</html>
