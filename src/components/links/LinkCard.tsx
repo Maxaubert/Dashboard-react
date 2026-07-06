@@ -25,8 +25,6 @@ export function LinkCard({ link, onToggleFavorite, onContextMenu }: LinkCardProp
       style={{ ['--ext-color' as string]: accent }}
       onContextMenu={onContextMenu}
     >
-      <ExtLinkFill />
-
       {/* Stretched anchor — fills the whole card so the entire surface
        * is clickable, not just the icon/text patches. The favorite
        * button sits above it via z-index in the CSS. Edit/Delete are on
@@ -71,13 +69,6 @@ export function LinkCard({ link, onToggleFavorite, onContextMenu }: LinkCardProp
       </div>
     </div>
   );
-}
-
-/** Hover fill: a single accent panel that wipes across and covers the whole
- *  card (a slight skew gives the leading edge a diagonal sweep). The styling
- *  lives in `.ext-fill` in globals.css. */
-export function ExtLinkFill() {
-  return <span className="ext-fill" aria-hidden="true" />;
 }
 
 /* ── Sortable link card ──────────────────────────────────────────────────── */
