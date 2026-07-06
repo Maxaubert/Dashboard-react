@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useLinks } from '@/hooks/useLinks';
 import { usePageOverlay } from '@/context/PageOverlayContext';
 import { useDragScroll } from '@/hooks/useDragScroll';
-import { LinkIconRender, ExtLinkFill } from '@/components/links/LinkCard';
+import { LinkIconRender } from '@/components/links/LinkCard';
 import type { LinkItem } from '@/api/types';
 import { GripHandle, type HandleProps } from '@/components/home/GripHandle';
 
@@ -83,7 +83,6 @@ function ExternalLinkCard({ link }: { link: LinkItem }) {
       className="ext-link"
       style={{ ['--ext-color' as string]: accent }}
     >
-      <ExtLinkFill />
       <div className="ext-link-top">
         <div className="ext-link-icon-wrap">
           <LinkIconRender link={link} />

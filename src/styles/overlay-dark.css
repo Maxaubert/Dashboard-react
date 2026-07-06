@@ -47,7 +47,6 @@
  *      link tiles read dark, and fix their hover states (the Papir HUD hover
  *      prints a hard light shadow / light accent wash). ─────────────────────*/
 .page-overlay-panel .card,
-.page-overlay-panel .ext-link,
 .page-overlay-panel .weather-card,
 .page-overlay-panel .prompt-launcher-card {
   background: #151517 !important;
@@ -57,28 +56,59 @@
   border-color: rgba(255, 255, 255, 0.22) !important;
   box-shadow: 6px 6px 0 var(--card-color, #e8214e) !important;
 }
-.page-overlay-panel .ext-link:hover {
-  /* Dark accent wash behind the staircase fill (Papir HUD used a light wash). */
-  background: color-mix(in srgb, var(--ext-color, #e8214e) 16%, #151517) !important;
-  border-color: var(--ext-color, #e8214e) !important;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5) !important;
-}
 
-/* ── 4a. Links page ─────────────────────────────────────────────────────────
- *  LinksLibrary section headers / rename input / category picker are already
- *  dark-styled. We only fix the .ext-link tile text (it used dark-on-light
- *  ink) and the right-click section menu (it was a white popover). */
+/* ── 4a. Links page — match the home dashboard link tiles (.lcard) exactly ───
+ *  The library `.ext-link` cards should read as visually identical to the bento
+ *  `.lcard` tiles on the home dashboard: transparent surface, 16px corners,
+ *  accent-tinted icon chip, plain-grey mono subtitle, and a lift + accent-glow
+ *  hover (no fill wash, no bottom accent line). Doubled specificity + !important
+ *  beats the Papir HUD light-surface rules. The favorite ★ stays — it is the
+ *  only control for toggling favorites on this page. */
+.page-overlay-panel .ext-link {
+  background: transparent !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 16px !important;
+  padding: 16px !important;
+  min-height: 112px;
+  box-shadow: none !important;
+}
+.page-overlay-panel .ext-link::after { content: none !important; }
+.page-overlay-panel .ext-link:hover {
+  background: transparent !important;
+  transform: translateY(-3px) !important;
+  border-color: var(--ext-color, #e8214e) !important;
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.42),
+    0 0 28px -8px var(--ext-color, #e8214e) !important;
+}
+.page-overlay-panel .ext-link-icon-wrap {
+  background: color-mix(in srgb, var(--ext-color, #e8214e) 16%, #101012);
+}
 .page-overlay-panel .ext-link-name {
-  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #ededec;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .page-overlay-panel .ext-link:hover .ext-link-name {
-  color: #fff;
+  color: #ededec;
 }
 .page-overlay-panel .ext-link-arrow {
-  color: rgba(255, 255, 255, 0.30);
+  color: #5b5b5c;
+}
+.page-overlay-panel .ext-link:hover .ext-link-arrow {
+  opacity: 1;
+  color: #ededec;
+  transform: translate(3px, -3px);
 }
 .page-overlay-panel .ext-link-sub {
-  color: color-mix(in srgb, var(--ext-color, #9a9a98) 35%, #9a9a98);
+  color: #8d8d8b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 /* Right-click "rename / delete section" menu (rendered inside the library). */
 .page-overlay-panel .section-context-menu {
