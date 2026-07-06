@@ -238,7 +238,9 @@
 }
 .bento-home .gtile {
   position: relative;
-  flex: 0 0 196px;
+  /* Steam header capsules are 460x215 (~2.14:1). Match that ratio so the
+   * cover art fills the tile without object-fit cropping the sides. */
+  flex: 0 0 338px;
   height: 158px;
   border-radius: 14px;
   overflow: hidden;
@@ -290,7 +292,7 @@
 }
 .bento-home .gtile .gp s { color: var(--dim); font-size: 0.66rem; }
 .bento-home .gskel {
-  flex: 0 0 196px;
+  flex: 0 0 338px;
   height: 158px;
   border-radius: 14px;
   background: linear-gradient(100deg, #1a1d24 30%, #23262f 50%, #1a1d24 70%);
