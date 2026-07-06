@@ -62,7 +62,6 @@ function GameTile({ game, onClick }: { game: WishlistGame; onClick: () => void }
       <div className="gg" />
       {game.onSale && <span className="gb">-{game.discount}%</span>}
       <div className="gm">
-        <div className="gn">{game.name}</div>
         <div className="gp">
           {game.isFree ? (
             'Gratis'

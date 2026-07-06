@@ -280,16 +280,7 @@
   right: 13px;
   bottom: 12px;
 }
-.bento-home .gtile .gn {
-  font-size: 0.82rem;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--ink);
-}
 .bento-home .gtile .gp {
-  margin-top: 5px;
   font-family: var(--font-mono);
   font-size: 0.78rem;
   display: flex;
