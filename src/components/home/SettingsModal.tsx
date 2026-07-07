@@ -1,6 +1,7 @@
 import { Modal } from '@/components/ui';
 import { SECTION_LABELS, type SectionId } from '@/lib/home';
 import { cn } from '@/lib/cn';
+import { useGlassMode } from '@/context/GlassModeContext';
 import {
   DndContext,
   KeyboardSensor,
@@ -44,6 +45,8 @@ export function SettingsModal({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
+  const { enabled: glassEnabled, setEnabled: setGlassEnabled } = useGlassMode();
+
   function handleDragEnd(e: DragEndEvent) {
     const { active, over } = e;
     if (!over || active.id === over.id) return;
@@ -56,6 +59,22 @@ export function SettingsModal({
   return (
     <Modal open={open} onOpenChange={onOpenChange} title="Innstillinger" variant="standard" size="md">
       <p className="settings-hint">Dra for å endre rekkefølge. Skru av for å skjule en seksjon.</p>
+      <div className="settings-row">
+        <span className="settings-row-label">Gjennomsiktig modus (Nebula)</span>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={glassEnabled}
+          aria-label="Gjennomsiktig modus (Nebula)"
+          className={cn('settings-toggle', glassEnabled && 'on')}
+          onClick={() => setGlassEnabled(!glassEnabled)}
+        >
+          <span className="settings-toggle-knob" />
+        </button>
+      </div>
+      <p className="settings-hint" style={{ marginTop: 0 }}>
+        Gjør flatene gjennomsiktige slik at Zen/Nebula-bakgrunnen skinner gjennom. Virker bare i Zen.
+      </p>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={order} strategy={verticalListSortingStrategy}>
           <div className="settings-list">
