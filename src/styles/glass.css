@@ -48,8 +48,15 @@ body.glass-mode .bento-card.sage .tobox { border-color: rgba(255, 255, 255, 0.30
 body.glass-mode .bento-card.sage .torow.done .tobox { background: #ededec !important; }
 body.glass-mode .bento-card.sage .torow.done .tobox::after { color: #171a12 !important; }
 
-/* 4. Modal backdrop: soften the opaque scrim so glass modals read against Mica
- *    rather than a flat black sheet. */
-body.glass-mode .lm-overlay { background: rgba(0, 0, 0, 0.35) !important; }
+/* 4. Popup backdrops: when a modal or a full-page overlay opens, blur the
+ *    dashboard behind it harder (strong ~50px) so the popup reads as a clear
+ *    frosted-glass focus. Covers modal scrims (.lm-overlay) and the full-page
+ *    overlay backdrop (.page-overlay-backdrop). */
+body.glass-mode .lm-overlay,
+body.glass-mode .page-overlay-backdrop {
+  background: rgba(0, 0, 0, 0.35) !important;
+  -webkit-backdrop-filter: blur(50px) saturate(140%) !important;
+  backdrop-filter: blur(50px) saturate(140%) !important;
+}
 
 }
