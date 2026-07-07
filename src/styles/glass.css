@@ -5,11 +5,16 @@
  * Heavy, pure glass per the design spec: rgba(17,17,20,0.40) + blur(30px),
  * no readability floor.
  *
- * Cascade: these rules are unlayered, so they beat the layered @layer base /
- * @layer components rules in globals.css regardless of source order. Doubled
- * classes / descendant pairs raise specificity above the scoped dark overrides
- * in bento.css and overlay-dark.css.
+ * Cascade: this file is wrapped in @layer base and imported after globals.css
+ * in main.tsx, so these rules append later within that same base layer.
+ * body.glass-mode (0,1,1) beats the plain body rule (0,0,1) on specificity,
+ * and beats the equal-specificity body.bento-active on source order. Being
+ * layered !important also lets these surface rules outrank the unlayered
+ * !important overrides in bento.css and overlay-dark.css, since an unlayered
+ * important declaration is the lowest priority in the cascade.
  */
+
+@layer base {
 
 /* 1. Canvas: transparent so Zen's Mica backdrop shows through the whole app.
  *    body.bento-active forces #0c0c0d and <html> carries the base white bg;
@@ -36,7 +41,8 @@ body.glass-mode .lm-content {
  *    flip light and its sage-tinted controls need light hairlines. */
 body.glass-mode .bento-card.sage { color: #ededec !important; }
 body.glass-mode .bento-card.sage .tohead .lab,
-body.glass-mode .bento-card.sage .ch-link { color: #9a9a98 !important; }
+body.glass-mode .bento-card.sage .ch-link,
+body.glass-mode .bento-card.sage .todo-empty { color: #9a9a98 !important; }
 body.glass-mode .bento-card.sage .torow { border-bottom-color: rgba(255, 255, 255, 0.10) !important; }
 body.glass-mode .bento-card.sage .tobox { border-color: rgba(255, 255, 255, 0.30) !important; }
 body.glass-mode .bento-card.sage .torow.done .tobox { background: #ededec !important; }
@@ -45,3 +51,5 @@ body.glass-mode .bento-card.sage .torow.done .tobox::after { color: #171a12 !imp
 /* 4. Modal backdrop: soften the opaque scrim so glass modals read against Mica
  *    rather than a flat black sheet. */
 body.glass-mode .lm-overlay { background: rgba(0, 0, 0, 0.35) !important; }
+
+}
