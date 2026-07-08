@@ -3761,9 +3761,21 @@ body::after { background-image: none !important; animation: none !important; }
 .lm-overlay,
 .gaming-modal-overlay,
 .page-overlay-backdrop {
-  background: rgba(13, 13, 17, 0.4) !important;
-  -webkit-backdrop-filter: blur(60px) saturate(120%) !important;
-  backdrop-filter: blur(60px) saturate(120%) !important;
+  background: rgba(13, 13, 17, 0.45) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(120%) !important;
+  backdrop-filter: blur(40px) saturate(120%) !important;
+}
+
+/* `backdrop-filter` on the scrim only frosts pixels painted *below* it in the
+ * stacking order, so any dashboard element with its own stacking context
+ * (header, weather widget, framer-motion tiles) stayed razor-sharp while only
+ * lower-painted images blurred -- the "sporadic blur" bug. Blurring the page
+ * root itself frosts every descendant uniformly. All popups render in a Radix
+ * portal (sibling of #root), so this never blurs the popup panel/modal. */
+body:has(.page-overlay-backdrop) .app-shell,
+body:has(.lm-overlay) .app-shell,
+body:has(.gaming-modal-overlay) .app-shell {
+  filter: blur(10px);
 }
 
 /* Decorative vertical CJK lettering down the side margins (home). */
