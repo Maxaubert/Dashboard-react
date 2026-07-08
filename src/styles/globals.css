@@ -3761,9 +3761,9 @@ body::after { background-image: none !important; animation: none !important; }
 .lm-overlay,
 .gaming-modal-overlay,
 .page-overlay-backdrop {
-  background: rgba(13, 13, 17, 0.3) !important;
-  -webkit-backdrop-filter: blur(10px) saturate(115%) !important;
-  backdrop-filter: blur(10px) saturate(115%) !important;
+  background: rgba(13, 13, 17, 0.4) !important;
+  -webkit-backdrop-filter: blur(60px) saturate(120%) !important;
+  backdrop-filter: blur(60px) saturate(120%) !important;
 }
 
 /* Decorative vertical CJK lettering down the side margins (home). */
