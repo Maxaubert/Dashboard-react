@@ -49,7 +49,21 @@ body.glass-mode .bento-card.sage .torow.done .tobox { background: #ededec !impor
 body.glass-mode .bento-card.sage .torow.done .tobox::after { color: #171a12 !important; }
 
 /* 4. Modal backdrop: soften the opaque scrim so glass modals read against Mica
- *    rather than a flat black sheet. */
+ *    rather than a flat black sheet. (The strong popup blur itself is applied
+ *    unconditionally in globals.css, not gated to glass mode.) */
 body.glass-mode .lm-overlay { background: rgba(0, 0, 0, 0.35) !important; }
+
+/* 5. Lift the popup surfaces off the frosted backdrop. With the page behind
+ *    blurred to the same dark glass tone, a 0.40 panel merged into it and the
+ *    edges vanished. Give the overlay panel + modals a lighter, more opaque
+ *    surface plus a hairline edge so the popup reads as its own card. The
+ *    doubled selector out-specifies rule 2 above. (Layered !important beats the
+ *    unlayered `border: none !important` in globals.css.) */
+body.glass-mode .page-overlay-panel.page-overlay-panel,
+body.glass-mode .lm-content.lm-content,
+body.glass-mode .gaming-modal-panel.gaming-modal-panel {
+  background: rgba(30, 30, 35, 0.62) !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+}
 
 }
