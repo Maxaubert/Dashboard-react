@@ -23,12 +23,26 @@ html:has(body.glass-mode) { background: transparent !important; }
 body.glass-mode { background: transparent !important; }
 
 /* 2. Shared frosted-glass surface for the big container surfaces: home section
- *    cards, the Hurtigsok bar, overlay page panels and their cards, and modals.
+ *    cards, the Hurtigsok bar, overlay page cards, and modals.
  *    Inner tiles are intentionally left alone: link tiles (.lcard) inherit the
- *    glassed card behind them; wishlist/news tiles stay image-filled. */
+ *    glassed card behind them; wishlist/news tiles stay image-filled.
+ *
+ *    `.page-overlay-panel` is deliberately NOT in this list. `backdrop-filter`
+ *    (like `transform`, `filter`, `perspective`, `contain: paint` and
+ *    `will-change` of any of those) makes an element the containing block for
+ *    its `position: fixed` descendants. The panel hosts two fixed elements that
+ *    position themselves from viewport coordinates -- dnd-kit's `DragOverlay`
+ *    and `.section-context-menu` (see `InlineContextMenu.tsx`) -- so giving the
+ *    panel a containing block re-anchors `left: clientX` to the panel's corner
+ *    and both snap ~(panel.left, panel.top) away from the cursor. `globals.css`
+ *    avoids `transform` on the panel for exactly this reason; do not reintroduce
+ *    the same bug through a different property.
+ *
+ *    The panel loses nothing: rule 5 below gives it its glass tone + edge, and
+ *    what sits behind it is already frosted by the scrim's own backdrop-filter
+ *    and the `filter: blur()` on `.app-shell`. */
 body.glass-mode .bento-card,
 body.glass-mode .prompt-launcher-card,
-body.glass-mode .page-overlay-panel.page-overlay-panel,
 body.glass-mode .page-overlay-panel .card,
 body.glass-mode .page-overlay-panel .weather-card,
 body.glass-mode .lm-content {
