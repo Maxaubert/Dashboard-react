@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Ink tile with notched top-right corner (Frames cyber-editorial) -->
+  <path d="M0 0 H50 L64 14 V64 H0 Z" fill="#0D0D11"/>
+  <!-- Squared D monogram, chamfered like Chakra Petch -->
+  <path d="M18 16 H38 L46 24 V40 L38 48 H18 Z M26 24 V40 H34 L38 36 V28 L34 24 Z" fill="#E8214E" fill-rule="evenodd"/>
+</svg>
