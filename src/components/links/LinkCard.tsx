@@ -1,6 +1,6 @@
 import { type CSSProperties, type MouseEvent } from 'react';
 import type { LinkItem } from '@/api/types';
-import { faviconUrl } from '@/api/pdf';
+import { faviconUrl } from '@/lib/favicon';
 import { resolveSvgIcon } from '@/data/svgIcons';
 import { cn } from '@/lib/cn';
 import { useSortable } from '@dnd-kit/sortable';

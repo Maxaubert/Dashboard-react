@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { faviconUrl } from './pdf';
+import { faviconUrl } from './favicon';
 
 describe('faviconUrl', () => {
   it('points at the Google favicon service', () => {
