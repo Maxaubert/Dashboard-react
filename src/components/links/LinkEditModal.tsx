@@ -5,6 +5,7 @@ import { Modal } from '@/components/ui';
 import { IconPicker, type IconPickerHandle } from '@/components/patterns';
 import { LINK_COLOR_PRESETS } from '@/data/linkColors';
 import { cn } from '@/lib/cn';
+import { getDomain, normalizeUrl } from '@/lib/linkUtils';
 import { CategoryPickerRow } from '@/components/links/CategoryPickerRow';
 import { useCategories } from '@/hooks/useCategories';
 
@@ -29,6 +30,7 @@ export function LinkEditModal({ item, defaultCategoryId, onClose, onSave, onDele
       category: defaultCategoryId,
     }
   );
+  const [urlError, setUrlError] = useState<string | null>(null);
   const pickerRef = useRef<IconPickerHandle>(null);
   const { categories, create: createCategory } = useCategories();
   const { data: envelope } = useLinks();
@@ -40,19 +42,20 @@ export function LinkEditModal({ item, defaultCategoryId, onClose, onSave, onDele
 
   async function handleSubmit() {
     if (!form.url.trim() || !form.name.trim()) return;
+    // Scheme-less input ("youtube.com") is normalised to https:// so the
+    // card gets a favicon and the anchor does not open a relative path.
+    const url = normalizeUrl(form.url);
+    if (!url) {
+      setUrlError('Ugyldig URL. Skriv f.eks. youtube.com eller https://…');
+      return;
+    }
     const icon = pickerRef.current
-      ? await pickerRef.current.resolve(form.url)
+      ? await pickerRef.current.resolve()
       : { iconType: 'favicon' as const, iconValue: '' };
-    onSave({ ...form, iconType: icon.iconType, iconValue: icon.iconValue });
+    onSave({ ...form, url, iconType: icon.iconType, iconValue: icon.iconValue });
   }
 
-  const liveDomain = (() => {
-    try {
-      return new URL(form.url).hostname;
-    } catch {
-      return '';
-    }
-  })();
+  const liveDomain = getDomain(normalizeUrl(form.url) ?? '') ?? '';
 
   return (
     <Modal
@@ -85,8 +88,22 @@ export function LinkEditModal({ item, defaultCategoryId, onClose, onSave, onDele
           type="url"
           placeholder="https://…"
           value={form.url}
-          onChange={(e) => update('url', e.target.value)}
+          aria-invalid={urlError ? true : undefined}
+          aria-describedby={urlError ? 'f-url-error' : undefined}
+          onChange={(e) => {
+            update('url', e.target.value);
+            if (urlError) setUrlError(null);
+          }}
         />
+        {urlError && (
+          <p
+            id="f-url-error"
+            role="alert"
+            style={{ margin: '6px 0 0', fontSize: '0.78rem', color: 'var(--color-danger)' }}
+          >
+            {urlError}
+          </p>
+        )}
       </div>
 
       {/* Name + sub */}

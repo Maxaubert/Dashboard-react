@@ -7,35 +7,40 @@ import {
   type ChangeEvent,
   type DragEvent,
 } from 'react';
-import { faviconUrl } from '@/api/pdf';
+import type { LinkIconType } from '@/api/types';
+import { faviconUrl } from '@/lib/favicon';
 import { removeWhiteBg } from '@/lib/removeWhiteBg';
 import { SVG_ICONS } from '@/data/svgIcons';
 import { cn } from '@/lib/cn';
 
 /**
- * Resolved icon — what gets persisted on a `LinkItem`. Always one of:
+ * Resolved icon, what gets persisted on a `LinkItem`. One of:
  *   { iconType: 'favicon', iconValue: '' }    (renderer derives from URL)
  *   { iconType: 'svg',     iconValue: 'star' } (id from SVG_ICONS)
  *   { iconType: 'image',   iconValue: 'data:image/png;base64,...' }
+ *   { iconType: 'emoji',   iconValue: '...' }  (legacy data, passed through
+ *                                              unchanged when the picker
+ *                                              was not touched)
  */
 export interface ResolvedIcon {
-  iconType: 'favicon' | 'svg' | 'image';
+  iconType: LinkIconType;
   iconValue: string;
 }
 
 export interface IconPickerHandle {
   /**
-   * Returns the final icon to save. If "Fjern hvit/lys bakgrunn" is
-   * checked on the favicon or image tab, the source is processed via
-   * canvas and returned as an `image` data URL. Otherwise the raw
-   * selection is returned.
+   * Returns the final icon to save. If the user never interacted with the
+   * picker, the initial icon is returned unchanged so a name/colour edit
+   * cannot silently replace an existing icon. Otherwise the current
+   * selection is returned ("Fjern hvit/lys bakgrunn" on the image tab has
+   * already been baked into the data URL).
    */
-  resolve: (linkUrl: string) => Promise<ResolvedIcon>;
+  resolve: () => Promise<ResolvedIcon>;
 }
 
 interface IconPickerProps {
   /** Pre-fill the picker from an existing link's icon. */
-  initial?: { iconType?: string; iconValue?: string };
+  initial?: { iconType?: LinkIconType; iconValue?: string };
   /** Domain hint for the favicon preview before the user types a URL. */
   domainHint?: string;
 }
@@ -49,22 +54,40 @@ function detectInitialTab(initial?: IconPickerProps['initial']): Tab {
   return 'favicon';
 }
 
+/** True for http(s) sources, which a canvas cannot read back (no CORS
+ *  headers on most hosts), so background removal only works for files. */
+function isRemoteImage(src: string | null): boolean {
+  return /^https?:/i.test(src ?? '');
+}
+
 /**
- * Tabbed icon picker — Favicon / Ikoner / Bilde, matching the legacy
- * `links.html` modal exactly. The Emoji tab from the legacy is gone —
- * Ikoner is now backed by `lucide-react` (~150 curated icons), with a
- * search input so the grid stays usable.
+ * Tabbed icon picker with Favicon / Ikoner / Bilde. Ikoner is backed by
+ * `lucide-react` (~150 curated icons) with a search input so the grid
+ * stays usable. There is no Emoji tab; existing emoji icons are kept
+ * as-is until the user picks something else.
  */
 export const IconPicker = forwardRef<IconPickerHandle, IconPickerProps>(function IconPicker(
   { initial, domainHint },
   ref
 ) {
-  const [tab, setTab] = useState<Tab>(() => detectInitialTab(initial));
+  const [tab, setTabState] = useState<Tab>(() => detectInitialTab(initial));
+
+  // Whether the user changed anything. Untouched pickers hand back the
+  // initial icon so editing name/colour never rewrites the icon (B14).
+  const [touched, setTouched] = useState(false);
+  function setTab(next: Tab) {
+    setTouched(true);
+    setTabState(next);
+  }
 
   // Per-tab selection state.
-  const [selectedSvgId, setSelectedSvgId] = useState<string | null>(
+  const [selectedSvgId, setSelectedSvgIdState] = useState<string | null>(
     initial?.iconType === 'svg' ? initial.iconValue ?? null : null
   );
+  function setSelectedSvgId(id: string) {
+    setTouched(true);
+    setSelectedSvgIdState(id);
+  }
 
   // Image tab state
   const [imgOriginal, setImgOriginal] = useState<string | null>(
@@ -77,10 +100,7 @@ export const IconPicker = forwardRef<IconPickerHandle, IconPickerProps>(function
   const [imgBlendInfo, setImgBlendInfo] = useState('');
   const [imgUrlInput, setImgUrlInput] = useState('');
   const [imgDragOver, setImgDragOver] = useState(false);
-
-  // Favicon tab state
-  const [faviconBg, setFaviconBg] = useState(false);
-  const [faviconBgInfo, setFaviconBgInfo] = useState('');
+  const imgBlendDisabled = isRemoteImage(imgOriginal);
 
   // SVG icon search filter
   const [svgSearch, setSvgSearch] = useState('');
@@ -96,25 +116,15 @@ export const IconPicker = forwardRef<IconPickerHandle, IconPickerProps>(function
 
   // ── Imperative resolve for save-time processing ──────────────────────
   useImperativeHandle(ref, () => ({
-    async resolve(linkUrl: string): Promise<ResolvedIcon> {
+    async resolve(): Promise<ResolvedIcon> {
+      if (!touched && initial?.iconType) {
+        return { iconType: initial.iconType, iconValue: initial.iconValue ?? '' };
+      }
       if (tab === 'svg' && selectedSvgId) {
         return { iconType: 'svg', iconValue: selectedSvgId };
       }
       if (tab === 'image' && imgDataUrl) {
         return { iconType: 'image', iconValue: imgDataUrl };
-      }
-      // Favicon tab — optionally bake the bg-removed version into a PNG.
-      if (tab === 'favicon') {
-        const domain = getDomain(linkUrl) || liveDomain;
-        if (domain && faviconBg) {
-          try {
-            const dataUrl = await removeWhiteBg(faviconUrl(domain));
-            return { iconType: 'image', iconValue: dataUrl };
-          } catch {
-            // Fall through to plain favicon if bg removal fails.
-          }
-        }
-        return { iconType: 'favicon', iconValue: '' };
       }
       return { iconType: 'favicon', iconValue: '' };
     },
@@ -122,10 +132,11 @@ export const IconPicker = forwardRef<IconPickerHandle, IconPickerProps>(function
 
   // ── Image tab helpers ────────────────────────────────────────────────
   function applyImage(src: string) {
+    setTouched(true);
     setImgOriginal(src);
     setImgDataUrl(src);
     setImgBlendInfo('');
-    if (imgBlend) processImageBlend(src);
+    if (imgBlend && !isRemoteImage(src)) processImageBlend(src);
   }
 
   function processImageBlend(src: string) {
@@ -139,16 +150,18 @@ export const IconPicker = forwardRef<IconPickerHandle, IconPickerProps>(function
   }
 
   function onImgBlendToggle(checked: boolean) {
+    setTouched(true);
     setImgBlend(checked);
     if (!checked) {
       if (imgOriginal) setImgDataUrl(imgOriginal);
       setImgBlendInfo('');
       return;
     }
-    if (imgOriginal) processImageBlend(imgOriginal);
+    if (imgOriginal && !isRemoteImage(imgOriginal)) processImageBlend(imgOriginal);
   }
 
   function imgClear() {
+    setTouched(true);
     setImgOriginal(null);
     setImgDataUrl(null);
     setImgUrlInput('');
@@ -219,19 +232,6 @@ export const IconPicker = forwardRef<IconPickerHandle, IconPickerProps>(function
               </>
             )}
           </div>
-          <div className="img-blend-row">
-            <input
-              type="checkbox"
-              id="favicon-bg-check"
-              checked={faviconBg}
-              onChange={(e) => {
-                setFaviconBg(e.target.checked);
-                setFaviconBgInfo(e.target.checked ? 'Behandles ved lagring' : '');
-              }}
-            />
-            <label htmlFor="favicon-bg-check">Fjern hvit/lys bakgrunn</label>
-          </div>
-          <div className="img-blend-info">{faviconBgInfo}</div>
         </div>
       )}
 
@@ -334,22 +334,21 @@ export const IconPicker = forwardRef<IconPickerHandle, IconPickerProps>(function
             <input
               type="checkbox"
               id="img-blend-check"
-              checked={imgBlend}
+              checked={imgBlend && !imgBlendDisabled}
+              disabled={imgBlendDisabled}
               onChange={(e) => onImgBlendToggle(e.target.checked)}
             />
-            <label htmlFor="img-blend-check">Fjern hvit/lys bakgrunn</label>
+            <label htmlFor="img-blend-check" style={imgBlendDisabled ? { opacity: 0.5 } : undefined}>
+              Fjern hvit/lys bakgrunn
+            </label>
           </div>
-          <div className="img-blend-info">{imgBlendInfo}</div>
+          <div className="img-blend-info">
+            {imgBlendDisabled
+              ? 'Bakgrunnsfjerning krever en opplastet fil, ikke en URL.'
+              : imgBlendInfo}
+          </div>
         </div>
       )}
     </>
   );
 });
-
-function getDomain(url: string): string | null {
-  try {
-    return new URL(url).hostname;
-  } catch {
-    return null;
-  }
-}
