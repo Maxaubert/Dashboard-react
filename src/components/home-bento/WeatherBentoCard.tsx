@@ -2,6 +2,7 @@ import { useWeather } from '@/hooks/useWeather';
 import { describeWeather } from '@/api/weather';
 import { WeatherScene, sceneForCode } from './weatherScene';
 import { TempGraph } from './TempGraph';
+import { next24hPoints } from '@/lib/weatherGraph';
 import { WeatherLocationPicker } from './WeatherLocationPicker';
 import { ForecastRow } from './ForecastRow';
 
@@ -23,16 +24,8 @@ export function WeatherBentoCard() {
   const today = forecast?.daily?.[0];
   const days = forecast?.daily ?? [];
 
-  // 24h temperature window starting at the current hour (rolling, like the
-  // Google graph). Falls back to the first 24 entries before data resolves.
-  const graphPoints = (() => {
-    const hourly = forecast?.hourly ?? [];
-    if (hourly.length < 2) return [];
-    const now = Date.now();
-    let start = hourly.findIndex((h) => new Date(h.time).getTime() >= now);
-    start = start < 0 ? 0 : Math.max(0, start - 1);
-    return hourly.slice(start, start + 24).map((h) => ({ hour: h.hour, temp: h.temperature }));
-  })();
+  // Next 24 hours from the hour running now (25 points, both ends labelled).
+  const graphPoints = next24hPoints(forecast?.hourly ?? [], Date.now());
 
   return (
     <section className="bento-card area-vaer">

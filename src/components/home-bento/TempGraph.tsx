@@ -1,5 +1,6 @@
 /**
- * Compact temperature-over-the-day line/area chart for the Vær bento card.
+ * Compact temperature line/area chart for the Vær bento card, covering the
+ * next 24 hours. The first point is "now" and gets a marker dot.
  *
  * The curve is drawn in a normalised 0–100 viewBox with
  * `preserveAspectRatio="none"` so it stretches to the card width; the line
@@ -37,9 +38,9 @@ export function TempGraph({ points }: { points: Pt[] }) {
     coords.map((c) => `L ${c.x.toFixed(2)} ${c.y.toFixed(2)}`).join(' ') +
     ` L ${coords[n - 1].x.toFixed(2)} 100 Z`;
 
-  // Label roughly every 3 hours (≈ 8 labels across a 24h window).
-  const step = Math.max(1, Math.round(n / 8));
-  const labels = coords.filter((_, i) => i % step === 0);
+  // Label every 3 hours; with 25 points that includes both ends (12 ... 12).
+  const step = Math.max(1, Math.round((n - 1) / 8));
+  const labels = coords.filter((_, i) => i % step === 0 || i === n - 1);
 
   return (
     <div className="tgraph">
@@ -62,6 +63,7 @@ export function TempGraph({ points }: { points: Pt[] }) {
             strokeLinecap="round"
           />
         </svg>
+        <span className="tgraph-now" style={{ left: `${coords[0].x}%`, top: `${coords[0].y}%` }} />
         {labels.map((c, k) => (
           <span key={k} className="tgraph-temp" style={{ left: `${c.x}%`, top: `${c.y}%` }}>
             {Math.round(c.temp)}&deg;
@@ -70,8 +72,8 @@ export function TempGraph({ points }: { points: Pt[] }) {
       </div>
       <div className="tgraph-hours">
         {labels.map((c, k) => (
-          <span key={k} style={{ left: `${c.x}%` }}>
-            {String(c.hour).padStart(2, '0')}
+          <span key={k} className={k === 0 ? 'now' : undefined} style={{ left: `${c.x}%` }}>
+            {k === 0 ? 'Nå' : String(c.hour).padStart(2, '0')}
           </span>
         ))}
       </div>

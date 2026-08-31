@@ -687,6 +687,21 @@
   color: var(--faint);
   letter-spacing: 0.04em;
 }
+/* First label is "Nå": pin it to the left edge instead of centring it. */
+.bento-home .tgraph-hours span.now { transform: none; color: var(--ink); }
+.bento-home .tgraph-hours span:last-child { transform: translateX(-100%); }
+/* Marker on the current-hour point of the line (HTML overlay so the
+ * stretched SVG cannot squash it into an ellipse). */
+.bento-home .tgraph-now {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #e8b13a;
+  box-shadow: 0 0 0 2px #0e0c08;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
 
 /* ── Dagens plan ─────────────────────────────────────────────────────── */
 .bento-home .plist { display: flex; flex-direction: column; }
