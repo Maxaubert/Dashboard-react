@@ -8,25 +8,47 @@ export interface WishlistEnv {
 
 const ATL_SINCE = '2013-01-01T00:00:00Z';
 
+// Cache key for a user's Steam wishlist. Includes the linked Steam account so a
+// re-link inside the TTL never serves the previous account's list.
+export function wishlistCacheKey(userId: string, steamId: string): string {
+  return `wishlist:${userId}:${steamId}`;
+}
+
+interface WishlistItem {
+  appid: number;
+  priority: number;
+  date_added: number;
+}
+
+async function fetchWishlistItems(env: WishlistEnv, fetchImpl: typeof fetch): Promise<WishlistItem[]> {
+  const url = `https://api.steampowered.com/IWishlistService/GetWishlist/v1/?key=${env.steamKey}&steamid=${env.steamId}`;
+  const res = await fetchImpl(url);
+  if (!res.ok) throw new Error(`steam wishlist ${res.status}`);
+  let data: { response?: { items?: unknown } };
+  try {
+    data = (await res.json()) as typeof data;
+  } catch (err) {
+    throw new Error(`steam wishlist parse failure: ${err instanceof Error ? err.message : String(err)}`);
+  }
+  const items = data?.response?.items;
+  if (items !== undefined && !Array.isArray(items)) {
+    throw new Error('steam wishlist parse failure: items is not an array');
+  }
+  return (items ?? []) as WishlistItem[];
+}
+
 export async function buildWishlist(
   env: WishlistEnv,
   fetchImpl: typeof fetch = fetch,
 ): Promise<WishlistGame[]> {
-  // Step 1: GetWishlist → items[]; if empty return [].
-  let items: Array<{ appid: number; priority: number; date_added: number }> = [];
-  try {
-    const url = `https://api.steampowered.com/IWishlistService/GetWishlist/v1/?key=${env.steamKey}&steamid=${env.steamId}`;
-    const res = await fetchImpl(url);
-    const data = (await res.json()) as { response?: { items?: typeof items } };
-    items = data?.response?.items ?? [];
-  } catch {
-    return [];
-  }
+  // Step 1: GetWishlist -> items[]. A failed or unparseable response throws so
+  // the caller can serve its stale cache instead of caching an empty list.
+  const items = await fetchWishlistItems(env, fetchImpl);
 
   if (items.length === 0) return [];
 
   // Build lookup map: appid (string) -> wishlist metadata
-  const itemMap: Record<string, { appid: number; priority: number; date_added: number }> = {};
+  const itemMap: Record<string, WishlistItem> = {};
   for (const i of items) {
     itemMap[String(i.appid)] = i;
   }
