@@ -15,7 +15,7 @@ export function useWishlist() {
 
 export function useSteamConnection() {
   return useQuery({
-    queryKey: ['steam-connection'],
+    queryKey: queryKeys.steamConnection,
     queryFn: steamApi.getConnection,
     staleTime: 5 * 60_000,
   });

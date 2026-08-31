@@ -226,6 +226,34 @@
   font-size: 0.84rem;
   padding: 8px 2px;
 }
+/* Not-connected state of Ønskeliste: hint text + inline connect button. */
+.bento-home .row-connect {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+.bento-home .row-connect-btn {
+  border: 1px solid var(--line);
+  background: none;
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.bento-home .row-connect-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+.bento-home .row-connect-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
 
 /* ── Ønskeliste tiles ────────────────────────────────────────────────── */
 .bento-home .gscroll {
