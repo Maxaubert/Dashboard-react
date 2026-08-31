@@ -1,5 +1,6 @@
 import type { LinkItem } from '@/api/types';
 import { cn } from '@/lib/cn';
+import { sectionTitle } from '@/lib/categoryName';
 import type { groupLinks } from '@/lib/groupLinks';
 import { SectionHeader } from '@/components/links/SectionHeader';
 import { SortableLinkCard } from '@/components/links/LinkCard';
@@ -80,7 +81,7 @@ export function SortableSection({
       {...attributes}
     >
       <SectionHeader
-        title={section.kind === 'favorites' ? '★ Favorites' : section.category.name}
+        title={sectionTitle(section.category)}
         count={section.links.length}
         readonly={readonly}
         onRename={onRename}
