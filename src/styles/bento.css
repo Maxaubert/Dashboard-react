@@ -405,8 +405,84 @@
   top: 16px;
   font-size: 0.78rem;
   color: var(--dim);
-  z-index: 2;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
+/* Location picker: pencil next to the name, or a compact search row in
+ * the same top-right slot while editing. */
+.bento-home .wloc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--faint);
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+.bento-home .wloc-btn:hover,
+.bento-home .wloc-btn:focus-visible {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.08);
+  outline: none;
+}
+.bento-home .wloc-btn svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.bento-home .viz .wloc-form {
+  top: 12px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+}
+.bento-home .wloc-row { display: flex; align-items: center; gap: 6px; }
+.bento-home .wloc-input {
+  width: 150px;
+  padding: 5px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.78rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.bento-home .wloc-input::placeholder { color: var(--faint); }
+.bento-home .wloc-input:focus { border-color: rgba(255, 255, 255, 0.35); }
+.bento-home .wloc-submit {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 5px 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.bento-home .wloc-submit:hover:not(:disabled) { border-color: rgba(255, 255, 255, 0.25); }
+.bento-home .wloc-submit:disabled { opacity: 0.5; cursor: default; }
+.bento-home .wloc-status {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  color: var(--dim);
+}
+.bento-home .wloc-status.err { color: #e8896b; }
 .bento-home .viz-msg {
   position: absolute;
   inset: 0;
