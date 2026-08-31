@@ -26,6 +26,7 @@
 /* ── 1. Re-point the design tokens for the whole subtree. Fixes everything
  *      that already reads var(--color-*). ─────────────────────────────────── */
 .page-overlay-panel {
+  color-scheme: dark;
   --color-bg: #0c0c0d;
   --color-surface: #151517;
   --color-surface-2: #1b1b1d;
@@ -46,15 +47,9 @@
 /* ── 3. Override the Papir HUD light surfaces WITHIN the overlay so cards and
  *      link tiles read dark, and fix their hover states (the Papir HUD hover
  *      prints a hard light shadow / light accent wash). ─────────────────────*/
-.page-overlay-panel .card,
-.page-overlay-panel .weather-card,
 .page-overlay-panel .prompt-launcher-card {
   background: #151517 !important;
   border: 1px solid rgba(255, 255, 255, 0.10) !important;
-}
-.page-overlay-panel .card:hover {
-  border-color: rgba(255, 255, 255, 0.22) !important;
-  box-shadow: 6px 6px 0 var(--card-color, #e8214e) !important;
 }
 
 /* ── 4a. Links page — match the home dashboard link tiles (.lcard) exactly ───
@@ -157,17 +152,6 @@
   background: rgba(255, 255, 255, 0.10);
   border-color: rgba(255, 255, 255, 0.18);
 }
-/* Event chips can carry user colors; only the attached PDF link used dark ink. */
-.page-overlay-panel .cal-event .ev-pdf-link {
-  background: rgba(0, 0, 0, 0.45);
-  border-color: rgba(255, 255, 255, 0.18);
-  color: rgba(255, 255, 255, 0.88);
-}
-.page-overlay-panel .cal-event .ev-pdf-link:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.35);
-}
-
 /* ── 4c. Todo page ──────────────────────────────────────────────────────── */
 .page-overlay-panel .todo-hero {
   border-bottom-color: rgba(255, 255, 255, 0.08);
@@ -309,15 +293,13 @@ body.bento-active .lm-content input[type='color'] {
   border-color: rgba(255, 255, 255, 0.18);
 }
 
-/* Color swatch + day selector "selected" ring used near-black ink. */
-body.bento-active .lm-content .modal-color-swatch.selected,
-body.bento-active .lm-content .plan-color-swatch.selected {
+/* Color swatch "selected" ring used near-black ink. */
+body.bento-active .lm-content .modal-color-swatch.selected {
   border-color: #fff;
 }
 
-/* Day-of-week + plan day chips (dark-on-light translucent fills). */
-body.bento-active .lm-content .modal-day-btn,
-body.bento-active .lm-content .plan-day-btn {
+/* Day-of-week chips (dark-on-light translucent fills). */
+body.bento-active .lm-content .modal-day-btn {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.10);
 }

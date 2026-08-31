@@ -28,21 +28,11 @@ export interface Todo {
   /** ISO 8601 date string (YYYY-MM-DD). Optional. */
   deadline?: string | null;
   done: boolean;
-  /** Legacy field -- kept for data-compat. The widget feature was removed; this field is no longer written or read by the UI. */
-  pinned?: boolean;
   /** ISO timestamp the todo was marked done. Used to auto-purge after 7 days. */
   completedAt?: string | null;
 }
 
 // ─── Plan (weekly schedule) ──────────────────────────────────────────────
-
-export interface PlanPdfLink {
-  /** Display label, e.g. "Lab 3". */
-  label: string;
-  /** Either an embedded reference (lab number) or a stat name. */
-  lab?: string;
-  stat?: string;
-}
 
 export interface PlanItem {
   id: string;
@@ -61,7 +51,6 @@ export interface PlanItem {
   location?: string;
   /** Hex color shown as the left bar / accent. */
   color?: string;
-  pdfLinks?: PlanPdfLink[];
 }
 
 // ─── Links library ───────────────────────────────────────────────────────
@@ -127,74 +116,25 @@ export interface LinksEnvelope {
 }
 
 
-// ─── Wishlist (gaming) ───────────────────────────────────────────────────
+// ─── Function responses (wishlist, news) ─────────────────────────────────
 
-export type PriceTag = 'hot' | null;
-
-export interface WishlistGame {
-  appid: string;
-  name: string;
-  imgUrl: string;
-  imgFallback: string;
-  storeUrl: string;
-  isFree: boolean;
-  /** Localized current price like "kr 199,00", or null when free. */
-  price: string | null;
-  /** Original price string when on sale, "" otherwise. */
-  origPrice: string;
-  /** Discount percentage 0-100. */
-  discount: number;
-  onSale: boolean;
-  genres: string[];
-  /** Steam wishlist position (lower = higher priority). */
-  priority: number;
-  /** Unix timestamp the user added it. */
-  dateAdded: number;
-  /** Price in minor units (øre). */
-  priceInt: number;
-  currency: string;
-  /** "hot" when current discount matches the historical all-time-low. */
-  priceTag: PriceTag;
-  /** IsThereAnyDeal game id used for the price history modal. */
-  itadId: string | null;
-}
-
-// ─── News (VG.no front page) ─────────────────────────────────────────────
-
-export interface NewsItem {
-  link: string;
-  title: string;
-  desc: string;
-  img: string;
-}
+/**
+ * Owned by `api/_lib/types.ts` so the serverless functions never import
+ * from `src/`. Re-exported here for the frontend.
+ */
+export type { NewsItem, PriceTag, WishlistGame } from '../../api/_lib/types';
 
 // ─── Home page ───────────────────────────────────────────────────────────────
 
-/** Single envelope for all home-page server-persisted data. */
+/**
+ * Single envelope for all home-page server-persisted data. Stored rows may
+ * still carry the removed `widgets` / `habits` arrays; `normaliseHome`
+ * drops them on read.
+ */
 export interface HomeEnvelope {
   version: 1;
   /** Section IDs in the order they render on the home page. */
   sections: string[];
   /** Section IDs the user has hidden via Settings. Empty = all visible. */
   hidden: string[];
-  widgets: HomeWidget[];
-  habits: HomeHabit[];
-}
-
-/** Persisted widget tile (NOT the timer runtime state). */
-export interface HomeWidget {
-  id: string;
-  type: 'habit' | 'countdown' | 'pomodoro' | 'stopwatch' | 'alarm' | 'todo';
-  refId: string;
-}
-
-/** Persisted habit. Matches the existing `Habit` type in useHabits.ts. */
-export interface HomeHabit {
-  id: string;
-  name: string;
-  color: string;
-  /** ISO "YYYY-MM-DD" strings. */
-  completedDays: string[];
-  /** ISO timestamp. */
-  createdAt: string;
 }

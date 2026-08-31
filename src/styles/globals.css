@@ -19,14 +19,6 @@
   --color-text-muted: #6b6a62;
   --color-text-dim: #8a897f;
 
-  /* Per-page accent colors (used by .card / .ext-link via --card-color). */
-  --color-page-plan:    #9485c8;
-  --color-page-todo:    #2bc4de;
-  --color-page-notes:   #1f9d57;  /* "notater" in legacy */
-  --color-page-sport:   #1098b0;
-  --color-page-gaming:  #c2410c;
-  --color-page-links:   #2bc4de;
-
   --color-success: #1f9d57;
   --color-warning: #c2740c;
   --color-danger:  #e8214e;
@@ -42,8 +34,7 @@
   /* Page max-width — was 860px (and individual pages used 900-960). Bumped
    * to 1100px so content uses more of the viewport on wide screens. All
    * per-page wrappers (.gaming-page, .todo-page)
-   * now read this same variable, so reverting is just changing this number.
-   * Backup of the original file: src/styles/globals.css.bak */
+   * now read this same variable, so reverting is just changing this number. */
   --page-max-width: 1240px;
 }
 
@@ -176,12 +167,6 @@
     body::after { animation: none; }
   }
 
-  /* Pages that opt out of the dotted background + sweep — Notes uses a
-   * solid surface instead, matching legacy notes.html. AppShell adds
-   * `.route-no-grid` to the body when the active route should be plain. */
-  body.route-no-grid { background-image: none !important; }
-  body.route-no-grid::after { display: none; }
-
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
@@ -195,8 +180,6 @@
     background-clip: padding-box;
     border: 2px solid transparent;
   }
-  .no-scrollbar::-webkit-scrollbar { display: none; }
-  .no-scrollbar { scrollbar-width: none; }
 
   button { font-family: inherit; cursor: pointer; }
   input, select, textarea { font-family: inherit; color: inherit; }
@@ -256,109 +239,6 @@
     .page-header-title { font-size: 1.5rem; }
   }
 
-  /* ── Category cards (.card with .plan / .notater / etc. variants) ──────── */
-  .cards-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 12px;
-  }
-  .card {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    text-decoration: none;
-    /* Matches .ext-link — subtle grey tint on the near-black body so
-     * surfaces read as a consistent family. */
-    background: rgba(13, 13, 17, 0.006);
-    border: 1px solid rgba(13, 13, 17, 0.028);
-    border-radius: var(--radius);
-    padding: 20px 20px;
-    box-shadow:
-      inset 0 1px 0 rgba(13, 13, 17, 0.018),
-      0 1px 2px rgba(0, 0, 0, 0.4);
-    transition: border-color 0.15s, transform 0.12s, box-shadow 0.15s;
-    position: relative;
-    overflow: hidden;
-  }
-  .card::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 2px;
-    border-radius: 2px 0 0 2px;
-    background: var(--card-color, rgba(13, 13, 17, 0.2));
-    opacity: 0.5;
-  }
-  .card::after {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; bottom: 0;
-    width: 60%;
-    background: radial-gradient(
-      ellipse at -10% 50%,
-      color-mix(in srgb, var(--card-color, #fff) 6%, transparent),
-      transparent 70%
-    );
-    pointer-events: none;
-  }
-  .card:hover {
-    border-color: color-mix(in srgb, var(--card-color, #fff) 24%, rgba(13, 13, 17, 0.08));
-    transform: translateY(-2px);
-    box-shadow:
-      inset 0 1px 0 rgba(13, 13, 17, 0.035),
-      0 8px 22px rgba(0, 0, 0, 0.6),
-      0 0 28px -6px color-mix(in srgb, var(--card-color, #fff) 30%, transparent);
-  }
-  .card-icon {
-    width: 38px;
-    height: 38px;
-    flex-shrink: 0;
-    background: color-mix(in srgb, var(--card-color, #fff) 7%, rgba(0, 0, 0, 0.4));
-    border: 1px solid color-mix(in srgb, var(--card-color, #fff) 12%, transparent);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--card-color, rgba(13, 13, 17, 0.5));
-    position: relative;
-    z-index: 1;
-  }
-  .card-body { min-width: 0; position: relative; z-index: 1; }
-  .card-title {
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--color-text);
-  }
-  .card-desc {
-    font-size: 0.78rem;
-    margin-top: 2px;
-    color: color-mix(in srgb, var(--card-color, #888) 25%, #606060);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .card-arrow {
-    position: absolute;
-    top: 50%;
-    right: 16px;
-    transform: translateY(-50%);
-    color: var(--color-text-muted);
-    opacity: 0;
-    z-index: 1;
-    transition: opacity 0.15s, transform 0.15s;
-  }
-  .card:hover .card-arrow {
-    opacity: 1;
-    transform: translateY(-50%) translateX(2px);
-  }
-
-  /* Card colour variants */
-  .card.plan    { --card-color: var(--color-page-plan); }
-  .card.todo    { --card-color: var(--color-page-todo); }
-  .card.notater { --card-color: var(--color-page-notes); }
-  .card.sport   { --card-color: var(--color-page-sport); }
-  .card.gaming  { --card-color: var(--color-page-gaming); }
-
   /* ── Section header (used by every section on home + other pages) ────── */
   .section-header {
     font-family: var(--font-mono);
@@ -374,41 +254,8 @@
     align-items: center;
     justify-content: space-between;
   }
-  .section-header-link {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    color: var(--color-text-muted);
-    font-family: var(--font-mono);
-    font-size: 0.62rem;
-    font-weight: 500;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    transition: color 0.15s;
-  }
-  .section-header-link:hover { color: rgba(13, 13, 17, 0.6); }
 
-  /* ── External link cards (.ext-link, used in carousels and Lenker page) */
-  .ext-grid-wrap {
-    overflow: hidden;
-    position: relative;
-  }
-  .ext-grid {
-    display: flex;
-    flex-direction: row;
-    gap: 10px;
-    overflow-x: scroll;
-    overflow-y: visible;
-    -webkit-overflow-scrolling: touch;
-    cursor: grab;
-    user-select: none;
-    scrollbar-width: none;
-    padding-bottom: 20px;
-    margin-bottom: -20px;
-  }
-  .ext-grid:active { cursor: grabbing; }
-  .ext-grid::-webkit-scrollbar { display: none; }
-  .ext-grid .ext-link { flex: 0 0 148px; min-height: 100px; }
+  /* ── External link cards (.ext-link, Lenker page) ───────────────────── */
   /* "Duotone glow" card — each card is gently tinted in its own accent
    * color via two radial glows (warm highlight behind the icon top-left,
    * cool secondary glow bottom-right). Sits on a dark gradient base, with
@@ -467,7 +314,7 @@
     right: 0;
   }
   /* Stretched link — fills the whole card so the entire surface is
-   * clickable. The inner edit/delete/favorite buttons sit above it
+   * clickable. The inner favorite button sits above it
    * via the z-index rules below. */
   .ext-link-stretched {
     position: absolute;
@@ -483,16 +330,8 @@
     z-index: 2;
     pointer-events: none;
   }
-  .ext-link > .card-actions {
-    /* Stay absolutely positioned at top-right (set on .card-actions),
-     * but keep z-index above the stretched anchor and don't catch
-     * pointer events on the wrapper itself — only on the buttons. */
-    z-index: 3;
-    pointer-events: none;
-  }
-  /* Re-enable pointer events only on the actual interactive bits.
+  /* Re-enable pointer events only on the favorite button.
    * Clicks anywhere else fall through to the stretched anchor below. */
-  .ext-link .card-actions .card-btn,
   .ext-link .card-bottom .fav-btn {
     pointer-events: auto;
   }
@@ -526,11 +365,6 @@
     margin-top: 1px;
     flex-shrink: 0;
   }
-  .ext-link:hover .ext-link-arrow {
-    /* Hidden on hover so the absolute-positioned card-actions
-     * (edit + delete) can occupy the same top-right slot. */
-    opacity: 0;
-  }
   .ext-link-name {
     font-size: 0.84rem;
     font-weight: 700;
@@ -548,433 +382,7 @@
   }
   .ext-link:hover .ext-link-name { color: #0d0d11; }
 
-  /* ── Dagens plan / today list ────────────────────────────────────────── */
-  .today-list { display: flex; flex-direction: column; gap: 6px; }
-  .today-item {
-    background: rgba(13, 13, 17, 0.02);
-    border: none;
-    border-radius: 8px;
-    padding: 9px 12px;
-    transition: background 0.12s;
-  }
-  .today-item:hover {
-    background: rgba(13, 13, 17, 0.05);
-  }
-  .today-item.past {
-    opacity: 0.28;
-    filter: grayscale(1);
-    pointer-events: none;
-  }
-  .today-item-inner {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    text-decoration: none;
-    color: inherit;
-  }
-  .today-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  .today-time {
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--color-text-dim);
-    min-width: 88px;
-    flex-shrink: 0;
-    font-variant-numeric: tabular-nums;
-  }
-  .today-title {
-    font-size: 0.88rem;
-    font-weight: 600;
-    color: var(--color-text);
-    flex: 1;
-    min-width: 0;
-  }
-  .today-loc {
-    font-size: 0.74rem;
-    color: var(--color-text-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 160px;
-  }
-  .today-now-badge {
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    padding: 2px 7px;
-    border-radius: 20px;
-    background: rgba(167, 139, 250, 0.15);
-    color: #e8214e;
-    border: 1px solid rgba(167, 139, 250, 0.3);
-    flex-shrink: 0;
-  }
-  .today-empty {
-    font-size: 0.82rem;
-    color: var(--color-text-muted);
-    padding: 18px 0;
-  }
-  .today-pdfs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    margin-top: 6px;
-    padding-left: 32px;
-  }
-  .today-pdf-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.72rem;
-    font-weight: 600;
-    background: rgba(0, 0, 0, 0.22);
-    border: 1px solid rgba(13, 13, 17, 0.12);
-    border-radius: 6px;
-    padding: 4px 10px;
-    text-decoration: none;
-    color: rgba(13, 13, 17, 0.7);
-    transition: background 0.12s, border-color 0.12s, color 0.12s;
-  }
-  .today-pdf-link:hover {
-    background: rgba(13, 13, 17, 0.08);
-    border-color: rgba(13, 13, 17, 0.28);
-    color: rgba(13, 13, 17, 0.95);
-  }
-
-  /* ── News cards (160×240, image-fill, gradient overlay) ──────────────── */
-  .news-wrap {
-    overflow: hidden;
-    position: relative;
-  }
-  .news-list {
-    display: flex;
-    flex-direction: row;
-    gap: 10px;
-    overflow-x: scroll;
-    scrollbar-width: none;
-    cursor: grab;
-    user-select: none;
-    padding-bottom: 20px;
-    margin-bottom: -20px;
-  }
-  .news-list::-webkit-scrollbar { display: none; }
-  .news-list:active { cursor: grabbing; }
-  .news-item {
-    flex: 0 0 160px;
-    height: 240px;
-    display: flex;
-    flex-direction: column;
-    border: 1px solid rgba(13, 13, 17, 0.05);
-    border-radius: 12px;
-    overflow: hidden;
-    text-decoration: none;
-    transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
-    position: relative;
-  }
-  .news-item:hover {
-    border-color: rgba(13, 13, 17, 0.12);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-  }
-  .news-img { position: absolute; inset: 0; }
-  .news-img img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-  .news-overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      to top,
-      rgba(0, 0, 0, 0.88) 0%,
-      rgba(0, 0, 0, 0.2) 55%,
-      transparent 100%
-    );
-  }
-  .news-title {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 12px 11px;
-    font-size: 0.78rem;
-    font-weight: 700;
-    color: #fff;
-    line-height: 1.35;
-  }
-  .news-loading {
-    font-size: 0.78rem;
-    color: var(--color-text-muted);
-    padding: 8px 0;
-  }
-  /* Source dropdown for the news section header */
-  /* News source picker — custom dropdown (button + popover). Replaces a
-   * native <select> because Win11 renders <option> lists with rounded
-   * pills in a lighter container that clashes with the dark theme. */
-  .news-source-dropdown {
-    position: relative;
-  }
-  .news-source-trigger {
-    background: rgba(0, 0, 0, 0.35);
-    border: 1px solid rgba(13, 13, 17, 0.07);
-    color: var(--color-text-muted);
-    border-radius: 6px;
-    padding: 5px 8px 5px 11px;
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 0.10em;
-    text-transform: uppercase;
-    font-family: inherit;
-    cursor: pointer;
-    outline: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    transition: border-color 0.15s, color 0.15s, background 0.15s;
-  }
-  .news-source-trigger:hover,
-  .news-source-trigger[aria-expanded='true'] {
-    background: rgba(0, 0, 0, 0.5);
-    border-color: rgba(13, 13, 17, 0.14);
-    color: var(--color-text);
-  }
-  .news-source-trigger svg {
-    opacity: 0.55;
-    transition: transform 0.15s, opacity 0.15s;
-  }
-  .news-source-trigger[aria-expanded='true'] svg {
-    transform: rotate(180deg);
-    opacity: 0.85;
-  }
-  .news-source-menu {
-    position: absolute;
-    top: calc(100% + 6px);
-    right: 0;
-    min-width: 140px;
-    background: rgba(255, 255, 255, 0.96);
-    border: 1px solid rgba(13, 13, 17, 0.08);
-    border-radius: 8px;
-    padding: 4px;
-    z-index: 50;
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55),
-      inset 0 1px 0 rgba(13, 13, 17, 0.04);
-    backdrop-filter: blur(8px) saturate(140%);
-    -webkit-backdrop-filter: blur(8px) saturate(140%);
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-  }
-  .news-source-option {
-    background: none;
-    border: none;
-    color: var(--color-text-muted);
-    text-align: left;
-    padding: 8px 12px;
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 0.10em;
-    text-transform: uppercase;
-    font-family: inherit;
-    cursor: pointer;
-    border-radius: 5px;
-    transition: background 0.12s, color 0.12s;
-  }
-  .news-source-option:hover {
-    background: rgba(13, 13, 17, 0.05);
-    color: var(--color-text);
-  }
-  .news-source-option.active {
-    color: #e8214e;
-    background: rgba(167, 139, 250, 0.10);
-  }
-
-  /* ── Section spacing ─────────────────────────────────────────────────── */
-  .sections-container { display: flex; flex-direction: column; }
-  .sections-container > * + * { margin-top: 36px; }
-
-  /* ── Weather widget on the home page ─────────────────────────────────── */
-  /* Three-column layout: current (auto) | hourly (fills middle) | daily (auto). */
-  .weather-card {
-    display: grid;
-    grid-template-columns: minmax(220px, auto) minmax(0, 1fr) auto;
-    gap: 16px 24px;
-    align-items: stretch;
-    /* Matches .ext-link / .card — subtle grey tint, no backdrop-blur. */
-    background: rgba(13, 13, 17, 0.006);
-    border: 1px solid rgba(13, 13, 17, 0.028);
-    border-radius: var(--radius);
-    padding: 16px 18px;
-    box-shadow:
-      inset 0 1px 0 rgba(13, 13, 17, 0.018),
-      0 1px 2px rgba(0, 0, 0, 0.4);
-  }
-  .weather-current {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    min-width: 0;
-  }
-  .weather-location {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--color-text-muted);
-  }
-  .weather-location button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: rgba(13, 13, 17, 0.25);
-    padding: 2px 4px;
-    border-radius: 4px;
-    line-height: 0;
-    transition: color 0.15s;
-  }
-  .weather-location button:hover { color: rgba(13, 13, 17, 0.7); }
-  .weather-temp {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-  }
-  .weather-temp-main {
-    font-size: 2.4rem;
-    font-weight: 800;
-    line-height: 1;
-    color: var(--color-text);
-    letter-spacing: -0.03em;
-    font-variant-numeric: tabular-nums;
-  }
-  .weather-icon-big { font-size: 2rem; line-height: 1; }
-  .weather-desc {
-    font-size: 0.82rem;
-    color: var(--color-text-dim);
-  }
-  /* Wraps a row of weather cards (hourly OR daily) with a small label
-   * above so the user can tell at a glance which is "today" vs "the
-   * week". */
-  .weather-section {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    align-self: center;
-  }
-  .weather-section-label {
-    font-family: var(--font-mono);
-    font-size: 0.58rem;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--color-text-muted);
-    padding-left: 4px;
-  }
-  /* Visual divider between the hourly and daily sections — left border
-   * on the daily column, faded gradient so it doesn't draw too much
-   * attention. */
-  .weather-section + .weather-section {
-    padding-left: 18px;
-    border-left: 1px solid rgba(13, 13, 17, 0.07);
-  }
-
-  /* Hourly forecast — fixed slots for today (06/09/12/15/18/21).
-   * Sits in the middle column, fills available space, cards spread
-   * evenly. */
-  .weather-hourly {
-    display: flex;
-    gap: 6px;
-    align-items: stretch;
-    justify-content: space-around;
-    flex-wrap: nowrap;
-  }
-  .weather-hour {
-    flex: 1 1 0;
-    max-width: 64px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    padding: 7px 4px;
-    background: rgba(13, 13, 17, 0.006);
-    border: 1px solid rgba(13, 13, 17, 0.028);
-    border-radius: var(--radius-sm);
-    gap: 4px;
-  }
-  .weather-hour-label {
-    font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: var(--color-text-muted);
-    font-variant-numeric: tabular-nums;
-  }
-  .weather-hour-icon { font-size: 1.1rem; line-height: 1; }
-  .weather-hour-temp {
-    font-size: 0.78rem;
-    font-weight: 700;
-    color: var(--color-text);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .weather-daily {
-    display: flex;
-    gap: 6px;
-    align-items: stretch;
-  }
-  .weather-day {
-    flex: 0 0 auto;
-    width: 52px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    padding: 6px 4px;
-    background: rgba(13, 13, 17, 0.006);
-    border: 1px solid rgba(13, 13, 17, 0.028);
-    border-radius: var(--radius-sm);
-    gap: 4px;
-  }
-  .weather-day-label {
-    font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--color-text-muted);
-  }
-  .weather-day-icon { font-size: 1.1rem; line-height: 1; }
-  .weather-day-temps {
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: var(--color-text-dim);
-    text-align: center;
-    line-height: 1.2;
-    font-variant-numeric: tabular-nums;
-  }
-  .weather-day-temps strong {
-    color: var(--color-text);
-    font-weight: 700;
-  }
-  /* Mobile: stack everything vertically */
-  @media (max-width: 900px) {
-    .weather-card { grid-template-columns: 1fr; }
-    .weather-hourly { overflow-x: auto; justify-content: flex-start; }
-    .weather-daily { overflow-x: auto; }
-    .weather-section + .weather-section {
-      padding-left: 0;
-      padding-top: 12px;
-      border-left: none;
-      border-top: 1px solid rgba(13, 13, 17, 0.07);
-    }
-  }
-
-  /* Drag-reorder handle for the home page sections — 6-dot grip icon
+  /* Drag-reorder handle (prompt launcher) — 6-dot grip icon
    * inside each section header. Visible at low opacity, brighter on hover,
    * grab/grabbing cursor depending on state. */
   .db-grip-handle {
@@ -992,8 +400,6 @@
   }
   .db-grip-handle:hover { opacity: 0.55; }
   .db-grip-handle:active { cursor: grabbing; }
-  /* While the section is being dragged the original placeholder fades out. */
-  .db-section-dragging { opacity: 0.25; }
 
   /* ──────────────────────────────────────────────────────────────────────
    * Plan page — full-height week calendar
@@ -1242,79 +648,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .cal-event .ev-pdfs {
-    margin-top: 5px;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-  }
-  .cal-event .ev-pdf-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.62rem;
-    font-weight: 700;
-    background: rgba(0, 0, 0, 0.45);
-    border: 1px solid rgba(13, 13, 17, 0.18);
-    border-radius: 5px;
-    padding: 3px 7px;
-    opacity: 0.9;
-    text-decoration: none;
-    color: rgba(13, 13, 17, 0.88);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-    transition: background 0.12s, border-color 0.12s, opacity 0.12s;
-  }
-  .cal-event .ev-pdf-link:hover {
-    opacity: 1;
-    background: rgba(13, 13, 17, 0.12);
-    border-color: rgba(13, 13, 17, 0.35);
-  }
-
-  /* Plan modal — uses native form controls + day buttons + circle swatches */
-  .plan-day-row {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-  .plan-day-btn {
-    padding: 5px 10px;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    background: rgba(13, 13, 17, 0.05);
-    border: 1px solid rgba(13, 13, 17, 0.10);
-    color: var(--color-text-dim);
-    cursor: pointer;
-    transition: background 0.12s, color 0.12s;
-    letter-spacing: 0.04em;
-  }
-  .plan-day-btn.selected {
-    background: rgba(96, 165, 250, 0.18);
-    border-color: rgba(96, 165, 250, 0.35);
-    color: #93c5fd;
-  }
-  .plan-color-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  .plan-color-swatch {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    cursor: pointer;
-    border: 2px solid transparent;
-    transition: border-color 0.12s, transform 0.12s;
-    flex-shrink: 0;
-  }
-  .plan-color-swatch.selected {
-    border-color: #0d0d11;
-    transform: scale(1.2);
-  }
 
   /* ──────────────────────────────────────────────────────────────────────
    * Legacy modal — used by Modal.tsx via Radix Dialog. Ported verbatim
@@ -1363,8 +696,7 @@
   .modal-row {
     margin-bottom: 14px;
   }
-  .modal-row > label,
-  .modal-label {
+  .modal-row > label {
     display: block;
     font-size: 0.72rem;
     font-weight: 700;
@@ -1689,11 +1021,6 @@
      * pads 28px top/bottom = 56px total. */
     min-height: calc(100vh - 60px);
   }
-  /* Inside the popup the wrapper must shrink to the dialog's column
-   * (links-popup-body has fixed height), not stretch to viewport. */
-  .links-popup-body .links-library-root {
-    min-height: 0;
-  }
   .lenker-header {
     display: flex;
     align-items: center;
@@ -1910,46 +1237,6 @@
     line-height: 1.8;
   }
 
-  /* Card actions (edit + delete) — top-right, hover-only */
-  .card-actions {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    display: flex;
-    gap: 4px;
-    opacity: 0;
-    transition: opacity 0.15s;
-    z-index: 2;
-  }
-  .ext-link:hover .card-actions {
-    opacity: 1;
-  }
-  .card-btn {
-    width: 22px;
-    height: 22px;
-    border-radius: 5px;
-    border: 1px solid rgba(13, 13, 17, 0.12);
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: rgba(13, 13, 17, 0.45);
-    transition: background 0.12s, color 0.12s;
-    padding: 0;
-  }
-  .card-btn:hover {
-    background: rgba(13, 13, 17, 0.10);
-    color: #fff;
-  }
-  .card-btn.del:hover {
-    background: rgba(239, 68, 68, 0.20);
-    color: #ef4444;
-    border-color: rgba(239, 68, 68, 0.30);
-  }
-
   /* Favorite star button in card-bottom */
   .fav-btn {
     background: none;
@@ -2024,35 +1311,6 @@
   .favicon-preview-text {
     font-size: 0.8rem;
     color: var(--color-text-dim);
-  }
-
-  .emoji-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    max-height: 190px;
-    overflow-y: auto;
-  }
-  .emoji-cell {
-    width: 34px;
-    height: 34px;
-    border-radius: 7px;
-    border: 1px solid transparent;
-    background: rgba(13, 13, 17, 0.04);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 18px;
-    transition: background 0.12s, border-color 0.12s;
-    padding: 0;
-  }
-  .emoji-cell:hover {
-    background: rgba(13, 13, 17, 0.09);
-  }
-  .emoji-cell.selected {
-    background: rgba(167, 139, 250, 0.15);
-    border-color: rgba(167, 139, 250, 0.40);
   }
 
   .img-blend-row {
@@ -2281,11 +1539,6 @@
   .gaming-page .page-header { margin-bottom: 24px; }
   .gaming-page .page-header-eyebrow { margin-bottom: 6px; }
   .gaming-page .page-header-sub { font-size: 0.85rem; margin-top: 5px; }
-  .gaming-updated {
-    font-size: 0.68rem;
-    color: var(--color-text-muted);
-    margin-top: 3px;
-  }
 
   .gaming-filter-bar {
     display: flex;
@@ -3323,117 +2576,12 @@
 
 .section-context-menu .del { color: #f87171; }
 
-/* Rotating rainbow border for the armed alarm widget.
- *
- * Variant A from the brainstorm: the widget shell is wrapped in a 2px-padded
- * box whose background is a conic-gradient. The gradient's `from` angle is
- * driven by a CSS @property so the rotation interpolates smoothly (browsers
- * tween numeric custom-properties; without @property they crossfade or no-op).
- *
- * The shell inside MUST have an opaque background — the AlarmWidget overrides
- * its `style.background` to '#0a0a0a' when armed for exactly this reason. */
-@property --db-rainbow-angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
-}
-@keyframes db-rainbow-spin {
-  to { --db-rainbow-angle: 360deg; }
-}
-.db-armed-alarm-wrap {
-  display: inline-block;
-  padding: 2px;
-  border-radius: 16px;
-  /* Snake variant B: medium 90° rainbow streak with fade tails on both ends.
-   * The remaining 270° is transparent so the wrapper's edge is invisible. */
-  background: conic-gradient(
-    from var(--db-rainbow-angle),
-    transparent 0deg,
-    rgba(239, 68, 68, 0.2) 8deg,
-    #ef4444 18deg,
-    #f97316 32deg,
-    #eab308 46deg,
-    #22c55e 60deg,
-    #06b6d4 74deg,
-    rgba(99, 102, 241, 0.2) 84deg,
-    transparent 90deg,
-    transparent 360deg
-  );
-  animation: db-rainbow-spin 3.5s linear infinite;
-}
-
 /* Radix context-menu hover/highlight state for widget + link-card menus.
  * Radix sets [data-highlighted] on the active item for both mouse and
  * keyboard, so a single rule covers both. Lighter-dark background tint. */
 [role='menuitem'][data-highlighted] {
   background: rgba(13, 13, 17, 0.06);
 }
-
-/* Home wishlist carousel */
-.wishlist-strip { gap: 14px; align-items: flex-start; }
-.wishlist-cover {
-  flex: 0 0 auto;
-  width: 260px;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  border: 0;
-  background: transparent;
-  padding: 0;
-  cursor: pointer;
-  text-align: left;
-}
-.wishlist-cover-img {
-  position: relative;
-  width: 100%;
-  height: 121px;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid var(--color-border, #2a2a2a);
-  background: #ece9e1;
-}
-.wishlist-cover-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.wishlist-cover-skeleton {
-  flex: 0 0 auto;
-  width: 260px;
-  height: 150px;
-  border-radius: 8px;
-  background: linear-gradient(90deg, #14161c, #1c1f27, #14161c);
-}
-.wishlist-cover-badge {
-  position: absolute;
-  top: 7px;
-  left: 7px;
-  background: #4c1d95;
-  color: #fff;
-  font-size: 0.78rem;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 6px;
-}
-.wishlist-cover-meta {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 0 2px;
-  min-height: 18px;
-}
-.wishlist-price-was {
-  color: var(--color-text-muted, #71717a);
-  text-decoration: line-through;
-  font-size: 0.82rem;
-}
-.wishlist-price-now { color: var(--color-text, #e4e4e7); font-weight: 700; font-size: 0.92rem; }
-.wishlist-price-now.sale { color: #4ade80; }
-.wishlist-connect-box {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  align-items: flex-start;
-}
-.wishlist-connect-hint { color: var(--color-text-muted); font-size: 0.8rem; }
-.wishlist-empty-note { color: var(--color-text-muted); font-size: 0.8rem; padding: 8px 0; }
 
 /* Full-page pop-out overlay */
 .page-overlay-backdrop {
@@ -3459,21 +2607,7 @@
   cursor: pointer; font-size: 1rem;
 }
 
-/* Home todo preview */
-.todo-preview-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.todo-preview-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; cursor: pointer; background: rgba(13,13,17,0.02); }
-.todo-preview-item:hover { background: rgba(13,13,17,0.05); }
-.todo-preview-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; background: #71717a; }
-.todo-preview-dot.prio-high { background: #f87171; }
-.todo-preview-dot.prio-medium { background: #fbbf24; }
-.todo-preview-dot.prio-low { background: #60a5fa; }
-.todo-preview-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.todo-preview-deadline { color: var(--color-text-muted, #71717a); font-size: 0.78rem; flex: 0 0 auto; }
-.todo-preview-empty { color: var(--color-text-muted, #71717a); font-size: 0.85rem; padding: 8px 0; }
-
-.home-topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .home-account { display: flex; align-items: center; gap: 10px; }
-.home-account-name { color: var(--color-text-muted, #a1a1aa); font-size: 0.85rem; }
 .home-account-logout { background: transparent; border: 1px solid var(--color-border, #2a2a2a); color: var(--color-text, #e4e4e7); border-radius: 8px; padding: 5px 10px; font-size: 0.82rem; cursor: pointer; }
 .home-account-logout:hover { background: rgba(13,13,17,0.05); }
 /* ── Auth screen (login / signup) ───────────────────────────────────────────
@@ -3602,21 +2736,6 @@
   text-decoration: none;
 }
 
-/* Empty-state add buttons (home sections) */
-.todo-preview-empty, .today-empty, .ext-empty { display: flex; align-items: center; gap: 14px; }
-.today-empty, .ext-empty { color: var(--color-text-muted, #71717a); font-size: 0.82rem; padding: 8px 0; }
-.section-add-btn {
-  background: transparent;
-  border: 1px solid var(--color-border, #2a2a2a);
-  color: var(--color-text, #e4e4e7);
-  border-radius: 7px;
-  padding: 4px 11px;
-  font-size: 0.78rem;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.section-add-btn:hover { background: rgba(13, 13, 17, 0.05); border-color: #d97757; }
-
 /* Settings popup - section show/hide toggles */
 .settings-list { display: flex; flex-direction: column; }
 .settings-row {
@@ -3637,22 +2756,6 @@
 }
 .settings-toggle.on .settings-toggle-knob { transform: translateX(18px); }
 
-/* Home topbar actions (gear + account) */
-.home-topbar-actions { display: flex; align-items: center; gap: 12px; }
-.home-settings-btn {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 34px; height: 34px; border-radius: 8px;
-  background: rgba(13, 13, 17, 0.04);
-  border: 1px solid var(--color-border, #2a2a2a);
-  color: var(--color-text-muted, #a1a1aa);
-  cursor: pointer; transition: color 0.15s, border-color 0.15s;
-}
-.home-settings-btn:hover { color: #0d0d11; border-color: rgba(13, 13, 17, 0.3); }
-.home-empty-hint {
-  padding: 48px 16px; text-align: center;
-  color: var(--color-text-muted, #71717a); font-size: 0.9rem;
-}
-
 /* ============================================================
  * Papir HUD - sleek glass pass
  * Soft gradient backdrop (replaces the line grid) + frosted
@@ -3669,8 +2772,6 @@ body::after { background-image: none !important; animation: none !important; }
 /* Frosted glass on the boxed components. */
 /* Flat HUD panels: crisp hairline borders, square corners, no glass blur
  * or soft shadow. Hover prints a hard offset shadow (Frames signature). */
-.card,
-.weather-card,
 .prompt-launcher-card,
 .ext-link,
 .lm-content,
@@ -3686,19 +2787,6 @@ body::after { background-image: none !important; animation: none !important; }
   box-shadow: none !important;
 }
 
-/* Tint the game cover art a touch warm + slightly muted so the vibrant
- * Steam capsules sit in the Riso palette instead of fighting the paper. */
-.wishlist-cover-bg {
-  filter: sepia(0.12) saturate(0.85) brightness(0.99);
-}
-
-/* Variant B: flat card prints a hard offset shadow in its own accent on
- * hover, nudging up-left like a stamped layer. */
-.card:hover {
-  transform: translate(-2px, -2px) !important;
-  border-color: #0d0d11 !important;
-  box-shadow: 6px 6px 0 var(--card-color, #e8214e) !important;
-}
 /* Link cards: lift + accent-glow border on hover, matching the home
  * dashboard link tiles (.lcard). No fill sweep. */
 .ext-link:hover {
@@ -3746,18 +2834,6 @@ body::after { background-image: none !important; animation: none !important; }
   background: #c81a40;
   border-color: #c81a40;
 }
-.news-source-trigger {
-  background: rgba(13, 13, 17, 0.04);
-  border: 1px solid var(--color-border);
-  border-radius: 2px;
-  color: var(--color-text-muted);
-}
-.news-source-trigger:hover,
-.news-source-trigger[aria-expanded='true'] {
-  background: rgba(13, 13, 17, 0.08);
-  border-color: #0d0d11;
-  color: var(--color-text);
-}
 .lm-overlay,
 .gaming-modal-overlay,
 .page-overlay-backdrop {
@@ -3778,42 +2854,6 @@ body:has(.gaming-modal-overlay) .app-shell {
   filter: blur(10px);
 }
 
-/* Decorative vertical CJK lettering down the side margins (home). */
-.side-glyph {
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  z-index: -1;
-  display: none;
-  align-items: center;
-  writing-mode: vertical-rl;
-  text-orientation: upright;
-  font-family: 'Yu Gothic', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
-  font-weight: 800;
-  font-size: clamp(96px, 11vw, 196px);
-  line-height: 1;
-  letter-spacing: 0.06em;
-  color: rgba(13, 13, 17, 0.10);
-  user-select: none;
-  pointer-events: none;
-  white-space: nowrap;
-}
-/* Account controls (gear + name + logout) lifted out of the content flow
- * into a fixed vertical cluster in the top-right margin, so they cost no
- * vertical space and the sections start at the top. */
-.home-topbar--bare {
-  position: fixed;
-  top: auto;
-  bottom: 16px;
-  right: clamp(10px, 1.6vw, 30px);
-  z-index: 40;
-  margin: 0;
-}
-.home-topbar--bare .home-topbar-actions {
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-}
 /* Logout is now an icon-only button matching the gear. */
 .home-account-logout {
   display: inline-flex;
@@ -3834,13 +2874,6 @@ body:has(.gaming-modal-overlay) .app-shell {
  * and spans the full viewport width (no centered max-width cap). */
 .page { padding-top: 18px; max-width: none; }
 
-.side-glyph-left { left: clamp(8px, 2vw, 44px); }
-.side-glyph-right { right: clamp(8px, 2vw, 44px); }
-/* Only show when the centered page leaves empty margins beside it. */
-@media (min-width: 1480px) {
-  .side-glyph { display: flex; }
-}
-
 /* Section headers: grip + label removed (reorder + show/hide live in the
  * Settings popup now). Keep the remaining action right-aligned; fully hide
  * headers that have nothing left but the removed label (e.g. the launcher). */
@@ -3848,115 +2881,9 @@ body:has(.gaming-modal-overlay) .app-shell {
 .section-header { justify-content: flex-end; }
 .section-header:has(> span:only-child) { display: none; }
 
-/* Dashboard title at the top, set in the Rockybilly display face. */
-.home-title {
-  font-family: 'Xirod', var(--font-display);
-  font-weight: 400;
-  font-size: clamp(1.3rem, 2.5vw, 1.85rem);
-  line-height: 1.2;
-  padding-top: 6px;
-  overflow: visible;
-  letter-spacing: 0.02em;
-  color: var(--color-text);
-  margin: 0 0 12px;
-}
-
-/* Tighter spacing between home sections (was 36px). */
-.sections-container > * + * { margin-top: 18px; }
-
-/* Wishlist covers: hover lift, hidden scrollbar, price overlaid on the
- * image bottom-left over a soft gradient. */
-.ext-grid { scrollbar-width: none; -ms-overflow-style: none; }
-.ext-grid::-webkit-scrollbar { width: 0; height: 0; display: none; }
 /* No horizontal page scroll — all horizontal scrolling lives inside the
  * carousels, so kill the stray window scrollbar from full-width content. */
 html, body { overflow-x: hidden; }
-/* Angled HUD: skewed parallelogram cards with a notched corner, hazard
- * discount badge and a mono price tag. */
-.wishlist-cover {
-  position: relative;
-  flex: 0 0 280px;
-  width: auto;
-  height: 150px;
-  border: 0;
-  background: transparent;
-  padding: 0;
-  cursor: pointer;
-  overflow: hidden;
-  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%);
-  transform: skewX(-7deg);
-  transition: transform 0.35s cubic-bezier(.2, .85, .25, 1);
-}
-.wishlist-cover:hover { transform: skewX(-7deg) translateY(-4px); }
-.wishlist-cover-inner { position: absolute; inset: 0; transform: skewX(7deg) scale(1.2); }
-.wishlist-cover-bg { width: 100%; height: 100%; object-fit: cover; display: block; }
-.wishlist-cover-grad {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(105deg, rgba(8, 8, 12, 0.78) 16%, transparent 62%);
-  pointer-events: none;
-}
-.wishlist-cover-badge {
-  position: absolute;
-  top: 8px;
-  left: 10px;
-  right: auto;
-  z-index: 2;
-  transform: skewX(7deg);
-  background: #4c1d95;
-  color: #fff;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 0.74rem;
-  padding: 3px 8px;
-  border: 0;
-  border-radius: 5px;
-}
-.wishlist-cover-panel {
-  position: absolute;
-  left: 20px;
-  bottom: 12px;
-  z-index: 2;
-  transform: skewX(7deg);
-  color: #fff;
-}
-.wishlist-cover-eyebrow {
-  font-family: var(--font-mono);
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-size: 0.6rem;
-  opacity: 0.85;
-  margin-bottom: 4px;
-  max-width: 250px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.wishlist-cover-price {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 21px;
-  line-height: 1;
-}
-.wishlist-cover-price .wishlist-price-was {
-  font-family: var(--font-mono);
-  font-weight: 500;
-  font-size: 0.5em;
-  text-decoration: line-through;
-  opacity: 0.6;
-}
-.wishlist-cover-skeleton { flex: 0 0 280px; width: auto; height: 150px; transform: skewX(-7deg); }
-
-/* The wrapper stays overflow:hidden so it clips the inner scroller's
- * scrollbar (it sits in the padding-bottom zone, like the news carousel).
- * Add top padding + negative margin so the hover lift has room at the top
- * within the clip instead of being cut off. */
-.ext-grid-wrap { overflow: hidden; padding-top: 16px; margin-top: -16px; }
-.ext-grid { padding-top: 16px; margin-top: -16px; }
-
 /* Settings popup: draggable reorder rows. */
 .settings-hint { font-size: 0.78rem; color: var(--color-text-muted); margin: 0 0 12px; }
 .settings-row { gap: 10px; }
@@ -3985,6 +2912,7 @@ html, body { overflow-x: hidden; }
 @layer base {
   body.bento-active {
     background: #0c0c0d !important;
+    color-scheme: dark;
   }
   /* Drop the light-theme grid/sunbeam sweep on the dark bento canvas. */
   body.bento-active::after { display: none; }

@@ -140,13 +140,6 @@
 .bento-home .ch-link:hover { color: var(--ink); }
 .bento-home .sage .ch-link { color: var(--sage-dim); }
 .bento-home .sage .ch-link:hover { color: var(--sage-ink); }
-.bento-home .ch-note {
-  color: var(--faint);
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
 
 /* ── Eksterne lenker (horizontal row of full cards) ──────────────────── */
 .bento-home .lrow {

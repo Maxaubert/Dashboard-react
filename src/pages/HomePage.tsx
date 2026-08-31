@@ -4,24 +4,21 @@ import { HomeAccount } from '@/components/home/HomeAccount';
 import { SettingsModal } from '@/components/home/SettingsModal';
 import { HomeBento } from '@/components/home-bento/HomeBento';
 import { useHome, useMutateHome } from '@/hooks/useHome';
-import { useHomeMigration } from '@/hooks/useHomeMigration';
 import { SECTION_IDS, DEFAULT_SECTIONS, type SectionId } from '@/lib/home';
 
 /**
  * Home page — dark "bento grid" dashboard.
  *
  * The grid itself lives in `HomeBento`. This shell keeps the cross-cutting
- * bits: the one-shot localStorage→backend migration, the Settings modal
- * (section show/hide + reorder), and the account controls. The Settings
- * button + account render into the bento top bar via `topActions`.
+ * bits: the Settings modal (section show/hide + reorder) and the account
+ * controls. The Settings button + account render into the bento top bar
+ * via `topActions`.
  *
  * Section reordering still persists, but the bento uses a fixed layout, so
  * order only affects the Settings list; visibility (`hidden`) is honoured
  * by the bento.
  */
 export function HomePage() {
-  useHomeMigration();
-
   const { data: home } = useHome();
   const mutateHome = useMutateHome();
   const [settingsOpen, setSettingsOpen] = useState(false);

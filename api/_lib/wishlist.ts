@@ -1,4 +1,4 @@
-import type { WishlistGame } from '../../src/api/types.js';
+import type { WishlistGame } from './types.js';
 
 export interface WishlistEnv {
   steamKey: string;

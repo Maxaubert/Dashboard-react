@@ -7,6 +7,7 @@ import {
   type GeoLocation,
 } from '@/api/weather';
 import { useLocalStorage } from './useLocalStorage';
+import { queryKeys } from './queryKeys';
 
 const STORAGE_KEY = 'weather-location-v1';
 /** Halden, Norway — fallback when geolocation is denied or unavailable. */
@@ -69,7 +70,7 @@ export function useWeather() {
   }, []);
 
   const query = useQuery<Forecast>({
-    queryKey: ['weather', location.latitude, location.longitude],
+    queryKey: queryKeys.weather(location.latitude, location.longitude),
     queryFn: () => fetchForecast(location.latitude, location.longitude),
     staleTime: 10 * 60_000, // 10 minutes
     gcTime: 30 * 60_000,

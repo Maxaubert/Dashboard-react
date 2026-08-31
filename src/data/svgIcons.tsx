@@ -89,7 +89,7 @@ import {
  * `size` and `className` props we actually pass.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type IconComponent = ComponentType<any>;
+type IconComponent = ComponentType<any>;
 
 /** Wrap a phosphor icon so it always renders with weight="fill". */
 function filled(Icon: PhosphorIconType): IconComponent {
@@ -380,7 +380,7 @@ const LEGACY_ICON_ALIASES: Record<string, string> = {
 };
 
 /** Lookup map for fast id → icon resolution. */
-export const SVG_ICONS_BY_ID: Record<string, SvgIcon> = Object.fromEntries(
+const SVG_ICONS_BY_ID: Record<string, SvgIcon> = Object.fromEntries(
   SVG_ICONS.map((i) => [i.id, i])
 );
 
