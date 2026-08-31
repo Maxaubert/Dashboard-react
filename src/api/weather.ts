@@ -51,9 +51,9 @@ export interface Forecast {
 }
 
 /**
- * Fetch the 7-day forecast for a lat/lon. The response includes the
- * current conditions, hour-by-hour data for ~48 hours ahead, and
- * daily highs/lows for the next 7 days.
+ * Fetch the 14-day forecast for a lat/lon. The response includes the
+ * current conditions, hour-by-hour data, and daily highs/lows for the
+ * next 14 days (Open-Meteo's maximum for the free forecast endpoint).
  */
 export async function fetchForecast(lat: number, lon: number): Promise<Forecast> {
   const params = new URLSearchParams({
@@ -63,7 +63,7 @@ export async function fetchForecast(lat: number, lon: number): Promise<Forecast>
     hourly: 'temperature_2m,weather_code',
     daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,sunrise,sunset',
     timezone: 'auto',
-    forecast_days: '7',
+    forecast_days: '14',
   });
   const res = await fetch(`${FORECAST_URL}?${params}`);
   if (!res.ok) throw new Error(`weather: ${res.status}`);
@@ -152,24 +152,25 @@ export async function reverseLocation(lat: number, lon: number): Promise<GeoLoca
 }
 
 /**
- * WMO weather code → short Norwegian description + emoji icon.
+ * WMO weather code -> short Norwegian description. The matching glyph is
+ * `iconForCode` in src/lib/weatherIcons.ts.
  * Reference: https://open-meteo.com/en/docs (Weather variable documentation)
  */
-export function describeWeather(code: number): { label: string; icon: string } {
-  if (code === 0) return { label: 'Klart', icon: '☀️' };
-  if (code === 1) return { label: 'Mest klart', icon: '🌤' };
-  if (code === 2) return { label: 'Delvis skyet', icon: '⛅' };
-  if (code === 3) return { label: 'Skyet', icon: '☁️' };
-  if (code === 45 || code === 48) return { label: 'Tåke', icon: '🌫' };
-  if (code >= 51 && code <= 55) return { label: 'Yr', icon: '🌦' };
-  if (code === 56 || code === 57) return { label: 'Underkjølt yr', icon: '🌧' };
-  if (code >= 61 && code <= 65) return { label: 'Regn', icon: '🌧' };
-  if (code === 66 || code === 67) return { label: 'Underkjølt regn', icon: '🌧' };
-  if (code >= 71 && code <= 75) return { label: 'Snø', icon: '🌨' };
-  if (code === 77) return { label: 'Snøkorn', icon: '🌨' };
-  if (code >= 80 && code <= 82) return { label: 'Regnbyger', icon: '🌧' };
-  if (code === 85 || code === 86) return { label: 'Snøbyger', icon: '🌨' };
-  if (code === 95) return { label: 'Tordenvær', icon: '⛈' };
-  if (code === 96 || code === 99) return { label: 'Torden m/ hagl', icon: '⛈' };
-  return { label: 'Ukjent', icon: '❓' };
+export function describeWeather(code: number): { label: string } {
+  if (code === 0) return { label: 'Klart' };
+  if (code === 1) return { label: 'Mest klart' };
+  if (code === 2) return { label: 'Delvis skyet' };
+  if (code === 3) return { label: 'Skyet' };
+  if (code === 45 || code === 48) return { label: 'Tåke' };
+  if (code >= 51 && code <= 55) return { label: 'Yr' };
+  if (code === 56 || code === 57) return { label: 'Underkjølt yr' };
+  if (code >= 61 && code <= 65) return { label: 'Regn' };
+  if (code === 66 || code === 67) return { label: 'Underkjølt regn' };
+  if (code >= 71 && code <= 75) return { label: 'Snø' };
+  if (code === 77) return { label: 'Snøkorn' };
+  if (code >= 80 && code <= 82) return { label: 'Regnbyger' };
+  if (code === 85 || code === 86) return { label: 'Snøbyger' };
+  if (code === 95) return { label: 'Tordenvær' };
+  if (code === 96 || code === 99) return { label: 'Torden m/ hagl' };
+  return { label: 'Ukjent' };
 }

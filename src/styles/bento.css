@@ -365,6 +365,10 @@
   background: radial-gradient(220px 180px at 60% 34%, rgba(170, 195, 220, 0.2), transparent 65%),
     linear-gradient(180deg, #121419, #0c0e11);
 }
+.bento-home .viz.thunder {
+  background: radial-gradient(220px 180px at 60% 30%, rgba(120, 130, 190, 0.22), transparent 65%),
+    linear-gradient(180deg, #10111a, #0a0b10);
+}
 /* night: cool deep-blue base; the moon glow lives in the SVG. */
 .bento-home .viz.moon,
 .bento-home .viz.moon-partly {
@@ -380,17 +384,52 @@
   animation: bento-spin 60s linear infinite;
 }
 @keyframes bento-spin { to { transform: rotate(360deg); } }
-.bento-home .drop { animation: bento-fall 1s linear infinite; }
-@keyframes bento-fall {
-  0% { transform: translateY(-6px); opacity: 0; }
-  20% { opacity: 1; }
-  100% { transform: translateY(34px); opacity: 0; }
+/* Precipitation. Each particle carries its own --p-o (peak opacity) and,
+ * for snow, --p-sway (drift amplitude); duration and delay are set inline
+ * from lib/precipitation so two depth layers fall at different rates. The
+ * fall distance ends low in the hero where the mist ellipse fades it out. */
+.bento-home .drop {
+  opacity: var(--p-o, 0.7);
+  animation: bento-fall 1s linear infinite;
 }
-.bento-home .flake { animation: bento-snowfall 3s linear infinite; }
+@keyframes bento-fall {
+  0% { transform: translate(0, -4px); opacity: 0; }
+  12% { opacity: var(--p-o, 0.7); }
+  78% { opacity: var(--p-o, 0.7); }
+  100% { transform: translate(-12px, 56px); opacity: 0; }
+}
+.bento-home .flake {
+  opacity: var(--p-o, 0.8);
+  animation: bento-snowfall 3.5s ease-in-out infinite;
+}
 @keyframes bento-snowfall {
-  0% { transform: translateY(-6px); opacity: 0; }
-  20% { opacity: 0.9; }
-  100% { transform: translateY(40px); opacity: 0; }
+  0% { transform: translate(0, -4px); opacity: 0; }
+  12% { opacity: var(--p-o, 0.8); }
+  50% { transform: translate(var(--p-sway, 6px), 28px); }
+  80% { opacity: var(--p-o, 0.8); }
+  100% { transform: translate(0, 60px); opacity: 0; }
+}
+/* Thunder: a pale duplicate cloud sits over the storm cloud and lights up
+ * for two short bursts every ~6s (a double flash reads more like lightning
+ * than one even pulse). */
+.bento-home .flash {
+  opacity: 0;
+  animation: bento-flash 6s linear infinite;
+}
+@keyframes bento-flash {
+  0%, 71%, 74.5%, 77%, 100% { opacity: 0; }
+  72% { opacity: 0.85; }
+  73% { opacity: 0.25; }
+  75.5% { opacity: 0.6; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bento-home .drop,
+  .bento-home .flake,
+  .bento-home .flash,
+  .bento-home .rays {
+    animation: none;
+  }
+  .bento-home .flash { opacity: 0; }
 }
 .bento-home .viz .temp {
   position: absolute;
@@ -534,20 +573,63 @@
   transition: width 0.4s;
 }
 .bento-home .meter .val { font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+/* Forecast row: 14 fixed-width columns in a drag-scrollable strip. The
+ * card shows the first ~5; the right edge fades to hint at the rest. Row
+ * heights are explicit (16 + 28 + 22 = 66px, same as the old 5-up grid)
+ * so labels, icons and temps line up across every column. */
 .bento-home .fc {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 4px;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 16px;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  cursor: grab;
+  margin: 0 -16px;
+  padding: 0 16px;
+  border-radius: 6px;
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 40px), transparent);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 40px), transparent);
 }
-.bento-home .fc > div { text-align: center; }
+.bento-home .fc::-webkit-scrollbar { display: none; }
+.bento-home .fc:active { cursor: grabbing; }
+.bento-home .fc:focus-visible {
+  outline: 1px solid rgba(255, 255, 255, 0.35);
+  outline-offset: 2px;
+}
+.bento-home .fc-col {
+  flex: 0 0 56px;
+  display: grid;
+  grid-template-rows: 16px 28px 22px;
+  align-items: center;
+  justify-items: center;
+  scroll-snap-align: start;
+  text-align: center;
+  user-select: none;
+}
 .bento-home .fc .d {
   color: var(--dim);
-  font-size: 0.68rem;
+  font-size: 0.6rem;
   font-family: var(--font-mono);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
 }
-.bento-home .fc .fc-ic { font-size: 1.15rem; margin: 6px 0 4px; line-height: 1; }
-.bento-home .fc .fc-temps { font-size: 0.92rem; font-variant-numeric: tabular-nums; }
+.bento-home .fc-col:first-child .d { color: var(--ink); }
+.bento-home .fc .fc-ic {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  color: #dfe6d2;
+}
+.bento-home .fc .fc-ic svg { display: block; width: 22px; height: 22px; }
+.bento-home .fc .fc-temps {
+  font-size: 0.92rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 .bento-home .fc .fc-temps strong { font-weight: 600; }
 .bento-home .fc .fc-temps span { color: var(--dim); margin-left: 5px; }
 

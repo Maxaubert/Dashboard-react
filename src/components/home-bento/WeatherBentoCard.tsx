@@ -3,13 +3,12 @@ import { describeWeather } from '@/api/weather';
 import { WeatherScene, sceneForCode } from './weatherScene';
 import { TempGraph } from './TempGraph';
 import { WeatherLocationPicker } from './WeatherLocationPicker';
-
-const DAY_SHORT = ['Søn', 'Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør'];
+import { ForecastRow } from './ForecastRow';
 
 /** "2026-06-27T22:14" -> "22:14" */
 const hhmm = (iso?: string) => (iso ? iso.slice(11, 16) : '--:--');
 
-/** Vær — day/night scene, sunrise/sunset, temp graph + 5-day forecast. */
+/** Vær: day/night scene, sunrise/sunset, temp graph + 14-day forecast row. */
 export function WeatherBentoCard() {
   const { location, setLocation, forecast, isLoading, error } = useWeather();
   const current = forecast?.current;
@@ -22,7 +21,7 @@ export function WeatherBentoCard() {
   const windPct = Math.min(100, Math.round((wind / 15) * 100));
 
   const today = forecast?.daily?.[0];
-  const days = (forecast?.daily ?? []).slice(0, 5);
+  const days = forecast?.daily ?? [];
 
   // 24h temperature window starting at the current hour (rolling, like the
   // Google graph). Falls back to the first 24 entries before data resolves.
@@ -86,24 +85,7 @@ export function WeatherBentoCard() {
 
             {graphPoints.length > 1 && <TempGraph points={graphPoints} />}
 
-            {days.length > 0 && (
-              <div className="fc">
-                {days.map((d) => {
-                  const dt = new Date(d.date + 'T12:00:00');
-                  const di = describeWeather(d.weatherCode);
-                  return (
-                    <div key={d.date}>
-                      <div className="d">{DAY_SHORT[dt.getDay()]}</div>
-                      <div className="fc-ic">{di.icon}</div>
-                      <div className="fc-temps">
-                        <strong>{Math.round(d.tempMax)}&deg;</strong>
-                        <span>{Math.round(d.tempMin)}&deg;</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            {days.length > 0 && <ForecastRow days={days} />}
           </div>
         )}
       </div>
