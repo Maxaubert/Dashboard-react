@@ -29,7 +29,7 @@ per-user API keys; no key typing.
 Gaming page
   ├── getConnection()  ── supabase (anon, RLS) ─► integrations row (own steam_id)   [direct, no function]
   ├── "Connect Steam"  ── fetch /api/steam/login (Bearer JWT) ─► {url} ─► browser redirect to Steam
-  │        Steam OpenID ─► GET /api/steam/callback ── verify w/ Steam + signed state ─► upsert integrations (service role) ─► redirect /gaming?steam=connected
+  │        Steam OpenID ─► GET /api/steam/callback ── verify w/ Steam + signed state ─► upsert integrations (service role) ─► redirect /?steam=connected
   ├── disconnect()     ── supabase (anon, RLS) ─► delete own integrations row        [direct, no function]
   └── wishlistApi.list() ── fetch /api/wishlist (Bearer JWT) ─► { connected, games }
                                   └─ verify JWT ─► user_id ─► steam_id (service role) ─► buildWishlist(SHARED_KEY, steam_id) ─► cache wishlist:<user_id>
@@ -86,8 +86,9 @@ Steam OpenID endpoint: `https://steamcommunity.com/openid/login`.
 - Extract SteamID64 from `openid.claimed_id`
   (`https://steamcommunity.com/openid/id/<steamid64>`); validate it is 17 digits.
 - Upsert `integrations(user_id, steam_id)` via the service-role client.
-- Redirect (302) to `<base>/gaming?steam=connected` (or `?steam=error` on any
-  failure).
+- Redirect (302) to `<base>/?steam=connected` (or `?steam=error` on any
+  failure). The SPA only routes `/`; the Gaming view is an overlay on the home
+  page, so the callback must land on the root route.
 
 The Supabase JWT never appears in a URL; only the HMAC-signed `state`
 (carrying the non-secret `user_id`) travels through the redirect.
@@ -121,8 +122,11 @@ The Supabase JWT never appears in a URL; only the HMAC-signed `state`
   - **Not connected** -> a "Koble til Steam" button (calls `startConnect`) + a hint
     line: wishlisten din ma vaere offentlig.
   - **Connected** -> existing wishlist UI, plus a small "Koble fra / Koble til pa
-    nytt" control. On `?steam=connected` show a success toast and refetch; on
-    `?steam=error` show an error toast.
+    nytt" control.
+- `HomePage` (via `useSteamCallback`): on `?steam=connected` show a success
+  toast, refetch the connection + wishlist queries and open the Gaming overlay;
+  on `?steam=error` show an error toast. Strip the query with
+  `history.replaceState`.
 - All user-facing strings in Norwegian (nb-NO).
 
 ## Environment / setup
