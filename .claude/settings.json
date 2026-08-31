@@ -22,7 +22,10 @@
       "Bash(gh pr list *)",
       "Bash(gh pr diff *)",
       "Bash(gh auth status)",
-      "Bash(gh api *)"
+      "Bash(gh api *)",
+      "Bash(vercel --prod*)",
+      "Bash(vercel ls*)",
+      "Bash(vercel whoami)"
     ]
   }
 }

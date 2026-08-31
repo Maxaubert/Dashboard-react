@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { todosApi } from '@/api/todos';
 import type { Todo } from '@/api/types';
+import { bulkSaveMutation } from './bulkSaveMutation';
 import { queryKeys } from './queryKeys';
 
 export function useTodos() {
@@ -33,20 +34,7 @@ function normalizeCompletion(list: Todo[]): Todo[] {
 
 export function useSaveTodos() {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (todos: Todo[]) => todosApi.saveAll(normalizeCompletion(todos)),
-    onMutate: async (raw) => {
-      const next = normalizeCompletion(raw);
-      await qc.cancelQueries({ queryKey: queryKeys.todos });
-      const previous = qc.getQueryData<Todo[]>(queryKeys.todos);
-      qc.setQueryData(queryKeys.todos, next);
-      return { previous };
-    },
-    onError: (_err, _next, ctx) => {
-      if (ctx?.previous) qc.setQueryData(queryKeys.todos, ctx.previous);
-    },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.todos });
-    },
-  });
+  return useMutation(
+    bulkSaveMutation<Todo[]>(qc, queryKeys.todos, todosApi.saveAll, normalizeCompletion),
+  );
 }

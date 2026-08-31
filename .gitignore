@@ -10,55 +10,30 @@ __pycache__/
 .superpowers/
 .worktrees/
 
-# Credentials — never commit
+# Credentials, never commit
 dashboard.txt
 .env
 .env.*
 !.env.example
 !.env.test
 
-# Local discovery / deploy helpers (not part of the app)
-_discover.py
-_deploy.py
-_inspect_server.py
-_setup_env_secrets.py
-_setup_postgres.py
-_apply_migrations.py
-_setup_backup_cron.py
-_setup_encryption_key.py
-_migrate_to_postgres.py
-_migrate_plan_to_postgres.py
-_migrate_links_to_postgres.py
-_migrate_home_to_postgres.py
-_migrate_notes_to_postgres.py
-_headless_test.py
-_pull_reports.py
-_signup_via_api.ps1
-_install_ssh_key.ps1
-_rollback.ps1
-_i*.txt
-_apply_out.txt
-_deploy_out.txt
-_headless_out.txt
-_setup_*_out.txt
+# Local scratch files and folders at the repo root (helper scripts, throwaway
+# mockups, captured logs). Anchored so api/_lib and friends stay tracked.
+/_*
 
 # Playwright MCP captures (snapshots/screenshots)
 .playwright-mcp/
 
-# Throwaway design mockups (standalone HTML + large local video sources)
-_mockups/
-
-# Bug/feature reports — personal notes, mirrored from /opt/dashboard/reports/
-# on the server via _pull_reports.py. Don't push these to the public repo.
+# Personal bug/feature notes
 reports/
 
 # Local planning / audit notes (not part of the app).
 # Ignore contents by default, but track files that follow a clear
 # convention so future sessions can find them:
-#   - TEMPLATE.md   — plan structure
-#   - *-design.md   — approved design specs (output of brainstorming)
-#   - *-spec.md     — any other shareable spec
-#   - *-plan.md     — approved implementation plans (output of writing-plans)
+#   - TEMPLATE.md   plan structure
+#   - *-design.md   approved design specs (output of brainstorming)
+#   - *-spec.md     any other shareable spec
+#   - *-plan.md     approved implementation plans (output of writing-plans)
 # Personal audit notes that don't match these patterns stay local.
 plans_md/*
 !plans_md/TEMPLATE.md
@@ -83,7 +58,6 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-_dev.log
 
 # TypeScript incremental build cache (regenerated on every build)
 *.tsbuildinfo

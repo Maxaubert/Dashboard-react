@@ -2,12 +2,13 @@ import { useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { homeApi } from '@/api/home';
 import type { HomeEnvelope } from '@/api/types';
+import { bulkSaveMutation } from './bulkSaveMutation';
 import { queryKeys } from './queryKeys';
 
-const EMPTY_HOME: HomeEnvelope = { version: 1, sections: [], hidden: [], widgets: [], habits: [] };
+const EMPTY_HOME: HomeEnvelope = { version: 1, sections: [], hidden: [] };
 
 /**
- * Fetches the single home-page envelope: { version, sections, hidden, widgets, habits }.
+ * Fetches the single home-page envelope: { version, sections, hidden }.
  * Passes through `normaliseHome` so consumers never see missing arrays even if
  * the stored `home` document (`documents` table, via docStore) is partial.
  */
@@ -24,32 +25,13 @@ export function useHome() {
 
 /**
  * Saves the full envelope. Callers construct the next envelope and call
- * `.mutate(next)`. Optimistic update swaps it in immediately; rolls back
- * on error. Mirrors the useSaveLinks pattern.
+ * `.mutate(next)`. Optimistic update swaps it in synchronously so rapid
+ * `useMutateHome` patches build on each other; saves are serialised and
+ * rolled back on error (see `bulkSaveMutation`).
  */
 export function useSaveHome() {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (envelope: HomeEnvelope) => homeApi.saveAll(envelope),
-    onMutate: async (next) => {
-      // IMPORTANT: set the cache SYNCHRONOUSLY before any await. Two rapid
-      // `save.mutate(...)` calls read the cache between calls; if we awaited the
-      // cancellation first, the second call would see the pre-mutation cache
-      // and its patch would clobber the first mutation's changes.
-      const previous = qc.getQueryData<HomeEnvelope>(queryKeys.home);
-      qc.setQueryData(queryKeys.home, next);
-      // Cancel in-flight refetches *after* the optimistic write so nothing
-      // overwrites us asynchronously.
-      qc.cancelQueries({ queryKey: queryKeys.home }).catch(() => {});
-      return { previous };
-    },
-    onError: (_err, _next, ctx) => {
-      if (ctx?.previous) qc.setQueryData(queryKeys.home, ctx.previous);
-    },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.home });
-    },
-  });
+  return useMutation(bulkSaveMutation<HomeEnvelope>(qc, queryKeys.home, homeApi.saveAll));
 }
 
 /**
@@ -59,7 +41,7 @@ export function useSaveHome() {
  *
  * Usage:
  *   const mutate = useMutateHome();
- *   mutate((prev) => ({ ...prev, habits: [...prev.habits, newHabit] }));
+ *   mutate((prev) => ({ ...prev, hidden: [...prev.hidden, 'vaer'] }));
  */
 export function useMutateHome() {
   const qc = useQueryClient();
@@ -81,7 +63,5 @@ export function normaliseHome(raw: Partial<HomeEnvelope> | null | undefined): Ho
     version: 1,
     sections: Array.isArray(raw?.sections) ? raw!.sections : [],
     hidden: Array.isArray(raw?.hidden) ? raw!.hidden : [],
-    widgets: Array.isArray(raw?.widgets) ? raw!.widgets : [],
-    habits: Array.isArray(raw?.habits) ? raw!.habits : [],
   };
 }

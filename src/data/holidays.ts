@@ -8,8 +8,7 @@
  *   - Works offline
  *
  * Each entry is `YYYY-MM-DD` keyed in HOLIDAYS_BY_DATE for O(1) lookup
- * from PlanPage when rendering day headers. The full list is also
- * exported for any future overview UI.
+ * from PlanPage when rendering day headers (via `getHoliday`).
  *
  * To add a new year: append the 12 dates below and the lookup map will
  * pick them up automatically.
@@ -22,7 +21,7 @@ export interface Holiday {
   fixed: boolean;
 }
 
-export const HOLIDAYS: Holiday[] = [
+const HOLIDAYS: Holiday[] = [
   // ── 2026 ─────────────────────────────────────────────────────────────
   { date: '2026-01-01', name: 'Nyttårsdag',          fixed: true },
   { date: '2026-04-02', name: 'Skjærtorsdag',        fixed: false },
@@ -57,7 +56,7 @@ export const HOLIDAYS: Holiday[] = [
  * date (e.g. 2027 has 2. pinsedag and 17. mai both on May 17) the first
  * entry in HOLIDAYS wins, so list the more recognizable one first above.
  */
-export const HOLIDAYS_BY_DATE: Record<string, Holiday> = (() => {
+const HOLIDAYS_BY_DATE: Record<string, Holiday> = (() => {
   const map: Record<string, Holiday> = {};
   for (const h of HOLIDAYS) {
     if (!map[h.date]) map[h.date] = h;

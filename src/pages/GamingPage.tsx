@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useWishlist, useSteamConnection } from '@/hooks/useWishlist';
+import { useSteamConnect } from '@/hooks/useSteamConnect';
 import { queryKeys } from '@/hooks/queryKeys';
 import { steamApi } from '@/api/steam';
 import type { WishlistGame } from '@/api/types';
@@ -17,6 +18,7 @@ export function GamingPage() {
   const { toast } = useToast();
   const { data: conn } = useSteamConnection();
   const { data: wl, isLoading, error } = useWishlist();
+  const { connect, pending: connecting } = useSteamConnect();
   const [tab, setTab] = useState<Tab>('wishlist');
   const [activeGame, setActiveGame] = useState<WishlistGame | null>(null);
 
@@ -29,21 +31,13 @@ export function GamingPage() {
   );
   const regular = useMemo(() => games.filter((g) => !g.onSale), [games]);
 
-  useEffect(() => {
-    const p = new URLSearchParams(window.location.search).get('steam');
-    if (p === 'connected') {
-      toast({ tone: 'success', title: 'Steam koblet til' });
-    }
-    if (p === 'error') {
-      toast({ tone: 'danger', title: 'Kunne ikke koble til Steam' });
-    }
-    if (p) window.history.replaceState({}, '', '/gaming');
-  }, [toast]);
+  // The `?steam=connected|error` return from the OpenID callback is handled
+  // by `useSteamCallback` on HomePage; this overlay never sees the query.
 
   async function handleDisconnect() {
     try {
       await steamApi.disconnect();
-      queryClient.invalidateQueries({ queryKey: ['steam-connection'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.steamConnection });
       queryClient.invalidateQueries({ queryKey: queryKeys.wishlist });
       toast({ tone: 'neutral', title: 'Steam frakoblet' });
     } catch {
@@ -102,9 +96,11 @@ export function GamingPage() {
               Ønskelisten din på Steam må være satt til offentlig.
             </p>
             <button
+              type="button"
               className="gaming-filter-btn active"
               style={{ marginTop: '1rem' }}
-              onClick={() => steamApi.startConnect()}
+              onClick={connect}
+              disabled={connecting}
             >
               Koble til Steam
             </button>
