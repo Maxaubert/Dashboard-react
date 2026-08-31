@@ -80,6 +80,9 @@ async function fetchAppDetails(appid: string, fetchImpl: typeof fetch): Promise<
 async function fetchItadId(appid: string, itadKey: string, fetchImpl: typeof fetch): Promise<ItadLookup> {
   const url = `https://api.isthereanydeal.com/games/lookup/v1?key=${itadKey}&appid=${appid}`;
   const res = await fetchImpl(url);
+  // A 429/401/5xx must throw rather than parse to { id: null }: the caller's
+  // cache would otherwise persist a transient error as a day-long miss.
+  if (!res.ok) throw new Error(`itad lookup ${res.status}`);
   const data = (await res.json()) as { game?: { id?: string } };
   return { id: data?.game?.id ?? null };
 }

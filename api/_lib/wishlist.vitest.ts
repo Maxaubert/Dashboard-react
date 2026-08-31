@@ -169,6 +169,20 @@ describe('buildWishlist ITAD lookup cache', () => {
     expect(ttls.get(itadLookupKey('7'))).toBe(ITAD_LOOKUP_MISS_TTL_MS);
   });
 
+  it('does not cache a non-2xx lookup reply and keeps itadId null', async () => {
+    const { cache, store } = memoryCache();
+    const stub = (async (url: string) => {
+      const json = (o: unknown) => ({ ok: true, json: () => Promise.resolve(o), text: () => Promise.resolve('') }) as Response;
+      if (url.includes('GetWishlist')) return json({ response: { items: [{ appid: 7, priority: 1, date_added: 1 }] } });
+      if (url.includes('lookup')) return { ok: false, status: 429, json: () => Promise.resolve({}), text: () => Promise.resolve('') } as Response;
+      return json({});
+    }) as unknown as typeof fetch;
+    const games = await buildWishlist({ steamKey: 'k', steamId: 's', itadKey: 'i' }, stub, cache);
+    expect(games).toHaveLength(1);
+    expect(games[0].itadId).toBeNull();
+    expect(store.has(itadLookupKey('7'))).toBe(false);
+  });
+
   it('tolerates a cache that throws for one game', async () => {
     const cache: CacheReader = async (key, _ttl, fetcher) => {
       if (key === itadLookupKey('1001')) throw new Error('db down');
