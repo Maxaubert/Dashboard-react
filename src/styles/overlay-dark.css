@@ -231,6 +231,9 @@
 .page-overlay-panel .gaming-search-input:hover {
   border-color: rgba(255, 255, 255, 0.20);
 }
+.page-overlay-panel .gaming-search-input:disabled:hover {
+  border-color: rgba(255, 255, 255, 0.10);
+}
 .page-overlay-panel .gaming-search-input:focus-visible {
   border-color: rgba(249, 115, 22, 0.55);
   background: rgba(249, 115, 22, 0.06);

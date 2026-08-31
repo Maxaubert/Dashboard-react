@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface Props {
   query: string;
@@ -13,15 +13,28 @@ interface Props {
  */
 export function WishlistSearch({ query, onQueryChange }: Props) {
   const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  // Set by an explicit close (Escape, clear) so keyboard focus lands on the
+  // collapsed button instead of dropping to <body>. A blur-collapse must not
+  // pull focus back from wherever the user moved it.
+  const restoreFocus = useRef(false);
+
+  useEffect(() => {
+    if (open || !restoreFocus.current) return;
+    restoreFocus.current = false;
+    btnRef.current?.focus();
+  }, [open]);
 
   function close() {
     onQueryChange('');
+    restoreFocus.current = true;
     setOpen(false);
   }
 
   if (!open) {
     return (
       <button
+        ref={btnRef}
         type="button"
         className="wsearch-btn"
         onClick={() => setOpen(true)}

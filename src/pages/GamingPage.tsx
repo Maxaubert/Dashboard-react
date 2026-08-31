@@ -24,6 +24,7 @@ export function GamingPage() {
   const connected = wl?.connected ?? conn?.connected ?? false;
   const games = useMemo(() => wl?.games ?? [], [wl?.games]);
   const searching = query.trim().length > 0;
+  const ready = !isLoading && !error && games.length > 0;
 
   const filtered = useMemo(() => filterGames(games, query), [games, query]);
   const onSale = useMemo(
@@ -70,19 +71,20 @@ export function GamingPage() {
         <div className="page-header-sub">{subtitle}</div>
       </div>
 
-      <GamingSearchBar
-        query={query}
-        onQueryChange={setQuery}
-        onRefresh={handleRefresh}
-        refreshing={refreshing}
-        trailing={
-          connected ? (
+      {connected && (
+        <GamingSearchBar
+          query={query}
+          onQueryChange={setQuery}
+          onRefresh={handleRefresh}
+          refreshing={refreshing}
+          disabled={!ready}
+          trailing={
             <button type="button" className="gaming-filter-btn gaming-disconnect-btn" onClick={handleDisconnect}>
               Koble fra
             </button>
-          ) : null
-        }
-      />
+          }
+        />
+      )}
 
       {!connected && !isLoading ? (
         <div className="gaming-state-box">

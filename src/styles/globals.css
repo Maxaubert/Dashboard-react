@@ -1525,7 +1525,7 @@
   .ext-color-swatch.selected { border-color: #0d0d11; }
 
   /* ──────────────────────────────────────────────────────────────────────
-   * Gaming page — Steam wishlist with search, refresh and detail modal
+   * Gaming page: Steam wishlist with search, refresh and detail modal
    * ──────────────────────────────────────────────────────────────────── */
   .gaming-page {
     max-width: var(--page-max-width); /* was 900px */
@@ -1625,6 +1625,11 @@
     border-color: rgba(249, 115, 22, 0.55);
     background: rgba(249, 115, 22, 0.05);
   }
+  .gaming-search-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .gaming-search-input:disabled:hover { border-color: rgba(13, 13, 17, 0.10); }
   .gaming-search-clear {
     position: absolute;
     right: 6px;

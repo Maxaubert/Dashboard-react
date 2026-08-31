@@ -213,6 +213,9 @@
 @media (max-width: 480px) {
   .bento-home .wsearch-input { width: 120px; }
 }
+@media (prefers-reduced-motion: reduce) {
+  .bento-home .wsearch { animation: none; }
+}
 
 /* ── Eksterne lenker (horizontal row of full cards) ──────────────────── */
 .bento-home .lrow {
