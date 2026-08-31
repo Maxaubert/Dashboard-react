@@ -56,6 +56,18 @@ describe('getCached', () => {
     expect(store['k']).toBeUndefined();
   });
 
+  it('lets the TTL depend on the cached value', async () => {
+    const ttl = (data: { id: string | null }) => (data.id ? 60_000 : 1_000);
+    store['k'] = { data: { id: null }, fetched_at: new Date(Date.now() - 5_000).toISOString() };
+    const fetcher = vi.fn(async () => ({ id: 'found' }));
+    // A 5s-old null row is past its 1s TTL, so the fetcher runs.
+    expect(await getCached('k', ttl, fetcher)).toEqual({ id: 'found' });
+    expect(fetcher).toHaveBeenCalledOnce();
+    // The stored hit is now within its 60s TTL, so the fetcher does not run again.
+    expect(await getCached('k', ttl, fetcher)).toEqual({ id: 'found' });
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
+
   it('keeps rows for different keys independent', async () => {
     store['wishlist:u:old'] = { data: ['old-account'], fetched_at: new Date().toISOString() };
     const fetcher = vi.fn(async () => ['new-account']);
