@@ -2725,6 +2725,12 @@
   text-align: center;
   margin: 0;
 }
+.auth-info {
+  color: #86efac;
+  font-size: 0.82rem;
+  text-align: center;
+  margin: 0;
+}
 .auth-footer {
   margin-top: 6px;
   text-align: center;

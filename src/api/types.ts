@@ -88,8 +88,9 @@ export interface LinkItem {
 /**
  * A category groups links under a named section on the Lenker page.
  * Two reserved ids anchor the derived sections:
- *   - `__favorites` — rendered as "★ Favorites" (membership = links with favorite === true)
- *   - `__other`     — rendered as "Other"      (membership = links with no `category` set)
+ *   - `__favorites`: rendered as "★ Favoritter" (membership = links with favorite === true)
+ *   - `__other`:     rendered as "Annet"        (membership = links with no `category` set)
+ * Display names come from `lib/categoryName.ts` (by id), not the stored `name`.
  * Reserved ids exist only to give those derived sections a position in the
  * drag order; their membership is always computed at render time.
  */

@@ -5,6 +5,7 @@ import type { LinkItem } from '@/api/types';
 import { useToast } from '@/components/ui';
 import { useInlineContextMenu, InlineContextMenuList } from '@/components/links/InlineContextMenu';
 import { groupLinks, type SectionRender } from '@/lib/groupLinks';
+import { OTHER_LABEL } from '@/lib/categoryName';
 import { useCategories } from '@/hooks/useCategories';
 import {
   DndContext,
@@ -361,7 +362,7 @@ export function LinksLibrary() {
                           confirm(
                             section.links.length === 0
                               ? `Slett kategorien «${section.category.name}»?`
-                              : `Slett «${section.category.name}»? ${section.links.length} lenker flyttes til Other.`,
+                              : `Slett «${section.category.name}»? ${section.links.length} lenker flyttes til ${OTHER_LABEL}.`,
                           )
                         ) {
                           removeCategory(section.category.id);
@@ -370,9 +371,9 @@ export function LinksLibrary() {
                       onToggleFavorite={toggleFavorite}
                       onCardContextMenu={(e, link) =>
                         openMenu(e, [
-                          { label: 'Edit', onSelect: () => setEditing(link) },
+                          { label: 'Rediger', onSelect: () => setEditing(link) },
                           {
-                            label: 'Remove',
+                            label: 'Fjern',
                             danger: true,
                             onSelect: () => {
                               if (confirm(`Slette «${link.name}»?`)) handleDelete(link.id);

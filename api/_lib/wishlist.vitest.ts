@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildWishlist } from './wishlist';
+import { buildWishlist, wishlistCacheKey } from './wishlist';
 
 function stubFetch(url: string) {
   const json = (o: unknown) => Promise.resolve({ ok: true, json: () => Promise.resolve(o), text: () => Promise.resolve('') } as Response);
@@ -39,5 +39,46 @@ describe('buildWishlist ITAD optional', () => {
     expect(games).toHaveLength(1);
     expect(games[0].itadId).toBeNull();
     expect(calls.some((u) => u.includes('isthereanydeal'))).toBe(false);
+  });
+});
+
+describe('buildWishlist upstream failures', () => {
+  const env = { steamKey: 'k', steamId: 's', itadKey: '' };
+
+  it('throws instead of returning [] when GetWishlist is not ok', async () => {
+    const stub = (async () =>
+      ({ ok: false, status: 403, json: () => Promise.resolve({}), text: () => Promise.resolve('') }) as Response) as unknown as typeof fetch;
+    await expect(buildWishlist(env, stub)).rejects.toThrow(/steam wishlist 403/);
+  });
+
+  it('throws when the GetWishlist body is not JSON', async () => {
+    const stub = (async () =>
+      ({ ok: true, status: 200, json: () => Promise.reject(new SyntaxError('Unexpected token <')), text: () => Promise.resolve('<html>') }) as Response) as unknown as typeof fetch;
+    await expect(buildWishlist(env, stub)).rejects.toThrow(/parse failure/);
+  });
+
+  it('throws when the fetch itself rejects', async () => {
+    const stub = (async () => { throw new TypeError('fetch failed'); }) as unknown as typeof fetch;
+    await expect(buildWishlist(env, stub)).rejects.toThrow('fetch failed');
+  });
+
+  it('throws when items is not an array', async () => {
+    const stub = (async () =>
+      ({ ok: true, status: 200, json: () => Promise.resolve({ response: { items: 'nope' } }), text: () => Promise.resolve('') }) as Response) as unknown as typeof fetch;
+    await expect(buildWishlist(env, stub)).rejects.toThrow(/parse failure/);
+  });
+
+  it('returns [] for a genuinely empty wishlist', async () => {
+    const stub = (async () =>
+      ({ ok: true, status: 200, json: () => Promise.resolve({ response: { items: [] } }), text: () => Promise.resolve('') }) as Response) as unknown as typeof fetch;
+    await expect(buildWishlist(env, stub)).resolves.toEqual([]);
+  });
+});
+
+describe('wishlistCacheKey', () => {
+  it('scopes the key by user and linked Steam account', () => {
+    expect(wishlistCacheKey('u1', '7656')).toBe('wishlist:u1:7656');
+    expect(wishlistCacheKey('u1', '7656')).not.toBe(wishlistCacheKey('u1', '9999'));
+    expect(wishlistCacheKey('u1', '7656')).not.toBe(wishlistCacheKey('u2', '7656'));
   });
 });

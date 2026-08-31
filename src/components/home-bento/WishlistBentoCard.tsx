@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useWishlist, useSteamConnection } from '@/hooks/useWishlist';
+import { useSteamConnect } from '@/hooks/useSteamConnect';
 import { usePageOverlay } from '@/context/PageOverlayContext';
 import { orderForCarousel } from '@/lib/wishlistOrder';
 import { GameModal } from '@/components/gaming/GameModal';
@@ -10,7 +11,8 @@ import { useBentoCarousel } from './useBentoCarousel';
 export function WishlistBentoCard() {
   const { openOverlay } = usePageOverlay();
   const { data: conn } = useSteamConnection();
-  const { data: wl, isLoading } = useWishlist();
+  const { data: wl, isLoading, error } = useWishlist();
+  const { connect, pending: connecting } = useSteamConnect();
   const [active, setActive] = useState<WishlistGame | null>(null);
   const scrollerRef = useBentoCarousel<HTMLDivElement>();
 
@@ -32,7 +34,14 @@ export function WishlistBentoCard() {
         {isLoading ? (
           Array.from({ length: 6 }).map((_, i) => <div key={i} className="gskel" />)
         ) : !connected ? (
-          <div className="row-empty">Koble til Steam for å vise ønskelisten.</div>
+          <div className="row-empty row-connect">
+            <span>Koble til Steam for å vise ønskelisten.</span>
+            <button type="button" className="row-connect-btn" onClick={connect} disabled={connecting}>
+              Koble til Steam
+            </button>
+          </div>
+        ) : error ? (
+          <div className="row-empty">Kunne ikke laste ønskeliste.</div>
         ) : games.length === 0 ? (
           <div className="row-empty">Ønskelisten er tom.</div>
         ) : (

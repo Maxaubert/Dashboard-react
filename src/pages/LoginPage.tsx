@@ -1,14 +1,16 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { authApi } from '@/api/auth';
+import { mapAuthError } from '@/lib/authErrors';
 import { queryKeys } from '@/hooks/queryKeys';
 import { AuthCard } from '@/components/auth/AuthCard';
 
 /**
  * Minimalist login: brand + two placeholder fields + button on a blurred
  * galaxy video background. On success it seeds the currentUser cache and
- * navigates back to wherever the guard bounced from (or `/`).
+ * navigates back to wherever the guard bounced from (or `/`). Supabase error
+ * strings are mapped to Norwegian in `lib/authErrors`.
  */
 export function LoginPage() {
   const navigate = useNavigate();
@@ -30,14 +32,7 @@ export function LoginPage() {
       qc.setQueryData(queryKeys.currentUser, user);
       navigate(from, { replace: true });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : '';
-      if (msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('credentials')) {
-        setError('Feil e-post eller passord.');
-      } else if (msg.toLowerCase().includes('rate') || msg.toLowerCase().includes('too many')) {
-        setError('For mange forsøk. Vent litt og prøv igjen.');
-      } else {
-        setError(msg || 'Noe gikk galt. Prøv igjen.');
-      }
+      setError(mapAuthError(err));
     } finally {
       setSubmitting(false);
     }
@@ -69,9 +64,9 @@ export function LoginPage() {
           {submitting ? 'Logger inn…' : 'Logg inn'}
         </button>
       </form>
-      <p className="auth-footer">
-        Har du ikke konto? <Link to="/signup">Registrer deg</Link>
-      </p>
+      {/* Public signup is disabled in Supabase after the single account was
+          created (see the 2026-06-19 migration spec); /signup stays routable
+          but is not advertised here. */}
     </AuthCard>
   );
 }

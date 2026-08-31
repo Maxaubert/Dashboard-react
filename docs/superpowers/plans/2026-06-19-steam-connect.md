@@ -241,7 +241,7 @@ git commit -m "$(printf 'feat: Steam OpenID helper lib\n\nState HMAC sign/verify
 
 **Interfaces:**
 - Consumes: `signState`, `verifyState`, `buildAuthUrl`, `extractSteamId`, `verifyWithSteam` from `../_lib/steamOpenid.js`; `admin` from `../_lib/supabaseAdmin.js`.
-- Produces: `GET /api/steam/login` -> `{ url }`; `GET /api/steam/callback` -> 302 redirect to `/gaming?steam=connected|error`.
+- Produces: `GET /api/steam/login` -> `{ url }`; `GET /api/steam/callback` -> 302 redirect to `/?steam=connected|error`.
 
 - [ ] **Step 1: Implement `api/steam/login.ts`**
 
@@ -285,7 +285,7 @@ function baseUrl(req: VercelRequest): string {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const base = baseUrl(req);
-  const fail = () => res.redirect(302, `${base}/gaming?steam=error`);
+  const fail = () => res.redirect(302, `${base}/?steam=error`);
   try {
     const params = new URLSearchParams(req.query as Record<string, string>);
     const userId = verifyState(String(req.query.state ?? ''), process.env.STEAM_OPENID_SECRET as string, Date.now());
@@ -297,7 +297,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .from('integrations')
       .upsert({ user_id: userId, steam_id: steamId, connected_at: new Date().toISOString() }, { onConflict: 'user_id' });
     if (error) return fail();
-    res.redirect(302, `${base}/gaming?steam=connected`);
+    res.redirect(302, `${base}/?steam=connected`);
   } catch {
     fail();
   }
@@ -582,14 +582,16 @@ For the wishlist tab body, replace the conditional with:
       )}
 ```
 
-Also: read the `?steam=` query param once on mount and surface a toast, then strip it:
+Also: read the `?steam=` query param once on mount of `HomePage` (the callback redirects to `/`; the Gaming view is an overlay, not a route), surface a toast, then strip it. This lives in `src/hooks/useSteamCallback.ts` with the pure parsing in `src/lib/steamCallback.ts`:
 ```tsx
   useEffect(() => {
-    const p = new URLSearchParams(window.location.search).get('steam');
-    if (p === 'connected') { /* show success toast via the app Toast */ }
-    if (p === 'error') { /* show error toast */ }
-    if (p) window.history.replaceState({}, '', '/gaming');
-  }, []);
+    const status = readSteamCallback(window.location.search);
+    if (!status) return;
+    window.history.replaceState({}, '', stripSteamParam(window.location.pathname, window.location.search));
+    if (status === 'connected') { /* success toast + invalidate steam-connection and wishlist */ }
+    else { /* error toast */ }
+    openOverlay('gaming');
+  }, [queryClient, toast, openOverlay]);
 ```
 Use the app's existing `useToast()` (from `src/components/ui`) for the messages: success "Steam koblet til" / error "Kunne ikke koble til Steam". Add a small "Koble fra" button near the header when `connected` that calls `steamApi.disconnect()` then invalidates the `['steam-connection']` and wishlist queries.
 
@@ -656,7 +658,7 @@ Expected: Build Completed, ready.
 
 On `https://dashboard-react-mauve-alpha.vercel.app`:
 1. Log in, go to Gaming -> see "Koble til Steam".
-2. Click it -> redirected to the real Steam login -> authorize -> redirected back to `/gaming?steam=connected` with a success toast.
+2. Click it -> redirected to the real Steam login -> authorize -> redirected back to `/?steam=connected` with a success toast and the Gaming overlay open.
 3. The wishlist loads (ensure your Steam wishlist is Public). If empty, confirm the privacy setting.
 4. `curl` the function with no auth returns 401; with a valid session it returns `{connected:true,...}`.
 5. "Koble fra" clears the connection and the Connect button returns.

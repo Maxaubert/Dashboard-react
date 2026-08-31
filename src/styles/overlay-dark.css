@@ -115,6 +115,20 @@
 .page-overlay-panel .section-context-menu div:hover {
   background: rgba(255, 255, 255, 0.06);
 }
+/* Favorite star: globals.css colours it with near-black alpha for the light
+ * Papir theme, which is invisible on these dark tiles. Neutral white alpha
+ * here, brighter on hover/focus, gold when favorited. Unlayered, so it beats
+ * the @layer rules without !important. */
+.page-overlay-panel .fav-btn {
+  color: rgba(255, 255, 255, 0.28);
+}
+.page-overlay-panel .fav-btn:hover,
+.page-overlay-panel .fav-btn:focus-visible {
+  color: rgba(255, 255, 255, 0.7);
+}
+.page-overlay-panel .fav-btn.favorited {
+  color: #f5c518;
+}
 
 /* ── 4b. Plan page (week calendar) ───────────────────────────────────────── */
 .page-overlay-panel .week-toolbar {

@@ -1,12 +1,13 @@
 /**
- * Canvas-based "remove white background" — ported verbatim from
- * links.html so the React rewrite produces identical output.
+ * Canvas-based "remove white background" for uploaded link icons.
  *
- * Loads `src` (URL or data-URL), draws it into a 128×128 canvas, and
- * sets the alpha to 0 for any pixel where all three RGB channels are
- * above 220 (i.e. near-white). Returns a Promise that resolves to a
- * PNG data URL on success, or rejects with an error message on failure
- * (the most common cause is a CORS-tainted canvas).
+ * Loads `src` (a data URL from a file upload), draws it into a 128x128
+ * canvas, and sets the alpha to 0 for any pixel where all three RGB
+ * channels are above 220 (i.e. near-white). Returns a Promise that
+ * resolves to a PNG data URL on success, or rejects with an error
+ * message on failure. Remote http(s) images normally fail here because
+ * the host sends no CORS headers and the canvas becomes tainted, so the
+ * picker only offers this for uploaded files.
  */
 export function removeWhiteBg(src: string): Promise<string> {
   return new Promise((resolve, reject) => {

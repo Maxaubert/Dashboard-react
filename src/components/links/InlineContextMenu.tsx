@@ -30,11 +30,25 @@ export function useInlineContextMenu() {
   useEffect(() => {
     if (!menu) return;
     const close = () => setMenu(null);
+    // Escape closes only this menu. Capture on window runs before Radix's
+    // document-level escape listener, so stopping propagation here keeps
+    // the whole page overlay from closing too.
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      close();
+    };
     window.addEventListener('click', close);
+    // A right-click is not a click; openers stopPropagation on the React
+    // event, so a capture-phase listener is the only one that sees it.
+    window.addEventListener('contextmenu', close, true);
     window.addEventListener('scroll', close, true);
+    window.addEventListener('keydown', onKeyDown, true);
     return () => {
       window.removeEventListener('click', close);
+      window.removeEventListener('contextmenu', close, true);
       window.removeEventListener('scroll', close, true);
+      window.removeEventListener('keydown', onKeyDown, true);
     };
   }, [menu]);
 
