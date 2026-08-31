@@ -140,6 +140,82 @@
 .bento-home .ch-link:hover { color: var(--ink); }
 .bento-home .sage .ch-link { color: var(--sage-dim); }
 .bento-home .sage .ch-link:hover { color: var(--sage-ink); }
+/* Right side of a card header: optional tools + the "Alle" link. */
+.bento-home .ch-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* Ønskeliste header search: icon button that expands into a small field. */
+.bento-home .wsearch-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--dim);
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+.bento-home .wsearch-btn:hover,
+.bento-home .wsearch-btn:focus-visible {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.08);
+  outline: none;
+}
+.bento-home .wsearch-btn svg,
+.bento-home .wsearch-icon {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.bento-home .wsearch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 4px 0 9px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--dim);
+  transition: border-color 0.2s;
+  animation: wsearch-in 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.bento-home .wsearch:focus-within { border-color: rgba(255, 255, 255, 0.35); color: var(--ink); }
+.bento-home .wsearch-input {
+  width: 180px;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.78rem;
+  outline: none;
+}
+.bento-home .wsearch-input::placeholder { color: var(--faint); }
+.bento-home .wsearch-input::-webkit-search-cancel-button { display: none; }
+.bento-home .wsearch-clear { width: 20px; height: 20px; }
+@keyframes wsearch-in {
+  from { opacity: 0; transform: translateX(6px); }
+  to { opacity: 1; transform: none; }
+}
+@media (max-width: 480px) {
+  .bento-home .wsearch-input { width: 120px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bento-home .wsearch { animation: none; }
+}
 
 /* ── Eksterne lenker (horizontal row of full cards) ──────────────────── */
 .bento-home .lrow {

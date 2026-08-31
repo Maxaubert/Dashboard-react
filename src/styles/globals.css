@@ -1525,7 +1525,7 @@
   .ext-color-swatch.selected { border-color: #0d0d11; }
 
   /* ──────────────────────────────────────────────────────────────────────
-   * Gaming page — Steam wishlist + events with detail modal
+   * Gaming page: Steam wishlist with search, refresh and detail modal
    * ──────────────────────────────────────────────────────────────────── */
   .gaming-page {
     max-width: var(--page-max-width); /* was 900px */
@@ -1567,10 +1567,89 @@
     border-color: rgba(249, 115, 22, 0.35);
     color: #f97316;
   }
-  .gaming-filter-count {
-    font-size: 0.7rem;
-    color: var(--color-text-muted);
+  .gaming-filter-btn:focus-visible {
+    outline: 2px solid rgba(249, 115, 22, 0.55);
+    outline-offset: 2px;
+  }
+  .gaming-filter-btn:disabled {
+    opacity: 0.55;
+    cursor: default;
+  }
+  .gaming-refresh-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .gaming-refresh-btn svg { flex-shrink: 0; }
+  .gaming-refresh-btn.is-busy svg { animation: spin 0.9s linear infinite; }
+  .gaming-disconnect-btn {
     margin-left: auto;
+    opacity: 0.7;
+    font-size: 0.8rem;
+  }
+  @media (max-width: 480px) {
+    .gaming-disconnect-btn { margin-left: 0; }
+  }
+
+  /* Wishlist search: icon + field + clear, sized like a filter chip. */
+  .gaming-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1 1 220px;
+    max-width: 340px;
+    min-width: 0;
+  }
+  .gaming-search-icon {
+    position: absolute;
+    left: 11px;
+    color: var(--color-text-muted);
+    pointer-events: none;
+  }
+  .gaming-search-input {
+    width: 100%;
+    padding: 6px 32px 6px 32px;
+    border-radius: 20px;
+    border: 1px solid rgba(13, 13, 17, 0.10);
+    background: rgba(13, 13, 17, 0.04);
+    color: var(--color-text);
+    font: inherit;
+    font-size: 0.8rem;
+    outline: none;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .gaming-search-input::placeholder { color: var(--color-text-muted); }
+  .gaming-search-input::-webkit-search-cancel-button { display: none; }
+  .gaming-search-input:hover { border-color: rgba(13, 13, 17, 0.20); }
+  .gaming-search-input:focus-visible {
+    border-color: rgba(249, 115, 22, 0.55);
+    background: rgba(249, 115, 22, 0.05);
+  }
+  .gaming-search-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .gaming-search-input:disabled:hover { border-color: rgba(13, 13, 17, 0.10); }
+  .gaming-search-clear {
+    position: absolute;
+    right: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+  }
+  .gaming-search-clear:hover,
+  .gaming-search-clear:focus-visible {
+    color: var(--color-text);
+    background: rgba(13, 13, 17, 0.08);
+    outline: none;
   }
 
   .gaming-section-label {
@@ -1777,112 +1856,6 @@
     padding: 60px 20px;
     color: var(--color-text-dim);
     font-size: 0.88rem;
-  }
-
-  /* Gaming events list */
-  .gaming-events-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .gaming-event-card {
-    display: flex;
-    gap: 16px;
-    align-items: flex-start;
-    background: rgba(0, 0, 0, 0.28);
-    border: 1px solid rgba(13, 13, 17, 0.07);
-    border-radius: var(--radius);
-    padding: 16px 18px;
-    transition: border-color 0.15s, background 0.15s;
-    text-decoration: none;
-    color: inherit;
-  }
-  .gaming-event-card:hover {
-    border-color: rgba(13, 13, 17, 0.14);
-    background: rgba(0, 0, 0, 0.38);
-  }
-  .gaming-event-card.past {
-    opacity: 0.38;
-    filter: grayscale(0.6);
-    pointer-events: none;
-  }
-  .gaming-event-card.live {
-    border-color: rgba(239, 68, 68, 0.40);
-    background: rgba(239, 68, 68, 0.04);
-  }
-  .gaming-event-date-col {
-    flex-shrink: 0;
-    width: 52px;
-    text-align: center;
-    background: rgba(13, 13, 17, 0.04);
-    border: 1px solid rgba(13, 13, 17, 0.08);
-    border-radius: 8px;
-    padding: 7px 4px;
-  }
-  .gaming-event-date-day {
-    font-size: 1.4rem;
-    font-weight: 800;
-    line-height: 1;
-    color: var(--color-text);
-  }
-  .gaming-event-date-mon {
-    font-size: 0.62rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--color-text-muted);
-    margin-top: 2px;
-  }
-  .gaming-event-info { flex: 1; min-width: 0; }
-  .gaming-event-name {
-    font-size: 0.92rem;
-    font-weight: 700;
-    color: var(--color-text);
-  }
-  .gaming-event-time {
-    font-size: 0.76rem;
-    color: var(--color-text-dim);
-    margin-top: 3px;
-  }
-  .gaming-event-desc {
-    font-size: 0.78rem;
-    color: var(--color-text-dim);
-    margin-top: 5px;
-    line-height: 1.5;
-  }
-  .gaming-event-badge {
-    flex-shrink: 0;
-    align-self: center;
-    font-size: 0.62rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    padding: 3px 8px;
-    border-radius: 20px;
-  }
-  .badge-live-now {
-    background: rgba(239, 68, 68, 0.15);
-    color: #ef4444;
-    border: 1px solid rgba(239, 68, 68, 0.30);
-    animation: pulse 1.5s infinite;
-  }
-  .badge-soon {
-    background: rgba(249, 115, 22, 0.12);
-    color: #f97316;
-    border: 1px solid rgba(249, 115, 22, 0.30);
-  }
-  .badge-upcoming {
-    background: rgba(13, 13, 17, 0.05);
-    color: var(--color-text-muted);
-    border: 1px solid rgba(13, 13, 17, 0.10);
-  }
-  .events-past-label {
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--color-text-muted);
-    margin: 20px 0 8px;
   }
 
   /* Gaming detail modal */
