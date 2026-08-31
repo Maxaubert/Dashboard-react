@@ -382,7 +382,7 @@
   }
   .ext-link:hover .ext-link-name { color: #0d0d11; }
 
-  /* Drag-reorder handle (prompt launcher) — 6-dot grip icon
+  /* Drag-reorder handle (prompt launcher): 6-dot grip icon
    * inside each section header. Visible at low opacity, brighter on hover,
    * grab/grabbing cursor depending on state. */
   .db-grip-handle {
@@ -2763,6 +2763,14 @@
  * ============================================================ */
 
 html { --radius: 2px; --radius-sm: 2px; color-scheme: light; background: #f4efe6; }
+
+/* The viewport scrollbar follows the ROOT element's color-scheme, and the
+ * browser only forwards body's value when html is `normal`. html is
+ * explicitly `light` above, so the layered `body.bento-active` rule alone
+ * leaves the main scrollbar light on the (100vh-tall) bento home. Flip the
+ * root too while the bento home is mounted. Unlayered, after the html rule
+ * above, and higher specificity, so it wins. */
+html:has(> body.bento-active) { color-scheme: dark; }
 
 /* Riso paper background lives in the @layer base body rule above (a layered
  * !important wins over an unlayered one, so that is the rule that takes
