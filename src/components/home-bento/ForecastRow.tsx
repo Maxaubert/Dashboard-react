@@ -29,7 +29,6 @@ export function ForecastRow({ days }: { days: DailyForecast[] }) {
             <li
               key={d.date}
               className="fc-col"
-              title={condition}
               aria-label={`${label}: ${condition}, ${max} til ${min} grader`}
             >
               <div className="d">{label}</div>
