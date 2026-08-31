@@ -5,8 +5,8 @@ import { iconForCode } from '@/lib/weatherIcons';
 import { WeatherIcon } from './WeatherIcon';
 
 /**
- * Horizontal, drag-scrollable row of forecast days. Fixed 56px columns with
- * scroll snapping; the first ~5 fit the card, the rest are reached by
+ * Horizontal, drag-scrollable row of forecast days. Fixed 74px columns (8px gap)
+ * with scroll snapping; the first ~4 fit the card, the rest are reached by
  * dragging (mouse, with inertia), trackpad, or arrow keys once focused.
  *
  * The scroller is a focusable region wrapping a real list, so screen
