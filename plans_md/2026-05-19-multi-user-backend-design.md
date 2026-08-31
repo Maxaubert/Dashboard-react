@@ -1,5 +1,7 @@
 # Multi-user backend — design
 
+> **Superseded by `docs/superpowers/specs/2026-06-19-vercel-supabase-migration-design.md`.** This document describes the deleted Python/VPS backend and is kept for history only.
+
 **Date**: 2026-05-19
 **Status**: design approved, no implementation started
 **Author**: Max + Claude (brainstorming session)

@@ -11,7 +11,7 @@ const DEFAULT_PSEUDO_CATEGORIES: Category[] = [
 ];
 
 /**
- * Normalise whatever shape the backend returns into a v2 envelope.
+ * Normalise whatever shape the `links` document holds into a v2 envelope.
  * - Legacy v1: bare LinkItem[] → wrap in { version: 2, links, categories: [...defaults] }
  * - v2: pass through, but backfill pseudo-categories if they're missing
  * - null/undefined: return empty envelope with defaults

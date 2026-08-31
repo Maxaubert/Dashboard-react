@@ -1,5 +1,7 @@
 # Multi-User Backend — Phase 2: Auth + Sessions — Implementation Plan
 
+> **Superseded by `docs/superpowers/specs/2026-06-19-vercel-supabase-migration-design.md`.** This plan targets the deleted Python/VPS backend and is kept for history only.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Ship the auth surface — signup, login, logout, current-user, plus admin invite generation. Sessions are server-side. Passwords use argon2id. Everything is exercised by `tests/server/test_auth.py`. After this phase, you can `curl` your way through a full signup → login → me → logout flow against the live site. No existing endpoint changes (those come in Phase 3).
