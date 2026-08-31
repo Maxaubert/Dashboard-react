@@ -25,7 +25,9 @@
       "Bash(gh api *)",
       "Bash(vercel --prod*)",
       "Bash(vercel ls*)",
-      "Bash(vercel whoami)"
+      "Bash(vercel whoami)",
+      "Bash(vercel env *)",
+      "Bash(vercel git *)"
     ]
   }
 }
