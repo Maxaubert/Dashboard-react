@@ -1313,31 +1313,6 @@
     color: var(--color-text-dim);
   }
 
-  .img-blend-row {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    margin-top: 10px;
-  }
-  .img-blend-row input[type='checkbox'] {
-    width: 14px;
-    height: 14px;
-    accent-color: #e8214e;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-  .img-blend-row label {
-    font-size: 0.76rem;
-    color: var(--color-text-dim);
-    cursor: pointer;
-    user-select: none;
-  }
-  .img-blend-info {
-    font-size: 0.72rem;
-    color: var(--color-text-muted);
-    margin-top: 5px;
-    min-height: 16px;
-  }
 
   /* SVG icon grid (Ikoner tab) */
   .icon-grid {

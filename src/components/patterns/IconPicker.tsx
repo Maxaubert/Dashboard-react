@@ -9,7 +9,6 @@ import {
 } from 'react';
 import type { LinkIconType } from '@/api/types';
 import { faviconUrl } from '@/lib/favicon';
-import { removeWhiteBg } from '@/lib/removeWhiteBg';
 import { SVG_ICONS } from '@/data/svgIcons';
 import { cn } from '@/lib/cn';
 
@@ -32,8 +31,7 @@ export interface IconPickerHandle {
    * Returns the final icon to save. If the user never interacted with the
    * picker, the initial icon is returned unchanged so a name/colour edit
    * cannot silently replace an existing icon. Otherwise the current
-   * selection is returned ("Fjern hvit/lys bakgrunn" on the image tab has
-   * already been baked into the data URL).
+   * selection is returned.
    */
   resolve: () => Promise<ResolvedIcon>;
 }
@@ -52,12 +50,6 @@ function detectInitialTab(initial?: IconPickerProps['initial']): Tab {
   if (initial.iconType === 'svg') return 'svg';
   if (initial.iconType === 'image') return 'image';
   return 'favicon';
-}
-
-/** True for http(s) sources, which a canvas cannot read back (no CORS
- *  headers on most hosts), so background removal only works for files. */
-function isRemoteImage(src: string | null): boolean {
-  return /^https?:/i.test(src ?? '');
 }
 
 /**
@@ -90,17 +82,11 @@ export const IconPicker = forwardRef<IconPickerHandle, IconPickerProps>(function
   }
 
   // Image tab state
-  const [imgOriginal, setImgOriginal] = useState<string | null>(
-    initial?.iconType === 'image' ? initial.iconValue ?? null : null
-  );
   const [imgDataUrl, setImgDataUrl] = useState<string | null>(
     initial?.iconType === 'image' ? initial.iconValue ?? null : null
   );
-  const [imgBlend, setImgBlend] = useState(false);
-  const [imgBlendInfo, setImgBlendInfo] = useState('');
   const [imgUrlInput, setImgUrlInput] = useState('');
   const [imgDragOver, setImgDragOver] = useState(false);
-  const imgBlendDisabled = isRemoteImage(imgOriginal);
 
   // SVG icon search filter
   const [svgSearch, setSvgSearch] = useState('');
@@ -133,39 +119,13 @@ export const IconPicker = forwardRef<IconPickerHandle, IconPickerProps>(function
   // ── Image tab helpers ────────────────────────────────────────────────
   function applyImage(src: string) {
     setTouched(true);
-    setImgOriginal(src);
     setImgDataUrl(src);
-    setImgBlendInfo('');
-    if (imgBlend && !isRemoteImage(src)) processImageBlend(src);
-  }
-
-  function processImageBlend(src: string) {
-    setImgBlendInfo('Behandler…');
-    removeWhiteBg(src)
-      .then((data) => {
-        setImgDataUrl(data);
-        setImgBlendInfo('Hvit bakgrunn fjernet ✓');
-      })
-      .catch((err: Error) => setImgBlendInfo(err.message));
-  }
-
-  function onImgBlendToggle(checked: boolean) {
-    setTouched(true);
-    setImgBlend(checked);
-    if (!checked) {
-      if (imgOriginal) setImgDataUrl(imgOriginal);
-      setImgBlendInfo('');
-      return;
-    }
-    if (imgOriginal && !isRemoteImage(imgOriginal)) processImageBlend(imgOriginal);
   }
 
   function imgClear() {
     setTouched(true);
-    setImgOriginal(null);
     setImgDataUrl(null);
     setImgUrlInput('');
-    setImgBlendInfo('');
   }
 
   function imgFileSelected(e: ChangeEvent<HTMLInputElement>) {
@@ -330,23 +290,6 @@ export const IconPicker = forwardRef<IconPickerHandle, IconPickerProps>(function
               </div>
             </>
           )}
-          <div className="img-blend-row">
-            <input
-              type="checkbox"
-              id="img-blend-check"
-              checked={imgBlend && !imgBlendDisabled}
-              disabled={imgBlendDisabled}
-              onChange={(e) => onImgBlendToggle(e.target.checked)}
-            />
-            <label htmlFor="img-blend-check" style={imgBlendDisabled ? { opacity: 0.5 } : undefined}>
-              Fjern hvit/lys bakgrunn
-            </label>
-          </div>
-          <div className="img-blend-info">
-            {imgBlendDisabled
-              ? 'Bakgrunnsfjerning krever en opplastet fil, ikke en URL.'
-              : imgBlendInfo}
-          </div>
         </div>
       )}
     </>
