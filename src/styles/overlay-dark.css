@@ -224,19 +224,20 @@
 .page-overlay-panel .game-price-col {
   border-left-color: rgba(255, 255, 255, 0.07);
 }
-.page-overlay-panel .gaming-event-card {
-  border-color: rgba(255, 255, 255, 0.08);
-}
-.page-overlay-panel .gaming-event-card:hover {
-  border-color: rgba(255, 255, 255, 0.16);
-}
-.page-overlay-panel .gaming-event-date-col {
+.page-overlay-panel .gaming-search-input {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.10);
 }
-.page-overlay-panel .badge-upcoming {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.12);
+.page-overlay-panel .gaming-search-input:hover {
+  border-color: rgba(255, 255, 255, 0.20);
+}
+.page-overlay-panel .gaming-search-input:focus-visible {
+  border-color: rgba(249, 115, 22, 0.55);
+  background: rgba(249, 115, 22, 0.06);
+}
+.page-overlay-panel .gaming-search-clear:hover,
+.page-overlay-panel .gaming-search-clear:focus-visible {
+  background: rgba(255, 255, 255, 0.10);
 }
 
 /* ── 5. Generic form controls that DO render inside the overlay (not portaled
