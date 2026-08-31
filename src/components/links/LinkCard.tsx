@@ -1,4 +1,9 @@
-import { type CSSProperties, type MouseEvent } from 'react';
+import {
+  type CSSProperties,
+  type KeyboardEventHandler,
+  type MouseEvent,
+  type PointerEventHandler,
+} from 'react';
 import type { LinkItem } from '@/api/types';
 import { faviconUrl } from '@/lib/favicon';
 import { resolveSvgIcon } from '@/data/svgIcons';
@@ -59,6 +64,7 @@ export function LinkCard({ link, onToggleFavorite, onContextMenu }: LinkCardProp
           type="button"
           className={cn('fav-btn', link.favorite && 'favorited')}
           aria-label={link.favorite ? 'Fjern favoritt' : 'Marker som favoritt'}
+          aria-pressed={link.favorite === true}
           onClick={(e) => {
             e.stopPropagation();
             onToggleFavorite();
@@ -95,7 +101,17 @@ export function SortableLinkCard({
       style={style}
       className="touch-none"
       {...attributes}
-      {...listeners}
+      // Not `{...listeners}`: dnd-kit's KeyboardSensor would swallow Enter and
+      // Space bubbling up from the nested star button and stretched anchor and
+      // start a sortable drag instead of activating the control. Pointer drag
+      // starts anywhere on the card; keyboard drag only when the wrapper
+      // itself is focused (Tab onto the card, then Space).
+      onPointerDown={listeners?.onPointerDown as PointerEventHandler<HTMLDivElement> | undefined}
+      onKeyDown={(e) => {
+        if (e.target === e.currentTarget) {
+          (listeners?.onKeyDown as KeyboardEventHandler<HTMLDivElement> | undefined)?.(e);
+        }
+      }}
     >
       <LinkCard link={link} onToggleFavorite={onToggleFavorite} onContextMenu={onContextMenu} />
     </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Category, LinkItem } from '@/api/types';
 import { FAVORITES_CATEGORY_ID, OTHER_CATEGORY_ID } from '@/api/types';
+import { OTHER_LABEL } from '@/lib/categoryName';
 import { cn } from '@/lib/cn';
 
 interface CategoryPickerRowProps {
@@ -51,7 +52,7 @@ export function CategoryPickerRow({
 
       <div className={cn('cat-picker-row', value === undefined && 'selected')} onClick={() => onChange(undefined)}>
         <span className="cat-picker-radio" />
-        <span className="cat-picker-name">Other</span>
+        <span className="cat-picker-name">{OTHER_LABEL}</span>
         <span className="cat-picker-count">{otherCount}</span>
       </div>
 

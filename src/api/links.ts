@@ -2,10 +2,12 @@ import { readDoc, writeDoc } from '@/lib/docStore';
 import type { LinkItem, Category, LinksEnvelope } from './types';
 import { FAVORITES_CATEGORY_ID, OTHER_CATEGORY_ID } from './types';
 
-/** Default pseudo-categories for a fresh installation. */
+/** Default pseudo-categories for a fresh installation. The UI renders these
+ *  by id (see `lib/categoryName.ts`); older documents may still carry the
+ *  English names "Favorites" / "Other", which is harmless. */
 const DEFAULT_PSEUDO_CATEGORIES: Category[] = [
-  { id: FAVORITES_CATEGORY_ID, name: 'Favorites', order: 0 },
-  { id: OTHER_CATEGORY_ID, name: 'Other', order: 1_000_000 },
+  { id: FAVORITES_CATEGORY_ID, name: 'Favoritter', order: 0 },
+  { id: OTHER_CATEGORY_ID, name: 'Annet', order: 1_000_000 },
 ];
 
 /**
@@ -31,11 +33,8 @@ export function normaliseEnvelope(raw: LinkItem[] | LinksEnvelope | null | undef
       deduped.push(c);
     }
   }
-  if (!seen.has(FAVORITES_CATEGORY_ID)) {
-    deduped.push({ id: FAVORITES_CATEGORY_ID, name: 'Favorites', order: 0 });
-  }
-  if (!seen.has(OTHER_CATEGORY_ID)) {
-    deduped.push({ id: OTHER_CATEGORY_ID, name: 'Other', order: 1_000_000 });
+  for (const def of DEFAULT_PSEUDO_CATEGORIES) {
+    if (!seen.has(def.id)) deduped.push({ ...def });
   }
   return { version: 2, links: raw.links ?? [], categories: deduped };
 }

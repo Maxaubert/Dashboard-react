@@ -16,15 +16,15 @@ export function PromptLauncherHelp({ open, onOpenChange }: Props) {
     <Modal
       open={open}
       onOpenChange={onOpenChange}
-      title="Sending prompts to Claude / ChatGPT"
+      title="Sende prompter til Claude / ChatGPT"
       variant="standard"
       size="lg"
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14, fontSize: '0.85rem', lineHeight: 1.5 }}>
-        <Step n={1} title="Install Tampermonkey">
+        <Step n={1} title="Installer Tampermonkey">
           <p style={{ margin: 0 }}>
-            Tampermonkey is a browser extension that runs user-made scripts on
-            specific sites. Pick your browser:
+            Tampermonkey er en nettleserutvidelse som kjører brukerskript på
+            bestemte nettsteder. Velg nettleseren din:
           </p>
           <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
             <HelpLink href="https://addons.mozilla.org/firefox/addon/tampermonkey/">
@@ -39,10 +39,10 @@ export function PromptLauncherHelp({ open, onOpenChange }: Props) {
           </div>
         </Step>
 
-        <Step n={2} title="Install the auto-submit script">
+        <Step n={2} title="Installer auto-send-skriptet">
           <p style={{ margin: 0 }}>
-            Click the link below. Tampermonkey will open an install prompt — click
-            <strong> Install</strong>.
+            Klikk på lenken under. Tampermonkey åpner en installasjonsdialog,
+            klikk <strong>Installer</strong>.
           </p>
           <div style={{ marginTop: 8 }}>
             {/* No target="_blank": Tampermonkey opens its own install tab and
@@ -63,7 +63,7 @@ export function PromptLauncherHelp({ open, onOpenChange }: Props) {
                 textDecoration: 'none',
               }}
             >
-              Install userscript ↗
+              Installer brukerskript ↗
             </a>
           </div>
         </Step>
