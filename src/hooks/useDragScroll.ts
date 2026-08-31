@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { suspendScrollSnap } from '@/lib/scrollSnap';
 
 interface UseDragScrollOptions {
   /**
@@ -46,8 +47,23 @@ export function useDragScroll<T extends HTMLElement>(options: UseDragScrollOptio
     lastTime: 0,
     velocity: 0,
     moved: false,
+    /** Set while CSS scroll snapping is suspended for a gesture; see settle. */
+    restoreSnap: null as (() => void) | null,
   });
   const rafRef = useRef<number | null>(null);
+
+  // Chromium snaps every programmatic scrollLeft write, which would turn a
+  // drag on a `scroll-snap-type` container into a stutter between snap
+  // points and stall the inertia loop entirely. Snapping is therefore
+  // switched off when a drag begins and restored once the gesture and its
+  // inertia have ended, at which point the row re-snaps smoothly.
+  const settle = useCallback(() => {
+    const s = state.current;
+    if (!s.restoreSnap) return;
+    const restore = s.restoreSnap;
+    s.restoreSnap = null;
+    restore();
+  }, []);
 
   // Snap the scroll position back into the safe zone when the user
   // drifts toward either edge of the rendered copies. The safe zone is
@@ -81,13 +97,14 @@ export function useDragScroll<T extends HTMLElement>(options: UseDragScrollOptio
     const s = state.current;
     if (Math.abs(s.velocity) < minVelocity) {
       rafRef.current = null;
+      settle();
       return;
     }
     el.scrollLeft += s.velocity;
     s.velocity *= friction;
     wrap();
     rafRef.current = requestAnimationFrame(animate);
-  }, [friction, minVelocity, wrap]);
+  }, [friction, minVelocity, settle, wrap]);
 
   // Position the user at the start of the middle copy on mount. Polls
   // for up to ~1s to handle async data loads (links arriving after the
@@ -154,6 +171,9 @@ export function useDragScroll<T extends HTMLElement>(options: UseDragScrollOptio
         // event (if any) gets suppressed.
         if (!s.moved) {
           s.moved = true;
+          if (!s.restoreSnap && getComputedStyle(el!).scrollSnapType !== 'none') {
+            s.restoreSnap = suspendScrollSnap(el!);
+          }
           try {
             el!.setPointerCapture(e.pointerId);
           } catch {
@@ -190,6 +210,8 @@ export function useDragScroll<T extends HTMLElement>(options: UseDragScrollOptio
       }
       if (Math.abs(s.velocity) > minVelocity && rafRef.current === null) {
         rafRef.current = requestAnimationFrame(animate);
+      } else {
+        settle();
       }
     }
 
@@ -233,7 +255,7 @@ export function useDragScroll<T extends HTMLElement>(options: UseDragScrollOptio
       el.removeEventListener('dragstart', onDragStart);
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     };
-  }, [animate, minVelocity, wrap]);
+  }, [animate, minVelocity, settle, wrap]);
 
   return ref;
 }

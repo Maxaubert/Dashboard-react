@@ -1,18 +1,29 @@
 /**
- * Dynamic SVG weather scenes — ported from mockups/bento-dashboard.html.
+ * Dynamic SVG weather scenes, ported from mockups/bento-dashboard.html.
  *
- * `sceneForCode` maps an open-meteo WMO weather code to one of five scenes
- * (sunny / partly / cloudy / rain / snow). `WeatherScene` renders the SVG
- * sky for a given scene key. The scene key is also used as the `.viz`
- * background class in bento.css.
+ * `sceneForCode` maps an open-meteo WMO weather code to a scene key
+ * (sunny / partly / cloudy / rain / snow / thunder, plus the night
+ * variants). `WeatherScene` renders the SVG sky for a given scene key. The
+ * scene key is also used as the `.viz` background class in bento.css.
+ * The rain / snow particles live in weatherPrecipitation.tsx.
  */
 
-export type SceneKey = 'sunny' | 'partly' | 'cloudy' | 'rain' | 'snow' | 'moon' | 'moon-partly';
+import { Mist, Raindrops, Snowflakes } from './weatherPrecipitation';
+
+export type SceneKey =
+  | 'sunny'
+  | 'partly'
+  | 'cloudy'
+  | 'rain'
+  | 'snow'
+  | 'thunder'
+  | 'moon'
+  | 'moon-partly';
 
 /**
  * Map an open-meteo WMO weather code to a scene key. When `isDay` is false
- * the clear / mostly-clear scenes swap the sun for a moon; cloud, rain and
- * snow look the same day or night.
+ * the clear / mostly-clear scenes swap the sun for a moon; cloud, rain,
+ * snow and thunder look the same day or night.
  */
 export function sceneForCode(code: number, isDay = true): SceneKey {
   if (code === 0) return isDay ? 'sunny' : 'moon';
@@ -20,9 +31,8 @@ export function sceneForCode(code: number, isDay = true): SceneKey {
   if (code === 3 || code === 45 || code === 48) return 'cloudy';
   if (code >= 71 && code <= 77) return 'snow';
   if (code === 85 || code === 86) return 'snow';
-  if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82) || (code >= 95 && code <= 99)) {
-    return 'rain';
-  }
+  if (code >= 95 && code <= 99) return 'thunder';
+  if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return 'rain';
   return 'cloudy';
 }
 
@@ -104,38 +114,19 @@ function Cloud({ x, y, s, fill }: { x: number; y: number; s: number; fill: strin
   );
 }
 
-function Raindrops({ x, y }: { x: number; y: number }) {
+/** Rain cloud with drops; thunder adds a near-white cloud that flashes over it. */
+function RainScene({ thunder }: { thunder: boolean }) {
   return (
-    <g stroke="#8fb6e0" strokeWidth={2.5} strokeLinecap="round">
-      {Array.from({ length: 7 }, (_, i) => (
-        <line
-          key={i}
-          className="drop"
-          style={{ animationDelay: `${(i * 0.13).toFixed(2)}s` }}
-          x1={x + i * 16}
-          y1={y}
-          x2={x + i * 16 - 4}
-          y2={y + 10}
-        />
-      ))}
-    </g>
-  );
-}
-
-function Snowflakes({ x, y }: { x: number; y: number }) {
-  return (
-    <g fill="#cfe0f2">
-      {Array.from({ length: 7 }, (_, i) => (
-        <circle
-          key={i}
-          className="flake"
-          style={{ animationDelay: `${(i * 0.4).toFixed(2)}s` }}
-          cx={x + i * 16}
-          cy={y}
-          r={2.6}
-        />
-      ))}
-    </g>
+    <>
+      <Mist tint="#8fb6e0" />
+      <Cloud x={66} y={66} s={1.15} fill={thunder ? '#7d8593' : '#9098a4'} />
+      {thunder && (
+        <g className="flash">
+          <Cloud x={66} y={66} s={1.15} fill="#e4ebf5" />
+        </g>
+      )}
+      <Raindrops />
+    </>
   );
 }
 
@@ -163,16 +154,13 @@ export function WeatherScene({ scene }: { scene: SceneKey }) {
           <Cloud x={78} y={90} s={1.1} fill="#c2c7cf" />
         </>
       )}
-      {scene === 'rain' && (
-        <>
-          <Cloud x={66} y={66} s={1.15} fill="#9098a4" />
-          <Raindrops x={78} y={128} />
-        </>
-      )}
+      {scene === 'rain' && <RainScene thunder={false} />}
+      {scene === 'thunder' && <RainScene thunder />}
       {scene === 'snow' && (
         <>
+          <Mist tint="#cfe0f2" />
           <Cloud x={66} y={66} s={1.15} fill="#aab4c2" />
-          <Snowflakes x={78} y={128} />
+          <Snowflakes />
         </>
       )}
     </svg>
