@@ -2,12 +2,15 @@ import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { authApi } from '@/api/auth';
+import { mapAuthError } from '@/lib/authErrors';
 import { queryKeys } from '@/hooks/queryKeys';
 import { AuthCard } from '@/components/auth/AuthCard';
 
 /**
- * Signup shares the login shell (galaxy video + glass card). On success the
- * user is logged in immediately (Supabase sets the session) and routed to `/`.
+ * Signup shares the login shell (galaxy video + glass card). If Supabase
+ * returns a session the user is logged in immediately and routed to `/`.
+ * With e-mail confirmation on (the hosted default) there is no session yet,
+ * so we stay here and tell the user to check their inbox.
  */
 export function SignupPage() {
   const navigate = useNavigate();
@@ -16,31 +19,33 @@ export function SignupPage() {
   const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    setInfo(null);
     if (password.length < 10) {
       setError('Passordet må være minst 10 tegn.');
       return;
     }
     setSubmitting(true);
     try {
-      const user = await authApi.signup({
+      const { user, session } = await authApi.signup({
         email: email.trim(),
         password,
         display_name: displayName.trim(),
       });
+      if (!session) {
+        setPassword('');
+        setInfo('Sjekk e-posten din for å bekrefte kontoen.');
+        return;
+      }
       qc.setQueryData(queryKeys.currentUser, user);
       navigate('/', { replace: true });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : '';
-      if (msg.toLowerCase().includes('already')) {
-        setError('E-posten er allerede registrert.');
-      } else {
-        setError(msg || 'Noe gikk galt. Prøv igjen.');
-      }
+      setError(mapAuthError(err));
     } finally {
       setSubmitting(false);
     }
@@ -76,6 +81,11 @@ export function SignupPage() {
           onChange={(e) => setPassword(e.target.value)}
         />
         {error && <p className="auth-error">{error}</p>}
+        {info && (
+          <p className="auth-info" role="status">
+            {info}
+          </p>
+        )}
         <button className="auth-btn" type="submit" disabled={submitting}>
           {submitting ? 'Registrerer…' : 'Registrer deg'}
         </button>

@@ -1,14 +1,16 @@
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { authApi } from '@/api/auth';
+import { authApi, mapUser } from '@/api/auth';
 import { supabase } from '@/lib/supabase';
 import { queryKeys } from './queryKeys';
 
 /**
- * Resolves the current user via Supabase Auth (`supabase.auth.getUser()`).
- * Returns `null` (not an error) when logged out, so callers can branch on
- * `data === null` to mean "anonymous". The whole app is guarded by
- * RequireAuth, so most pages can assume `data` is a User once rendered.
+ * Resolves the current user from the persisted Supabase session
+ * (`supabase.auth.getSession()`). Returns `null` (not an error) when logged
+ * out, so callers can branch on `data === null` to mean "anonymous". A
+ * network failure surfaces as `isError`; RequireAuth shows a retry state for
+ * that rather than redirecting. The whole app is guarded by RequireAuth, so
+ * most pages can assume `data` is a User once rendered.
  */
 export function useCurrentUser() {
   return useQuery({
@@ -37,21 +39,17 @@ export function useLogout() {
   });
 }
 
-/** Subscribe React Query to Supabase auth changes (call once, in App). */
+/**
+ * Subscribe React Query to Supabase auth changes (call once, in App).
+ * Fires INITIAL_SESSION with the persisted session on mount, TOKEN_REFRESHED
+ * on refresh and SIGNED_OUT when the client drops a dead session, so the
+ * guard follows the real session state without another probe.
+ */
 export function useAuthSync() {
   const qc = useQueryClient();
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      qc.setQueryData(
-        queryKeys.currentUser,
-        session?.user
-          ? {
-              id: session.user.id,
-              email: session.user.email ?? '',
-              display_name: (session.user.user_metadata?.display_name as string) ?? '',
-            }
-          : null
-      );
+      qc.setQueryData(queryKeys.currentUser, session?.user ? mapUser(session.user) : null);
     });
     return () => data.subscription.unsubscribe();
   }, [qc]);
