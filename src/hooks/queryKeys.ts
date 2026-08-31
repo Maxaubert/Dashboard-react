@@ -7,9 +7,9 @@ export const queryKeys = {
   todos: ['todos'] as const,
   plan: ['plan'] as const,
   links: ['links'] as const,
-  notes: ['notes'] as const,
   wishlist: ['wishlist'] as const,
   steamConnection: ['steam-connection'] as const,
   news: (source: string, count: number) => ['news', source, count] as const,
+  weather: (latitude: number, longitude: number) => ['weather', latitude, longitude] as const,
   home: ['home'] as const,
 };

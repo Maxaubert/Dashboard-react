@@ -5,10 +5,10 @@ import type { HomeEnvelope } from '@/api/types';
 import { bulkSaveMutation } from './bulkSaveMutation';
 import { queryKeys } from './queryKeys';
 
-const EMPTY_HOME: HomeEnvelope = { version: 1, sections: [], hidden: [], widgets: [], habits: [] };
+const EMPTY_HOME: HomeEnvelope = { version: 1, sections: [], hidden: [] };
 
 /**
- * Fetches the single home-page envelope: { version, sections, hidden, widgets, habits }.
+ * Fetches the single home-page envelope: { version, sections, hidden }.
  * Passes through `normaliseHome` so consumers never see missing arrays even if
  * the backend returns a partial payload.
  */
@@ -41,7 +41,7 @@ export function useSaveHome() {
  *
  * Usage:
  *   const mutate = useMutateHome();
- *   mutate((prev) => ({ ...prev, habits: [...prev.habits, newHabit] }));
+ *   mutate((prev) => ({ ...prev, hidden: [...prev.hidden, 'vaer'] }));
  */
 export function useMutateHome() {
   const qc = useQueryClient();
@@ -63,7 +63,5 @@ export function normaliseHome(raw: Partial<HomeEnvelope> | null | undefined): Ho
     version: 1,
     sections: Array.isArray(raw?.sections) ? raw!.sections : [],
     hidden: Array.isArray(raw?.hidden) ? raw!.hidden : [],
-    widgets: Array.isArray(raw?.widgets) ? raw!.widgets : [],
-    habits: Array.isArray(raw?.habits) ? raw!.habits : [],
   };
 }

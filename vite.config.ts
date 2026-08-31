@@ -20,9 +20,8 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: true,
   },
-  // Only pick up *.vitest.ts files. Several pre-existing *.test.ts files use
-  // a custom tsx-based runner (process.exit) and aren't vitest-compatible.
+  // Unit tests are co-located as *.vitest.ts next to the code they cover.
   test: {
-    include: ['src/**/*.vitest.ts', 'vite-plugins/**/*.vitest.ts', 'api/**/*.vitest.ts'],
+    include: ['src/**/*.vitest.ts', 'api/**/*.vitest.ts'],
   },
 });

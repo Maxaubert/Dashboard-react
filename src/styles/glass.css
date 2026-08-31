@@ -43,8 +43,6 @@ body.glass-mode { background: transparent !important; }
  *    and the `filter: blur()` on `.app-shell`. */
 body.glass-mode .bento-card,
 body.glass-mode .prompt-launcher-card,
-body.glass-mode .page-overlay-panel .card,
-body.glass-mode .page-overlay-panel .weather-card,
 body.glass-mode .lm-content {
   background: rgba(17, 17, 20, 0.40) !important;
   -webkit-backdrop-filter: blur(30px) saturate(150%) !important;
