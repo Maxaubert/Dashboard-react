@@ -5,7 +5,7 @@ vi.mock('@/lib/supabase', () => ({
   supabase: { auth: { getSession, signUp } },
 }));
 
-import { authApi, mapUser } from './auth';
+import { authApi, cacheUserForAuthEvent, mapUser } from './auth';
 
 beforeEach(() => {
   getSession.mockReset();
@@ -20,6 +20,24 @@ describe('mapUser', () => {
   it('falls back to empty display_name and email', () => {
     const u = { id: 'x', email: null, user_metadata: {} };
     expect(mapUser(u as never)).toEqual({ id: 'x', email: '', display_name: '' });
+  });
+});
+
+describe('cacheUserForAuthEvent', () => {
+  const session = { user: { id: 'u1', email: 'a@b.com', user_metadata: {} } } as never;
+
+  it('skips INITIAL_SESSION with no session so me() decides between offline and logged out', () => {
+    expect(cacheUserForAuthEvent('INITIAL_SESSION', null)).toBeUndefined();
+  });
+
+  it('seeds the user for INITIAL_SESSION, SIGNED_IN and TOKEN_REFRESHED', () => {
+    for (const event of ['INITIAL_SESSION', 'SIGNED_IN', 'TOKEN_REFRESHED'] as const) {
+      expect(cacheUserForAuthEvent(event, session)).toEqual({ id: 'u1', email: 'a@b.com', display_name: '' });
+    }
+  });
+
+  it('clears the cache on SIGNED_OUT', () => {
+    expect(cacheUserForAuthEvent('SIGNED_OUT', null)).toBeNull();
   });
 });
 

@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
+import type { AuthChangeEvent, Session, User as SupabaseUser } from '@supabase/supabase-js';
 import type { User } from './types';
 
 export function mapUser(u: SupabaseUser): User {
@@ -8,6 +8,25 @@ export function mapUser(u: SupabaseUser): User {
     email: u.email ?? '',
     display_name: (u.user_metadata?.display_name as string | undefined) ?? '',
   };
+}
+
+/**
+ * Translates an `onAuthStateChange` event into the value to write into the
+ * currentUser cache, or `undefined` to leave the cache alone.
+ *
+ * `INITIAL_SESSION` with a null session must be skipped: auth-js emits it
+ * for *any* failure while loading the persisted session, including an
+ * offline `AuthRetryableFetchError` from the token refresh. Writing `null`
+ * there would turn "could not check" into "logged out" and bypass the retry
+ * state; `authApi.me()` is the only path that tells the two apart. A dead
+ * refresh token still logs out through the client's own `SIGNED_OUT` event.
+ */
+export function cacheUserForAuthEvent(
+  event: AuthChangeEvent,
+  session: Session | null,
+): User | null | undefined {
+  if (event === 'INITIAL_SESSION' && !session) return undefined;
+  return session?.user ? mapUser(session.user) : null;
 }
 
 /** Result of `authApi.signup`. `session` is null when Supabase requires the

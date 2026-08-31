@@ -32,6 +32,13 @@ const retryStyle: CSSProperties = {
  * they are and offer a retry instead of redirecting; only a confirmed
  * "no session" sends them to /login, preserving where they came from so
  * login can send them back.
+ *
+ * Known limitation: auth-js caches a failed token refresh for 60 s
+ * (`REFRESH_FAILURE_COOLDOWN_MS`), so "Prøv igjen" within a minute of the
+ * failure re-throws the cached error without touching the network. After
+ * the cooldown the client's auto-refresh tick recovers on its own and
+ * TOKEN_REFRESHED seeds the cache through `useAuthSync`, so the screen
+ * clears without a click.
  */
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { data: user, isLoading, isError, isFetching, refetch } = useCurrentUser();

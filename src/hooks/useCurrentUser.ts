@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { authApi, mapUser } from '@/api/auth';
+import { authApi, cacheUserForAuthEvent } from '@/api/auth';
 import { supabase } from '@/lib/supabase';
 import { queryKeys } from './queryKeys';
 
@@ -41,15 +41,19 @@ export function useLogout() {
 
 /**
  * Subscribe React Query to Supabase auth changes (call once, in App).
- * Fires INITIAL_SESSION with the persisted session on mount, TOKEN_REFRESHED
- * on refresh and SIGNED_OUT when the client drops a dead session, so the
- * guard follows the real session state without another probe.
+ * INITIAL_SESSION with a session, TOKEN_REFRESHED and SIGNED_IN seed the
+ * cache without another probe; SIGNED_OUT (also fired when the client drops
+ * a dead refresh token) clears it. INITIAL_SESSION with a null session is
+ * ignored: auth-js emits that for any load failure, offline included, and
+ * only `authApi.me()` can tell "no session" from "could not check", which
+ * RequireAuth relies on for its retry state. See `cacheUserForAuthEvent`.
  */
 export function useAuthSync() {
   const qc = useQueryClient();
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      qc.setQueryData(queryKeys.currentUser, session?.user ? mapUser(session.user) : null);
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      const user = cacheUserForAuthEvent(event, session);
+      if (user !== undefined) qc.setQueryData(queryKeys.currentUser, user);
     });
     return () => data.subscription.unsubscribe();
   }, [qc]);
