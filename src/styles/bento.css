@@ -587,12 +587,20 @@
   scrollbar-width: none;
   cursor: grab;
   margin: 0 -16px;
-  padding: 0 16px;
+  /* Right padding matches the mask fade so the last day can scroll clear of it. */
+  padding: 0 40px 0 16px;
   border-radius: 6px;
   -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 40px), transparent);
   mask-image: linear-gradient(90deg, #000 calc(100% - 40px), transparent);
 }
 .bento-home .fc::-webkit-scrollbar { display: none; }
+.bento-home .fc-track {
+  display: flex;
+  flex: 0 0 auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
 .bento-home .fc:active { cursor: grabbing; }
 .bento-home .fc:focus-visible {
   outline: 1px solid rgba(255, 255, 255, 0.35);
