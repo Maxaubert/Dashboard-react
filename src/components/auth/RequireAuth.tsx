@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 /**
- * Route guard. While the /api/auth/me probe is in flight we render
+ * Route guard. While the Supabase session lookup (`useCurrentUser`) is in flight we render
  * nothing (avoids a flash of the app before bouncing). Logged-out users
  * are redirected to /login, preserving where they came from so login can
  * send them back.

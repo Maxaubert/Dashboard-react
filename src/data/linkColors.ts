@@ -1,6 +1,6 @@
 /**
- * Color presets for the link library — ported verbatim from links.html
- * so users see the same swatches in the picker.
+ * Color presets for the link library, shown as swatches in the link editor's
+ * color picker.
  */
 export const LINK_COLOR_PRESETS = [
   '#ff4444', '#ff8c00', '#f5c518', '#00cc66', '#00bfff',

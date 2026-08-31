@@ -1,8 +1,8 @@
 /**
- * Gaming events — ported verbatim from gaming.html.
+ * Gaming events: a static, hand-maintained list (no feed behind it).
  *
  * All times stored as UTC, displayed in Europe/Oslo (CET/CEST).
- * Replace with a backend endpoint when one is available.
+ * Refresh the entries by hand when the seasonal events roll over.
  */
 export interface GamingEvent {
   name: string;

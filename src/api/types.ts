@@ -9,7 +9,7 @@
 
 // ─── Auth ────────────────────────────────────────────────────────────────
 
-/** The current user, as returned by /api/auth/{me,login,signup}. */
+/** The current user, mapped from the Supabase Auth user by `mapUser` in `src/api/auth.ts`. */
 export interface User {
   id: string;
   email: string;
@@ -117,8 +117,9 @@ export const FAVORITES_CATEGORY_ID = '__favorites';
 export const OTHER_CATEGORY_ID = '__other';
 
 /**
- * v2 envelope for /api/links. The backend accepts both v1 (bare array)
- * and v2 (this shape) on read, and always writes v2 on save.
+ * v2 envelope stored in the `links` document (`documents` table, via
+ * `src/lib/docStore.ts`). `normaliseEnvelope` accepts both v1 (bare array)
+ * and v2 (this shape) on read, and the client always writes v2 on save.
  */
 export interface LinksEnvelope {
   version: 2;

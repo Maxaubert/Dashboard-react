@@ -9,7 +9,7 @@ const EMPTY_HOME: HomeEnvelope = { version: 1, sections: [], hidden: [], widgets
 /**
  * Fetches the single home-page envelope: { version, sections, hidden, widgets, habits }.
  * Passes through `normaliseHome` so consumers never see missing arrays even if
- * the backend returns a partial payload.
+ * the stored `home` document (`documents` table, via docStore) is partial.
  */
 export function useHome() {
   return useQuery({

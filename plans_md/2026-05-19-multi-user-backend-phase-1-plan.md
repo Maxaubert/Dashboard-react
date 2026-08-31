@@ -1,5 +1,7 @@
 # Multi-User Backend — Phase 1: Postgres Infrastructure — Implementation Plan
 
+> **Superseded by `docs/superpowers/specs/2026-06-19-vercel-supabase-migration-design.md`.** This plan targets the deleted Python/VPS backend and is kept for history only.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Install PostgreSQL 16 on the same VPS as the app, apply the full multi-user schema via yoyo-migrations, and ship a tested `server/db.py` connection-pool wrapper. After this plan lands, the site behavior is unchanged but the foundation is in place for Phase 2 (auth) and Phase 3 (data migration).

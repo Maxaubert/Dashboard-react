@@ -74,7 +74,7 @@ Everything lives on **one customizable page**. Sections are drag-reorderable, an
 
 - **Frontend:** React 18, TypeScript, Vite, Tailwind v4, React Router v6, TanStack Query, Radix UI primitives, dnd-kit, framer-motion.
 - **Auth + data:** [Supabase](https://supabase.com) (hosted Postgres + Supabase Auth). Row-level security scopes every row per user. Schema lives in `supabase/migrations/`.
-- **Serverless functions:** two Vercel Node functions in `api/` (`/api/wishlist`, `/api/news`) hold the third-party secrets (Steam, ITAD, RSS) the browser cannot.
+- **Serverless functions:** four Vercel Node functions in `api/` (`/api/wishlist`, `/api/news`, `/api/steam/login`, `/api/steam/callback`) hold the third-party secrets (Steam, ITAD, RSS) the browser cannot.
 - **Hosting:** [Vercel](https://vercel.com) serves the static build and runs the functions. No server to maintain.
 - **UI language:** Norwegian (`nb-NO`).
 
@@ -87,11 +87,11 @@ api/              Vercel serverless functions
   news.ts         VG / NRK / Aftenposten RSS
   steam/          OpenID login + callback
 supabase/
-  migrations/     SQL schema (documents, notes, cache, integrations)
+  migrations/     SQL schema (documents, integrations, cache; notes is reserved, unused)
 src/
   api/            typed clients (Supabase queries + function fetches)
   hooks/          TanStack Query wrappers, one per domain
-  context/        PageOverlay (pop-out state), Timer
+  context/        PageOverlay (pop-out state), GlassMode
   components/
     home/         the home sections (todo, plan, wishlist, links, weather, news)
     overlay/      PageOverlay (renders a full page in a pop-out)
@@ -100,5 +100,5 @@ src/
     ui/           Modal + Toast primitives
   pages/          HomePage + the overlay pages (Plan, Todo, Gaming, Links) + Login/Signup
   lib/            pure helpers + design tokens (styles/globals.css)
-screenshots/      captured with Playwright
+screenshots/      the four PNGs above (capture.mjs is a Playwright helper; run it manually)
 ```

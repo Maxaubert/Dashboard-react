@@ -13,8 +13,9 @@ export function useTodos() {
 
 /**
  * Saves the entire todo list. Uses optimistic updates so the UI flips
- * immediately and rolls back on failure. The legacy backend doesn't have
- * per-item PATCH/DELETE, so the only mutation primitive is "replace all".
+ * immediately and rolls back on failure. Todos live in one JSONB `documents`
+ * row (`docStore.writeDoc('todos', ...)`), so the only mutation primitive is
+ * "replace all"; there is no per-item update or delete.
  */
 /**
  * Stamp/clear `completedAt` so every code path (direct click, drag,
