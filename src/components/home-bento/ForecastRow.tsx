@@ -5,13 +5,14 @@ import { iconForCode } from '@/lib/weatherIcons';
 import { WeatherIcon } from './WeatherIcon';
 
 /**
- * Horizontal, drag-scrollable row of forecast days. Fixed 74px columns (8px gap)
- * with scroll snapping; the first ~4 fit the card, the rest are reached by
- * dragging (mouse, with inertia), trackpad, or arrow keys once focused.
+ * Horizontal, drag-scrollable row of forecast days. Fixed 74px columns (8px
+ * gap); the first ~4 fit the card, the rest are reached by dragging (mouse,
+ * with inertia), trackpad, or arrow keys once focused. The row is free
+ * scrolling, so releasing a drag leaves it exactly where it landed.
  *
  * The scroller is a focusable region wrapping a real list, so screen
  * readers get a named scroll region plus a 14-item list rather than a
- * focusable list. `useDragScroll` suspends snapping while a drag runs.
+ * focusable list.
  */
 export function ForecastRow({ days }: { days: DailyForecast[] }) {
   const ref = useDragScroll<HTMLDivElement>();

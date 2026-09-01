@@ -652,13 +652,12 @@
 /* Forecast row: 14 fixed-width columns in a drag-scrollable strip. The
  * card shows the first ~5; the right edge fades to hint at the rest. Row
  * heights are explicit (16 + 28 + 22 = 66px, same as the old 5-up grid)
- * so labels, icons and temps line up across every column. */
+ * so labels, icons and temps line up across every column. No scroll
+ * snapping: the row rests wherever the drag and its inertia leave it. */
 .bento-home .fc {
   display: flex;
   overflow-x: auto;
   overflow-y: hidden;
-  scroll-snap-type: x proximity;
-  scroll-padding-inline: 16px;
   overscroll-behavior-x: contain;
   scrollbar-width: none;
   cursor: grab;
@@ -689,7 +688,6 @@
   grid-template-rows: 16px 28px 22px;
   align-items: center;
   justify-items: center;
-  scroll-snap-align: start;
   text-align: center;
   user-select: none;
 }
