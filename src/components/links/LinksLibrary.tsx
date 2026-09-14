@@ -5,6 +5,7 @@ import type { LinkItem } from '@/api/types';
 import { useToast } from '@/components/ui';
 import { useInlineContextMenu, InlineContextMenuList } from '@/components/links/InlineContextMenu';
 import { groupLinks, type SectionRender } from '@/lib/groupLinks';
+import { applyLinkDrop, linkDragId, moveLinkPreview, type ActiveLinkDrag } from '@/lib/linkDrag';
 import { OTHER_LABEL } from '@/lib/categoryName';
 import { useCategories } from '@/hooks/useCategories';
 import {
@@ -56,14 +57,14 @@ export function LinksLibrary() {
   // dragged card visually lives in the destination mid-drag instead of
   // snapping back to its source SortableContext.
   const [localSections, setLocalSections] = useState<SectionRender[]>(derivedSections);
-  const [activeLinkId, setActiveLinkId] = useState<string | null>(null);
+  const [activeLinkDrag, setActiveLinkDrag] = useState<ActiveLinkDrag | null>(null);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
 
   // Re-seed local from upstream when props actually differ AND no drag is
   // in progress. Content-level compare prevents clobbering a just-committed
   // drop before the optimistic cache write has propagated.
   useEffect(() => {
-    if (activeLinkId || activeSectionId) return;
+    if (activeLinkDrag || activeSectionId) return;
     const keyOf = (sections: SectionRender[]) =>
       sections
         .map((s) =>
@@ -81,7 +82,7 @@ export function LinksLibrary() {
         .join('|');
     if (keyOf(derivedSections) === keyOf(localSections)) return;
     setLocalSections(derivedSections);
-  }, [derivedSections, localSections, activeLinkId, activeSectionId]);
+  }, [derivedSections, localSections, activeLinkDrag, activeSectionId]);
 
   const { menu, openMenu, close: closeMenu } = useInlineContextMenu();
 
@@ -128,7 +129,9 @@ export function LinksLibrary() {
     const realId = id.replace(/::(empty|grid)$/, '');
     const asSection = localSections.find((s) => s.category.id === realId);
     if (asSection) return asSection;
-    return localSections.find((s) => s.links.some((l) => l.id === realId));
+    return localSections.find((s) =>
+      s.links.some((l) => linkDragId(s.category.id, l.id, activeLinkDrag) === id),
+    );
   }
 
   function handleDragStart(e: DragStartEvent) {
@@ -136,51 +139,37 @@ export function LinksLibrary() {
     if (localSections.some((s) => s.category.id === id)) {
       setActiveSectionId(id);
     } else {
-      setActiveLinkId(id);
+      const section = findLocalSection(id);
+      const link = section?.links.find((l) => linkDragId(section.category.id, l.id) === id);
+      if (section && link) setActiveLinkDrag({ id, linkId: link.id, sectionId: section.category.id });
     }
   }
 
   function handleDragOver(e: DragOverEvent) {
     // Section drags don't need mid-drag container moves — they're handled
     // by the outer SortableContext purely via transforms.
-    if (!activeLinkId) return;
-    const { active, over } = e;
+    if (!activeLinkDrag) return;
+    const { over } = e;
     if (!over) return;
-    const activeId = String(active.id);
     const overId = String(over.id);
 
-    const fromSection = localSections.find((s) => s.links.some((l) => l.id === activeId));
+    const fromSection = localSections.find((s) => s.category.id === activeLinkDrag.sectionId);
     const toSection = findLocalSection(overId);
     if (!fromSection || !toSection || fromSection.category.id === toSection.category.id) return;
 
-    setLocalSections((prev) => {
-      const next = prev.map((s) => ({ ...s, links: [...s.links] }));
-      const from = next.find((s) => s.category.id === fromSection.category.id);
-      const to = next.find((s) => s.category.id === toSection.category.id);
-      if (!from || !to) return prev;
-      const fromIdx = from.links.findIndex((l) => l.id === activeId);
-      if (fromIdx < 0) return prev;
-      const [moved] = from.links.splice(fromIdx, 1);
-      // Insertion index: if hovering the section wrapper, append; otherwise
-      // insert before the over-item so the placeholder appears at its slot.
-      let insertIdx: number;
-      if (overId === to.category.id) {
-        insertIdx = to.links.length;
-      } else {
-        const idx = to.links.findIndex((l) => l.id === overId);
-        insertIdx = idx < 0 ? to.links.length : idx;
-      }
-      to.links.splice(insertIdx, 0, moved);
-      return next;
-    });
+    const overLink = toSection.links.find(
+      (l) => linkDragId(toSection.category.id, l.id, activeLinkDrag) === overId,
+    );
+    setLocalSections(moveLinkPreview(localSections, activeLinkDrag, toSection.category.id, overLink?.id));
+    setActiveLinkDrag({ ...activeLinkDrag, sectionId: toSection.category.id });
   }
 
   function handleDragEnd(e: DragEndEvent) {
     const { active, over } = e;
     const wasSectionDrag = activeSectionId !== null;
-    const wasLinkDrag = activeLinkId !== null;
+    const wasLinkDrag = activeLinkDrag !== null;
     setActiveSectionId(null);
-    setActiveLinkId(null);
+    setActiveLinkDrag(null);
 
     const activeId = String(active.id);
     const overId = over ? String(over.id) : null;
@@ -205,7 +194,7 @@ export function LinksLibrary() {
       return;
     }
 
-    if (!wasLinkDrag) return;
+    if (!wasLinkDrag || !activeLinkDrag) return;
 
     // Stretched <a> inside each card would otherwise open the link when
     // the browser fires the synthetic click after pointerup. Swallow it.
@@ -219,7 +208,7 @@ export function LinksLibrary() {
     // of `over` at drop time (e.g. droppable size mid-render) shouldn't
     // discard that progress. If nothing actually moved (localSections
     // matches derivedSections), the persist below is a no-op write.
-    const toSection = localSections.find((s) => s.links.some((l) => l.id === activeId));
+    const toSection = localSections.find((s) => s.category.id === activeLinkDrag.sectionId);
     if (!toSection) {
       setLocalSections(derivedSections);
       return;
@@ -227,7 +216,7 @@ export function LinksLibrary() {
 
     let finalSections = localSections;
     if (overId !== null && overId !== toSection.category.id) {
-      const ids = toSection.links.map((l) => l.id);
+      const ids = toSection.links.map((l) => linkDragId(toSection.category.id, l.id, activeLinkDrag));
       const fromIdx = ids.indexOf(activeId);
       const toIdx = ids.indexOf(overId);
       if (fromIdx >= 0 && toIdx >= 0 && fromIdx !== toIdx) {
@@ -239,48 +228,22 @@ export function LinksLibrary() {
       }
     }
 
-    // Rebuild the flat links array preserving both section membership and
-    // within-section order. `groupLinks` buckets by input order, so the
-    // persisted order must reflect what the user sees.
-    const now = Date.now();
-    const upstreamById = new Map(links.map((l) => [l.id, l]));
-    const newLinks: LinkItem[] = [];
-    for (const section of finalSections) {
-      for (const link of section.links) {
-        const upstream = upstreamById.get(link.id);
-        if (!upstream) continue;
-        const update: Partial<LinkItem> = {};
-        if (section.kind === 'favorites') {
-          update.favorite = true;
-        } else if (section.kind === 'other') {
-          update.favorite = false;
-          update.category = undefined;
-        } else {
-          update.favorite = false;
-          update.category = section.category.id;
-        }
-        const isMoved = link.id === activeId;
-        newLinks.push({
-          ...upstream,
-          ...update,
-          updatedAt: isMoved ? now : upstream.updatedAt,
-        });
-      }
-    }
-
-    persist(newLinks);
+    // Favorites is a second view of the same records. Reorder only the
+    // destination's records and change membership only on the dragged link.
+    const destination = finalSections.find((s) => s.category.id === toSection.category.id)!;
+    persist(applyLinkDrop(links, destination, activeLinkDrag.linkId, Date.now()));
   }
 
   function handleDragCancel() {
-    if (activeLinkId !== null) installOneShotClickSuppress();
-    setActiveLinkId(null);
+    if (activeLinkDrag !== null) installOneShotClickSuppress();
+    setActiveLinkDrag(null);
     setActiveSectionId(null);
     setLocalSections(derivedSections);
   }
 
   const activeLink =
-    activeLinkId != null
-      ? localSections.flatMap((s) => s.links).find((l) => l.id === activeLinkId) ?? null
+    activeLinkDrag != null
+      ? links.find((l) => l.id === activeLinkDrag.linkId) ?? null
       : null;
 
   return (
@@ -355,6 +318,7 @@ export function LinksLibrary() {
                     <SortableSection
                       key={section.category.id}
                       section={section}
+                      activeLinkDrag={activeLinkDrag}
                       readonly={section.kind !== 'user'}
                       onRename={(next) => renameCategory(section.category.id, next)}
                       onDeleteSection={() => {
@@ -403,7 +367,6 @@ export function LinksLibrary() {
             pendingCategoryRef.current = undefined;
           }}
           onSave={handleSave}
-          onDelete={editing ? () => handleDelete(editing.id) : undefined}
         />
       )}
     </>

@@ -15,6 +15,7 @@
  * data keeps rendering correctly.
  */
 import type { ComponentType } from 'react';
+import { APP_ICONS } from './appIcons';
 import {
   // Common
   Globe, Star, Heart, Home, Bookmark, Tag, Flag, Link as LinkIcon,
@@ -108,6 +109,7 @@ export interface SvgIcon {
 void PhHeart2;
 
 export const SVG_ICONS: SvgIcon[] = [
+  ...APP_ICONS,
   // Common
   { id: 'globe',         label: 'Globe',       Component: Globe },
   { id: 'star',          label: 'Stjerne',     Component: Star },

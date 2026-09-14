@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Category, LinkItem } from '@/api/types';
 import { FAVORITES_CATEGORY_ID, OTHER_CATEGORY_ID } from '@/api/types';
 import { OTHER_LABEL } from '@/lib/categoryName';
+import { groupLinks } from '@/lib/groupLinks';
 import { cn } from '@/lib/cn';
 
 interface CategoryPickerRowProps {
@@ -22,10 +23,11 @@ export function CategoryPickerRow({
     .filter((c) => c.id !== FAVORITES_CATEGORY_ID && c.id !== OTHER_CATEGORY_ID)
     .sort((a, b) => a.order - b.order);
 
-  const otherCount = links.filter((l) => !l.favorite && !l.category).length;
+  const counts = new Map(groupLinks(links, categories).map((section) => [section.category.id, section.links.length]));
+  const otherCount = counts.get(OTHER_CATEGORY_ID) ?? 0;
 
   function countFor(catId: string): number {
-    return links.filter((l) => !l.favorite && l.category === catId).length;
+    return counts.get(catId) ?? 0;
   }
 
   function commitCreate() {

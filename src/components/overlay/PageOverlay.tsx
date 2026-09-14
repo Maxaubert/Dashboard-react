@@ -37,7 +37,7 @@ export function PageOverlay() {
           <Dialog.Close asChild>
             <button className="page-overlay-close" aria-label="Lukk">✕</button>
           </Dialog.Close>
-          <div className="page-overlay-scroll">
+          <div className="page-overlay-scroll" data-overlay={key}>
             <Page />
           </div>
         </Dialog.Content>

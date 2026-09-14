@@ -54,7 +54,7 @@ function detectInitialTab(initial?: IconPickerProps['initial']): Tab {
 
 /**
  * Tabbed icon picker with Favicon / Ikoner / Bilde. Ikoner is backed by
- * `lucide-react` (~150 curated icons) with a search input so the grid
+ * curated outline, filled and app icons with a search input so the grid
  * stays usable. There is no Emoji tab; existing emoji icons are kept
  * as-is until the user picks something else.
  */
@@ -201,6 +201,7 @@ export const IconPicker = forwardRef<IconPickerHandle, IconPickerProps>(function
           <input
             type="text"
             className="modal-input"
+            aria-label="Søk etter ikon"
             placeholder={`Søk i ${SVG_ICONS.length} ikoner…`}
             value={svgSearch}
             onChange={(e) => setSvgSearch(e.target.value)}
@@ -214,6 +215,8 @@ export const IconPicker = forwardRef<IconPickerHandle, IconPickerProps>(function
                   key={ic.id}
                   type="button"
                   title={ic.label}
+                  aria-label={ic.label}
+                  aria-pressed={selectedSvgId === ic.id}
                   className={cn('icon-cell', selectedSvgId === ic.id && 'selected')}
                   onClick={() => setSelectedSvgId(ic.id)}
                 >

@@ -10,9 +10,9 @@ export type SectionRender =
  * Group links into ordered sections for rendering.
  *
  * Rules:
- * - Favorites: links with `favorite === true`. Trumps the link's own category.
+ * - Favorites: an additional view of links with `favorite === true`.
  * - Other: links without a category, or with a category id that doesn't exist.
- * - User: links with a valid category id and favorite !== true.
+ * - User: all links with a valid category id, including favorites.
  * - Sections are ordered ascending by `Category.order`. Empty sections are omitted.
  */
 export function groupLinks(links: LinkItem[], categories: Category[]): SectionRender[] {
@@ -26,7 +26,6 @@ export function groupLinks(links: LinkItem[], categories: Category[]): SectionRe
   for (const l of links) {
     if (l.favorite === true) {
       favorites.push(l);
-      continue;
     }
     if (
       l.category &&
