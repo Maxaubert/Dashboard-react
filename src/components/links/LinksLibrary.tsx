@@ -367,7 +367,6 @@ export function LinksLibrary() {
             pendingCategoryRef.current = undefined;
           }}
           onSave={handleSave}
-          onDelete={editing ? () => handleDelete(editing.id) : undefined}
         />
       )}
     </>

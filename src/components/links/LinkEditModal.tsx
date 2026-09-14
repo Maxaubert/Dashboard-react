@@ -15,10 +15,9 @@ export interface LinkEditModalProps {
   defaultCategoryId?: string;
   onClose: () => void;
   onSave: (item: LinkItem) => void;
-  onDelete?: () => void;
 }
 
-export function LinkEditModal({ item, defaultCategoryId, onClose, onSave, onDelete }: LinkEditModalProps) {
+export function LinkEditModal({ item, defaultCategoryId, onClose, onSave }: LinkEditModalProps) {
   const [form, setForm] = useState<LinkItem>(
     item ?? {
       id: `link_${Date.now()}`,
@@ -66,11 +65,6 @@ export function LinkEditModal({ item, defaultCategoryId, onClose, onSave, onDele
       variant="standard"
       footer={
         <>
-          {onDelete && (
-            <button className="btn-delete-std" onClick={onDelete}>
-              Slett
-            </button>
-          )}
           <button className="btn-cancel-std" onClick={onClose}>
             Avbryt
           </button>
