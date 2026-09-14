@@ -33,14 +33,24 @@ describe('groupLinks', () => {
     expect(out[0].links.map((l) => l.id)).toEqual(['a', 'b']);
   });
 
-  it('lets favorites trump the user category without duplication', () => {
+  it('shows favorites in both Favorites and their original category', () => {
     const links = [L('a', { favorite: true, category: 'dev' }), L('b', { category: 'dev' })];
     const out = groupLinks(links, [favCat, dev, otherCat]);
     expect(out).toHaveLength(2);
     expect(out[0].kind).toBe('favorites');
     expect(out[0].links.map((l) => l.id)).toEqual(['a']);
     expect(out[1].kind).toBe('user');
-    expect(out[1].links.map((l) => l.id)).toEqual(['b']);
+    expect(out[1].links.map((l) => l.id)).toEqual(['a', 'b']);
+    expect(out[0].links[0]).toBe(out[1].links[0]);
+  });
+
+  it('keeps uncategorized and orphan favorites in Other too', () => {
+    const links = [L('a', { favorite: true }), L('b', { favorite: true, category: 'gone' })];
+    const out = groupLinks(links, [favCat, dev, otherCat]);
+    expect(sectionIds(out)).toEqual(['favorites', 'other']);
+    expect(out.map((section) => section.links.map((link) => link.id))).toEqual([
+      ['a', 'b'], ['a', 'b'],
+    ]);
   });
 
   it('orders sections by Category.order', () => {

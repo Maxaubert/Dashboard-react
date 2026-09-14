@@ -79,14 +79,15 @@ export function LinkCard({ link, onToggleFavorite, onContextMenu }: LinkCardProp
 
 /* ── Sortable link card ──────────────────────────────────────────────────── */
 export function SortableLinkCard({
-  link, onToggleFavorite, onContextMenu,
+  link, dragId, onToggleFavorite, onContextMenu,
 }: {
   link: LinkItem;
+  dragId: string;
   onToggleFavorite: () => void;
   onContextMenu: (e: MouseEvent) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: link.id });
+    useSortable({ id: dragId });
 
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),

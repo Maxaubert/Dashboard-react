@@ -1317,7 +1317,7 @@
   /* SVG icon grid (Ikoner tab) */
   .icon-grid {
     display: grid;
-    grid-template-columns: repeat(8, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
     gap: 4px;
     max-height: 190px;
     overflow-y: auto;
@@ -1328,6 +1328,7 @@
     border-radius: 4px;
   }
   .icon-cell {
+    min-height: 44px;
     aspect-ratio: 1;
     border-radius: 7px;
     border: 1px solid transparent;
@@ -1348,6 +1349,10 @@
     background: rgba(167, 139, 250, 0.15);
     border-color: rgba(167, 139, 250, 0.40);
     color: #e8214e;
+  }
+  .icon-cell:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: -2px;
   }
 
   /* Image upload tab — drop zone */
@@ -2548,6 +2553,8 @@
   border-radius: 16px; overflow: hidden;
 }
 .page-overlay-scroll { width: 100%; height: 100%; overflow-y: auto; }
+.page-overlay-scroll[data-overlay="links"] { scrollbar-width: none; }
+.page-overlay-scroll[data-overlay="links"]::-webkit-scrollbar { display: none; }
 .page-overlay-close {
   position: absolute; top: 12px; right: 12px; z-index: 1;
   width: 34px; height: 34px; border-radius: 8px;

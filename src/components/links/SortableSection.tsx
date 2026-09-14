@@ -2,6 +2,7 @@ import type { LinkItem } from '@/api/types';
 import { cn } from '@/lib/cn';
 import { sectionTitle } from '@/lib/categoryName';
 import type { groupLinks } from '@/lib/groupLinks';
+import { linkDragId, type ActiveLinkDrag } from '@/lib/linkDrag';
 import { SectionHeader } from '@/components/links/SectionHeader';
 import { SortableLinkCard } from '@/components/links/LinkCard';
 import {
@@ -45,6 +46,7 @@ export function SectionGrid({
 /* ── Sortable section wrapper ────────────────────────────────────────────── */
 export function SortableSection({
   section,
+  activeLinkDrag,
   readonly,
   onCardContextMenu,
   onDeleteSection,
@@ -52,6 +54,7 @@ export function SortableSection({
   onToggleFavorite,
 }: {
   section: ReturnType<typeof groupLinks>[number];
+  activeLinkDrag: ActiveLinkDrag | null;
   readonly: boolean;
   onCardContextMenu: (e: React.MouseEvent, link: LinkItem) => void;
   onDeleteSection: () => void;
@@ -89,7 +92,10 @@ export function SortableSection({
         gripListeners={listeners as React.HTMLAttributes<HTMLElement>}
         dragging={isDragging}
       />
-      <SortableContext items={section.links.map((l) => l.id)} strategy={rectSortingStrategy}>
+      <SortableContext
+        items={section.links.map((l) => linkDragId(section.category.id, l.id, activeLinkDrag))}
+        strategy={rectSortingStrategy}
+      >
         <SectionGrid
           sectionId={section.category.id}
           empty={section.links.length === 0}
@@ -98,6 +104,7 @@ export function SortableSection({
             <SortableLinkCard
               key={link.id}
               link={link}
+              dragId={linkDragId(section.category.id, link.id, activeLinkDrag)}
               onToggleFavorite={() => onToggleFavorite(link.id)}
               onContextMenu={(e) => onCardContextMenu(e, link)}
             />
