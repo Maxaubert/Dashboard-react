@@ -18,9 +18,9 @@
 body.bento-active .lm-content .widget-timer-display input.widget-clock-input {
   background: transparent !important; border: 0 !important; border-radius: 0; outline: none !important; box-shadow: none !important; color: #f5f5f3;
 }
-.widget-clock-input::selection { background: transparent; color: inherit; }
+.widget-clock-input::selection { background: #d9e3c8; color: #1c2518; }
 .widget-clock-value[data-long='true'], .widget-clock-button[data-long='true'], .widget-clock-input[data-long='true'] { font-size: 1.13rem; }
-.widget-clock-error { position: absolute; top: 100%; left: -15%; width: 130%; color: #ffb8aa; font-size: .75rem; line-height: 1.25; }
+.widget-clock-error { grid-column: 1 / -1; margin: 0; color: #ffb8aa; font-size: .875rem; line-height: 1.4; text-align: center; }
 .widget-timer-actions { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .widget-timer-actions .widget-button { width: 100%; padding: 8px; gap: 6px; font-size: .875rem; }
 .widget-timer-actions .widget-button > svg { flex-shrink: 0; }

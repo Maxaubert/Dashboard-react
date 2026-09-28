@@ -223,9 +223,11 @@ test('countdown clock supports seconds, cancel, reload and a draining ring', asy
   const originalOffset = await arc.evaluate((element) => Number.parseFloat(getComputedStyle(element).strokeDashoffset));
   await countdown.getByRole('button', { name: 'Endre tid for nedtelling', exact: true }).click();
   await countdown.getByRole('textbox', { name: 'Rediger varighet', exact: true }).fill('invalid');
+  await expect(countdown.getByRole('button', { name: 'Start', exact: true })).toBeDisabled();
+  await expect(countdown.getByRole('textbox', { name: 'Rediger varighet', exact: true })).toHaveValue('invalid');
+  await expect(countdown.getByRole('button', { name: 'Pause', exact: true })).toHaveCount(0);
+  await countdown.getByRole('textbox', { name: 'Rediger varighet', exact: true }).press('Escape');
   await countdown.getByRole('button', { name: 'Start', exact: true }).click();
-  await expect(countdown.getByRole('textbox', { name: 'Rediger varighet', exact: true })).toHaveCount(0);
-  await expect(countdown.getByRole('button', { name: 'Endre tid for nedtelling', exact: true })).toBeDisabled();
   await page.clock.fastForward(30_000);
   await countdown.getByRole('button', { name: 'Pause', exact: true }).click();
   await expect(countdown.getByRole('timer', { name: 'Nedtelling' })).toHaveText(/^(?:01:00|00:5\d)$/);
@@ -296,6 +298,66 @@ test('typing inserts colons and Start uses the edited duration without Enter', a
   await alarm.getByRole('button', { name: 'Aktiver', exact: true }).click();
   await expect(alarm.getByRole('timer', { name: 'Alarm' })).toHaveText('08:30');
   await expect(alarm.getByRole('button', { name: 'Deaktiver', exact: true })).toBeVisible();
+});
+
+test('clock selection is visible and invalid durations cannot start the previous time', async ({ page }) => {
+  await mockWidgetDashboard(page);
+  await page.clock.install();
+  await page.goto('/');
+  await addWidget(page, 'Nedtelling');
+  const countdown = widgetCard(page, 'Nedtelling');
+  await countdown.getByRole('button', { name: 'Nedtelling', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Tilpass nedtelling', exact: true });
+  const clock = dialog.getByRole('button', { name: 'Endre tid for nedtelling', exact: true });
+  await clock.click();
+  const editor = dialog.getByRole('textbox', { name: 'Rediger varighet', exact: true });
+  const selection = () => editor.evaluate((element: HTMLInputElement) => [element.selectionStart, element.selectionEnd]);
+  await expect.poll(selection).toEqual([0, 5]);
+  await editor.press('ArrowRight');
+  await editor.press('ControlOrMeta+A');
+  await expect.poll(selection).toEqual([0, 5]);
+  await editor.press('ArrowLeft');
+  await editor.click();
+  await expect.poll(selection).toEqual([0, 5]);
+  const highlight = await editor.evaluate((element) => {
+    const style = getComputedStyle(element, '::selection');
+    return { background: style.backgroundColor, text: style.color };
+  });
+  expect(highlight).toEqual({ background: 'rgb(217, 227, 200)', text: 'rgb(28, 37, 24)' });
+  await page.screenshot({ path: test.info().outputPath('timer-selected-text.png'), fullPage: true });
+
+  await editor.pressSequentially('9999');
+  await expect(editor).toHaveValue('99:99');
+  await dialog.getByRole('button', { name: 'Start', exact: true }).click();
+  await expect(dialog.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
+  await expect(dialog.getByRole('timer', { name: 'Nedtelling' })).toHaveText('1:40:39');
+  await dialog.getByRole('button', { name: 'Pause', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Nullstill', exact: true }).click();
+  await expect(dialog.getByRole('timer', { name: 'Nedtelling' })).toHaveText('1:40:39');
+  await page.reload();
+  await expect(countdown.getByRole('timer', { name: 'Nedtelling' })).toHaveText('1:40:39');
+  await countdown.getByRole('button', { name: 'Nedtelling', exact: true }).click();
+  await clock.click();
+  await editor.fill('88:30:30');
+  await editor.press('Enter');
+  await expect(editor).toHaveAttribute('aria-invalid', 'true');
+  await expect(editor).toHaveValue('88:30:30');
+  await expect(dialog.getByRole('button', { name: 'Start', exact: true })).toBeDisabled();
+  await expect(dialog.getByRole('button', { name: 'Pause', exact: true })).toHaveCount(0);
+  await expect(editor).toHaveValue('88:30:30');
+  const error = dialog.getByRole('alert');
+  await expect(error).toBeVisible();
+  expect(await dialog.locator('.tt-ring-wrap').getByRole('alert').count()).toBe(0);
+  const ringBox = await dialog.locator('.tt-ring-wrap').boundingBox();
+  const errorBox = await error.boundingBox();
+  expect(ringBox).not.toBeNull();
+  expect(errorBox).not.toBeNull();
+  const overlapWidth = Math.max(0, Math.min(ringBox!.x + ringBox!.width, errorBox!.x + errorBox!.width) - Math.max(ringBox!.x, errorBox!.x));
+  const overlapHeight = Math.max(0, Math.min(ringBox!.y + ringBox!.height, errorBox!.y + errorBox!.height) - Math.max(ringBox!.y, errorBox!.y));
+  expect(overlapWidth * overlapHeight).toBe(0);
+  await page.screenshot({ path: test.info().outputPath('timer-validation-outside-ring.png'), fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: test.info().outputPath('timer-validation-mobile.png'), fullPage: true });
 });
 
 test('Pomodoro settings update segmented progress and stopwatch records laps', async ({ page }) => {

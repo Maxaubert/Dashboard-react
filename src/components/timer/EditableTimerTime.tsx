@@ -17,12 +17,13 @@ function formatDraft(raw: string, clock: boolean, deleting: boolean) {
 }
 
 /** The original click-to-edit clock, with keyboard access and explicit validation. */
-export function EditableTimerTime({ value, label, disabled, clock, onChange }: {
+export function EditableTimerTime({ value, label, disabled, clock, onChange, onValidationChange }: {
   value: string;
   label: string;
   disabled: boolean;
   clock?: boolean;
   onChange: (value: number | string) => void;
+  onValidationChange: (valid: boolean, error: string | null) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -44,22 +45,33 @@ export function EditableTimerTime({ value, label, disabled, clock, onChange }: {
     if (disabled && editing) {
       cancelBlur.current = true;
       restoreFocus.current = false;
+      onValidationChange(true, null);
       setEditing(false);
     }
-  }, [disabled, editing]);
+  }, [disabled, editing, onValidationChange]);
 
-  function commit(focus = false) {
-    if (cancelBlur.current) return;
+  function parseDraft(text: string) {
     let parsed: string | number | null;
     if (clock) {
-      const match = /^(\d{1,2}):(\d{2})$/.exec(draft.trim());
+      const match = /^(\d{1,2}):(\d{2})$/.exec(text.trim());
       parsed = match && Number(match[1]) < 24 && Number(match[2]) < 60
         ? `${match[1].padStart(2, '0')}:${match[2]}` : null;
     } else {
-      parsed = parseTimeString(draft);
+      parsed = parseTimeString(text);
       if (parsed === 0) parsed = null;
     }
-    if (parsed === null) { setInvalid(true); return; }
+    return parsed;
+  }
+
+  function commit(focus = false) {
+    if (cancelBlur.current) return;
+    const parsed = parseDraft(draft);
+    if (parsed === null) {
+      setInvalid(true);
+      onValidationChange(false, clock ? 'Velg et klokkeslett mellom 00:00 og 23:59.' : 'Velg en varighet fra 1 sekund til 24 timer.');
+      return;
+    }
+    onValidationChange(true, null);
     cancelBlur.current = true;
     restoreFocus.current = focus;
     onChange(parsed);
@@ -73,19 +85,21 @@ export function EditableTimerTime({ value, label, disabled, clock, onChange }: {
           value={draft} inputMode="text" autoFocus
           onChange={(event) => {
             const deleting = (event.nativeEvent as InputEvent).inputType?.startsWith('delete') ?? false;
-            setDraft(formatDraft(event.target.value, Boolean(clock), deleting));
+            const next = formatDraft(event.target.value, Boolean(clock), deleting);
+            setDraft(next);
             setInvalid(false);
+            onValidationChange(parseDraft(next) !== null, null);
           }}
+          onClick={(event) => event.currentTarget.select()}
           onBlur={() => commit()} onKeyDown={(event) => {
             if (event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); commit(true); }
             if (event.key === 'Escape') {
-              event.preventDefault(); event.stopPropagation(); cancelBlur.current = true; restoreFocus.current = true; setEditing(false);
+              event.preventDefault(); event.stopPropagation(); cancelBlur.current = true; restoreFocus.current = true; onValidationChange(true, null); setEditing(false);
             }
           }} />
-        {invalid && <span className="widget-clock-error" role="alert">{clock ? 'Bruk TT:MM' : 'Bruk minutter eller M:SS'}</span>}
       </> : <button ref={button} type="button" className="widget-clock-button" data-long={value.length > 5} disabled={disabled}
         aria-label={`Endre tid for ${label.toLowerCase()}`} title={disabled ? 'Sett på pause for å endre tiden' : 'Klikk for å endre tiden'}
-        onClick={() => { setDraft(value); setInvalid(false); cancelBlur.current = false; setEditing(true); }}>
+        onClick={() => { setDraft(value); setInvalid(false); onValidationChange(true, null); cancelBlur.current = false; setEditing(true); }}>
         <span role="timer" aria-label={label}>{value}</span>
       </button>}
     </div>

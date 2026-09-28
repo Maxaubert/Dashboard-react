@@ -1,4 +1,5 @@
 import { Flag, Pause, Play, RotateCcw } from 'lucide-react';
+import { useState } from 'react';
 import { TimerRing } from '@/components/timer/TimerRing';
 import { EditableTimerTime } from '@/components/timer/EditableTimerTime';
 import { useTimers } from '@/context/TimerContext';
@@ -8,6 +9,8 @@ import { WIDGET_KINDS, type TimerKind } from './widgetKinds';
 export function TimerDisplay({ kind, expanded = false }: { kind: TimerKind; expanded?: boolean }) {
   const timers = useTimers();
   const timer = timers.getTimer(kind);
+  const [validation, setValidation] = useState<{ valid: boolean; error: string | null }>({ valid: true, error: null });
+  const [editorKey, setEditorKey] = useState(0);
   const { title } = WIDGET_KINDS[kind];
   const complete = (timer.kind === 'pomodoro' && timer.completed)
     || (timer.kind === 'countdown' && timer.remainingMs === 0 && timer.zeroedAt !== null)
@@ -28,6 +31,8 @@ export function TimerDisplay({ kind, expanded = false }: { kind: TimerKind; expa
     : timer.kind === 'alarm' ? 'Ringer kl.' : timer.kind === 'stopwatch' ? 'Tid brukt' : 'Gjenstår';
 
   function reset() {
+    setValidation({ valid: true, error: null });
+    setEditorKey((key) => key + 1);
     if (kind === 'countdown') timers.resetCountdown();
     if (kind === 'pomodoro') timers.resetPomodoro();
     if (kind === 'stopwatch') timers.resetStopwatch();
@@ -46,7 +51,8 @@ export function TimerDisplay({ kind, expanded = false }: { kind: TimerKind; expa
         <TimerRing size={expanded ? 280 : 136} progress={progress} color={timer.color} running={timer.running} segments={segments}>
           <span className="widget-clock-label">{complete ? 'Ferdig' : phase}</span>
           {kind === 'stopwatch' ? <span className="widget-clock-value" data-long={value.length > (expanded ? 8 : 5)} role="timer" aria-label={title}>{value}</span>
-            : <EditableTimerTime value={value} label={title} disabled={timer.running || complete} clock={kind === 'alarm'}
+            : <EditableTimerTime key={editorKey} value={value} label={title} disabled={timer.running || complete} clock={kind === 'alarm'}
+              onValidationChange={(valid, error) => setValidation({ valid, error })}
               onChange={(next) => {
                 if (kind === 'countdown') timers.setCountdownTime(Number(next));
                 if (kind === 'pomodoro') timers.setPomodoroTime(Number(next));
@@ -55,7 +61,7 @@ export function TimerDisplay({ kind, expanded = false }: { kind: TimerKind; expa
         </TimerRing>
       </div>
       <div className="widget-timer-actions">
-        <button className="widget-button widget-primary" onClick={complete ? reset : toggle}>
+        <button className="widget-button widget-primary" disabled={!validation.valid && !timer.running && !complete} onClick={complete ? reset : toggle}>
           {timer.running ? <Pause size={16} /> : <Play size={16} />}
           {complete ? 'Stopp lyd' : kind === 'alarm' ? (timer.running ? 'Deaktiver' : 'Aktiver') : timer.running ? 'Pause' : 'Start'}
         </button>
@@ -63,6 +69,7 @@ export function TimerDisplay({ kind, expanded = false }: { kind: TimerKind; expa
         {kind === 'stopwatch' && <button className="widget-button" disabled={!timer.running} onClick={timers.addStopwatchLap}><Flag size={16} />Runde</button>}
         {timer.kind === 'alarm' && timer.running && <span className="widget-timer-hint">Om {formatHMS(Math.ceil(remaining / 1000))}</span>}
       </div>
+      {validation.error && <p className="widget-clock-error" role="alert">{validation.error}</p>}
       {expanded && timer.kind === 'stopwatch' && timer.laps.length > 0 && <ol className="widget-laps" aria-label="Rundetider">
         {timer.laps.map((lap, index) => <li key={timer.laps.length - index}>
           <span>Runde {timer.laps.length - index}</span>
