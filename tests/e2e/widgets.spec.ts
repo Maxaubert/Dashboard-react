@@ -198,16 +198,123 @@ test('timer completion can be stopped above an open settings dialog', async ({ p
   await expect(countdown.getByRole('timer', { name: 'Nedtelling' })).toHaveText('01:00');
 });
 
+test('countdown clock supports seconds, cancel, reload and a draining ring', async ({ page }) => {
+  await mockWidgetDashboard(page);
+  await page.clock.install();
+  await page.goto('/');
+  await addWidget(page, 'Nedtelling');
+  const countdown = widgetCard(page, 'Nedtelling');
+  await countdown.getByRole('button', { name: 'Endre tid for nedtelling', exact: true }).click();
+  let editor = countdown.getByRole('textbox', { name: 'Rediger varighet', exact: true });
+  await editor.fill('1:30');
+  await editor.press('Enter');
+  await expect(countdown.getByRole('timer', { name: 'Nedtelling' })).toHaveText('01:30');
+  await expect(countdown.getByRole('button', { name: 'Endre tid for nedtelling', exact: true })).toBeFocused();
+  await countdown.getByRole('button', { name: 'Endre tid for nedtelling', exact: true }).click();
+  editor = countdown.getByRole('textbox', { name: 'Rediger varighet', exact: true });
+  await editor.fill('9:45');
+  await editor.press('Escape');
+  await expect(countdown.getByRole('timer', { name: 'Nedtelling' })).toHaveText('01:30');
+  await expect(countdown.getByRole('button', { name: 'Endre tid for nedtelling', exact: true })).toBeFocused();
+  await page.reload();
+  await expect(countdown.getByRole('timer', { name: 'Nedtelling' })).toHaveText('01:30');
+
+  const arc = countdown.locator('.tt-ring circle').last();
+  const originalOffset = await arc.evaluate((element) => Number.parseFloat(getComputedStyle(element).strokeDashoffset));
+  await countdown.getByRole('button', { name: 'Endre tid for nedtelling', exact: true }).click();
+  await countdown.getByRole('textbox', { name: 'Rediger varighet', exact: true }).fill('invalid');
+  await countdown.getByRole('button', { name: 'Start', exact: true }).click();
+  await expect(countdown.getByRole('textbox', { name: 'Rediger varighet', exact: true })).toHaveCount(0);
+  await expect(countdown.getByRole('button', { name: 'Endre tid for nedtelling', exact: true })).toBeDisabled();
+  await page.clock.fastForward(30_000);
+  await countdown.getByRole('button', { name: 'Pause', exact: true }).click();
+  await expect(countdown.getByRole('timer', { name: 'Nedtelling' })).toHaveText(/^(?:01:00|00:5\d)$/);
+  await expect.poll(() => arc.evaluate((element) => Number.parseFloat(getComputedStyle(element).strokeDashoffset))).toBeGreaterThan(originalOffset);
+
+  await countdown.getByRole('button', { name: 'Nedtelling', exact: true }).click();
+  const expanded = page.getByRole('dialog', { name: 'Tilpass nedtelling', exact: true });
+  await expect(expanded).toBeVisible();
+  await expanded.getByRole('button', { name: 'Endre tid for nedtelling', exact: true }).click();
+  editor = expanded.getByRole('textbox', { name: 'Rediger varighet', exact: true });
+  await editor.fill('3:15');
+  await editor.press('Escape');
+  await expect(expanded).toBeVisible();
+  await expect(expanded.getByRole('button', { name: 'Endre tid for nedtelling', exact: true })).toBeFocused();
+  await expect(expanded.getByRole('timer', { name: 'Nedtelling' })).toHaveText(/^(?:01:00|00:5\d)$/);
+  await page.screenshot({ path: test.info().outputPath('widgets-expanded-countdown.png'), fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await expanded.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+  await page.screenshot({ path: test.info().outputPath('widgets-expanded-countdown-mobile.png'), fullPage: true });
+});
+
+test('Pomodoro settings update segmented progress and stopwatch records laps', async ({ page }) => {
+  await mockWidgetDashboard(page);
+  await page.clock.install();
+  await page.goto('/');
+  await addWidget(page, 'Pomodoro');
+  const pomodoro = widgetCard(page, 'Pomodoro');
+  await pomodoro.getByRole('button', { name: 'Pomodoro', exact: true }).click();
+  const settings = page.getByRole('dialog', { name: 'Tilpass pomodoro', exact: true });
+  await settings.getByLabel('Fokus (minutter)', { exact: true }).fill('2');
+  await settings.getByLabel('Pause (minutter)', { exact: true }).fill('1');
+  await settings.getByLabel('Antall økter', { exact: true }).fill('2');
+  await settings.getByRole('button', { name: 'Lagre', exact: true }).click();
+  await expect(pomodoro.getByRole('timer', { name: 'Pomodoro' })).toHaveText('02:00');
+  const ring = pomodoro.locator('.tt-ring');
+  await expect(ring).toBeVisible();
+  const originalSegments = await ring.locator('circle').evaluateAll((circles) => circles.map((circle) => getComputedStyle(circle).strokeDasharray));
+  await pomodoro.getByRole('button', { name: 'Start', exact: true }).click();
+  await page.clock.fastForward(65_000);
+  await pomodoro.getByRole('button', { name: 'Pause', exact: true }).click();
+  await expect(pomodoro.getByRole('timer', { name: 'Pomodoro' })).toHaveText(/^00:5\d$/);
+  await expect.poll(() => ring.locator('circle').evaluateAll((circles) => circles.map((circle) => getComputedStyle(circle).strokeDasharray))).not.toEqual(originalSegments);
+
+  await addWidget(page, 'Stoppeklokke');
+  const stopwatch = widgetCard(page, 'Stoppeklokke');
+  await stopwatch.getByRole('button', { name: 'Start', exact: true }).click();
+  await page.clock.fastForward(10_000);
+  await stopwatch.getByRole('button', { name: 'Runde', exact: true }).click();
+  await page.clock.fastForward(5_000);
+  await stopwatch.getByRole('button', { name: 'Runde', exact: true }).click();
+  await stopwatch.getByRole('button', { name: 'Pause', exact: true }).click();
+  await stopwatch.getByRole('button', { name: 'Stoppeklokke', exact: true }).click();
+  const expanded = page.getByRole('dialog', { name: 'Tilpass stoppeklokke', exact: true });
+  await expect(expanded.getByRole('list', { name: 'Rundetider' }).getByRole('listitem')).toHaveCount(2);
+  await page.screenshot({ path: test.info().outputPath('widgets-expanded-stopwatch.png'), fullPage: true });
+  await page.keyboard.press('Escape');
+  await page.reload();
+  await stopwatch.getByRole('button', { name: 'Stoppeklokke', exact: true }).click();
+  await expect(expanded.getByRole('list', { name: 'Rundetider' }).getByRole('listitem')).toHaveCount(2);
+});
+
 test('widget cards and chooser fit desktop, mobile and zoom layout', async ({ page }) => {
   await mockWidgetDashboard(page);
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
-  await addHabit(page);
+  const todo = page.locator('.area-todo');
+  const emptyBox = await widgets(page).boundingBox();
+  const todoBox = await todo.boundingBox();
+  expect(emptyBox).not.toBeNull();
+  expect(todoBox).not.toBeNull();
+  expect(Math.abs(emptyBox!.y - todoBox!.y)).toBeLessThan(2);
+  expect(emptyBox!.x).toBeGreaterThan(todoBox!.x + todoBox!.width);
+  expect(Math.abs(emptyBox!.width - todoBox!.width)).toBeLessThan(2);
+  for (const [label, width, height] of [
+    ['desktop', 1440, 1000], ['tablet', 921, 900], ['mobile', 390, 844], ['zoom-layout', 720, 500],
+  ] as const) {
+    await page.setViewportSize({ width, height });
+    await widgets(page).scrollIntoViewIfNeeded();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.screenshot({ path: test.info().outputPath(`widgets-empty-${label}.png`), fullPage: true });
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 });
   for (const name of ['Pomodoro', 'Nedtelling', 'Stoppeklokke', 'Alarm']) await addWidget(page, name);
+  await addHabit(page);
   await expect(widgets(page).getByRole('article')).toHaveCount(5);
+  expect((await widgets(page).boundingBox())!.height).toBeLessThanOrEqual(320);
 
   for (const [label, width, height] of [
-    ['desktop', 1440, 1000], ['mobile', 390, 844], ['zoom-layout', 720, 500],
+    ['desktop', 1440, 1000], ['tablet', 921, 900], ['mobile', 390, 844], ['zoom-layout', 720, 500],
   ] as const) {
     await page.setViewportSize({ width, height });
     await widgets(page).scrollIntoViewIfNeeded();

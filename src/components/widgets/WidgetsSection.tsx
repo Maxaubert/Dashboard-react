@@ -45,12 +45,12 @@ export function WidgetsSection() {
 
   return (
     <section className="bento-card area-widgets" aria-label="Widgets">
-      <div className="widget-section-heading"><div><h2>Widgets</h2><p>Vaner, fokus og tid til det som teller.</p></div>
-        <button className="widget-button" onClick={() => setAdding(true)} disabled={!home || isError}><Plus size={18} />Legg til widget</button>
+      <div className="widget-section-heading"><h2>Widgets{visible.length > 0 && <span className="widget-count">{visible.length}</span>}</h2>
+        <button className="widget-button" aria-label="Legg til widget" onClick={() => setAdding(true)} disabled={!home || isError}><Plus size={18} />Legg til</button>
       </div>
       {isPending ? <p className="widget-description" role="status">Laster widgets…</p> : isError ? <div role="alert"><p>Kunne ikke laste widgets.</p><button className="widget-button" onClick={() => void refetch()}>Prøv igjen</button></div> : visible.length === 0 ? (
-        <div className="widget-empty"><p>Lag plass til en god vane eller en fokusøkt.</p><span>Velg vanesporing, Pomodoro, nedtelling, stoppeklokke eller alarm.</span></div>
-      ) : <div className="widget-grid">{visible.map((widget) => widget.type === 'habit' ? (
+        <div className="widget-empty"><p>Legg til en vane eller timer.</p></div>
+      ) : <div className="widget-grid" tabIndex={0} role="group" aria-label="Dine widgets">{visible.map((widget) => widget.type === 'habit' ? (
         <HabitWidget key={widget.id} habit={habits.find((habit) => habit.id === widget.refId)!} onRemove={() => remove(widget)} />
       ) : <TimerWidget key={widget.id} kind={widget.type as TimerKind} onRemove={() => remove(widget)} />)}</div>}
       {adding && <AddWidgetDialog onClose={() => setAdding(false)} widgets={widgets} habits={habits} onAddHabit={addHabit} onAddTimer={addTimer} onRestoreHabit={(id) => {

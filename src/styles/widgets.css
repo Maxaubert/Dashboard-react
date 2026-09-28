@@ -1,9 +1,11 @@
-.bento-home .area-widgets { grid-column: 1 / 13; }
-.widget-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.bento-home .area-widgets { grid-column: 9 / 13; max-height: 320px; }
+.widget-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; flex-shrink: 0; }
 .widget-section-heading h2 { margin: 0; font-size: 1.18rem; font-weight: 500; }
+.widget-count { margin-left: 8px; color: #aaa9a6; font-size: 1rem; }
 .widget-section-heading p, .widget-description { color: #aaa9a6; font-size: 1rem; margin: 6px 0 0; }
-.widget-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 24px; }
-.widget-tile { min-width: 0; padding-top: 16px; border-top: 1px solid #38383c; display: flex; flex-direction: column; align-items: stretch; }
+.widget-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #55555a transparent; }
+.widget-grid:focus-visible { outline: 2px solid #d9e3c8; outline-offset: -2px; }
+.widget-tile { min-width: 0; padding-top: 8px; border-top: 1px solid #38383c; display: flex; flex-direction: column; align-items: stretch; }
 .widget-heading { display: flex; align-items: center; gap: 10px; min-height: 44px; }
 .widget-heading > svg { color: #b9c9ae; flex-shrink: 0; }
 .widget-heading h3 { margin: 0; flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 1.06rem; font-weight: 600; }
@@ -18,18 +20,14 @@
 .widget-button.widget-complete { color: #c6e3b3; border-color: #627656; }
 .widget-controls { display: flex; gap: 8px; flex-wrap: wrap; }
 .widget-main-action { margin-top: auto; }
-.widget-tile > .widget-main-action { margin-top: auto; padding-top: 24px; }
+.widget-tile > .widget-main-action { margin-top: auto; padding-top: 12px; }
 .habit-complete-button { width: 100%; }
-.widget-time { font-size: clamp(2.5rem, 4vw, 3.5rem); font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: -.035em; line-height: 1.2; padding: 20px 0 8px; overflow-wrap: anywhere; }
-.widget-progress { height: 4px; background: #39393c; border-radius: 2px; overflow: hidden; margin-top: 8px; }
-.widget-progress span { display: block; height: 100%; background: #b9c9ae; }
-.widget-empty { border-top: 1px solid #38383c; padding: 24px 0 8px; }
-.widget-empty p { margin: 0 0 8px; font-size: 1.15rem; }
-.widget-empty span { color: #aaa9a6; font-size: 1rem; }
-.habit-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; padding-top: 20px; }
+.widget-empty { padding: 12px 0; color: #aaa9a6; }
+.widget-empty p { margin: 0; font-size: 1rem; }
+.habit-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; padding-top: 8px; }
 .habit-day { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-width: 0; min-height: 72px; padding: 4px 0; border: 0; border-radius: 8px; color: #aaa9a6; background: transparent; cursor: pointer; font-size: .875rem; }
 .habit-day:hover { background: #2b2b2f; }
-.habit-day-mark { width: 32px; height: 32px; border: 1px solid #55555a; border-radius: 50%; display: grid; place-items: center; color: #ededec; }
+.habit-day-mark { width: min(32px, 100%); height: 32px; border: 1px solid #55555a; border-radius: 50%; display: grid; place-items: center; color: #ededec; }
 .habit-day[aria-pressed='true'] .habit-day-mark { background: #d9e3c8; color: #1c2518; border-color: #d9e3c8; }
 .widget-dialog { color: #ededec; }
 .widget-choices { display: grid; gap: 8px; }
@@ -47,7 +45,5 @@
 .widget-completion { display: grid; gap: 20px; color: #ededec; }
 .widget-completion > div { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; justify-content: space-between; }
 @media (max-width: 480px) {
-  .widget-grid { gap: 28px; }
-  .widget-section-heading > .widget-button { width: 100%; }
   .widget-choice { padding: 12px; gap: 10px; }
 }
