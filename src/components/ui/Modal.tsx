@@ -21,6 +21,7 @@ interface ModalProps {
    */
   variant?: ModalVariant;
   footer?: ReactNode;
+  onEscapeKeyDown?: (event: KeyboardEvent) => void;
   children: ReactNode;
 }
 
@@ -47,6 +48,7 @@ export function Modal({
   size = 'md',
   variant = 'compact',
   footer,
+  onEscapeKeyDown,
   children,
 }: ModalProps) {
   return (
@@ -54,6 +56,7 @@ export function Modal({
       <Dialog.Portal>
         <Dialog.Overlay className="lm-overlay" />
         <Dialog.Content
+          onEscapeKeyDown={onEscapeKeyDown}
           className={cn(
             'lm-content w-[calc(100vw-2rem)]',
             variant === 'standard' ? 'lm-standard flex flex-col' : 'lm-compact',
