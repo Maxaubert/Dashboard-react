@@ -61,7 +61,6 @@ export function TimerDisplay({ kind, expanded = false }: { kind: TimerKind; expa
         </button>
         {kind !== 'alarm' && <button className="widget-button" onClick={reset}><RotateCcw size={16} />Nullstill</button>}
         {kind === 'stopwatch' && <button className="widget-button" disabled={!timer.running} onClick={timers.addStopwatchLap}><Flag size={16} />Runde</button>}
-        {kind !== 'stopwatch' && !timer.running && !complete && <span className="widget-timer-hint">Klikk tiden for å endre</span>}
         {timer.kind === 'alarm' && timer.running && <span className="widget-timer-hint">Om {formatHMS(Math.ceil(remaining / 1000))}</span>}
       </div>
       {expanded && timer.kind === 'stopwatch' && timer.laps.length > 0 && <ol className="widget-laps" aria-label="Rundetider">

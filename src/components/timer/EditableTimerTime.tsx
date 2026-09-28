@@ -1,6 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
 import { parseTimeString } from '@/lib/timerUtils';
 
+function formatDraft(raw: string, clock: boolean, deleting: boolean) {
+  // Leave deletion alone so the automatically inserted colon is removable.
+  if (deleting) return raw;
+  raw = raw.replace(/:{2,}/g, ':');
+  if (!/^\d+:?\d*:?\d*$/.test(raw)) return raw;
+  if (!raw.includes(':')) {
+    if (raw.length < 2) return raw;
+    return raw.match(/.{1,2}/g)!.join(':') + (raw.length === 2 ? ':' : '');
+  }
+  const parts = raw.split(':');
+  const last = parts[parts.length - 1];
+  if (!clock && parts.length === 2 && last.length > 2) return `${parts[0]}:${last.slice(0, 2)}:${last.slice(2)}`;
+  return raw;
+}
+
 /** The original click-to-edit clock, with keyboard access and explicit validation. */
 export function EditableTimerTime({ value, label, disabled, clock, onChange }: {
   value: string;
@@ -56,7 +71,11 @@ export function EditableTimerTime({ value, label, disabled, clock, onChange }: {
       {editing ? <>
         <input ref={input} className="widget-clock-input" data-long={draft.length > 5} aria-label={clock ? 'Rediger klokkeslett' : 'Rediger varighet'} aria-invalid={invalid}
           value={draft} inputMode="text" autoFocus
-          onChange={(event) => { setDraft(event.target.value); setInvalid(false); }}
+          onChange={(event) => {
+            const deleting = (event.nativeEvent as InputEvent).inputType?.startsWith('delete') ?? false;
+            setDraft(formatDraft(event.target.value, Boolean(clock), deleting));
+            setInvalid(false);
+          }}
           onBlur={() => commit()} onKeyDown={(event) => {
             if (event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); commit(true); }
             if (event.key === 'Escape') {

@@ -247,6 +247,57 @@ test('countdown clock supports seconds, cancel, reload and a draining ring', asy
   await page.screenshot({ path: test.info().outputPath('widgets-expanded-countdown-mobile.png'), fullPage: true });
 });
 
+test('typing inserts colons and Start uses the edited duration without Enter', async ({ page }) => {
+  await mockWidgetDashboard(page);
+  await page.clock.install();
+  await page.goto('/');
+  await addWidget(page, 'Nedtelling');
+  const countdown = widgetCard(page, 'Nedtelling');
+  await countdown.getByRole('button', { name: 'Nedtelling', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Tilpass nedtelling', exact: true });
+  const clock = dialog.getByRole('button', { name: 'Endre tid for nedtelling', exact: true });
+  const resting = await clock.boundingBox();
+  const restingFont = await clock.evaluate((element) => getComputedStyle(element).fontSize);
+  await clock.click();
+  const editor = dialog.getByRole('textbox', { name: 'Rediger varighet', exact: true });
+  const editing = await editor.boundingBox();
+  expect(editing!.width).toBeCloseTo(resting!.width, 0);
+  expect(editing!.height).toBeCloseTo(resting!.height, 0);
+  expect(await editor.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return [style.fontSize, style.borderTopWidth, style.outlineStyle, style.boxShadow, style.backgroundColor];
+  })).toEqual([restingFont, '0px', 'none', 'none', 'rgba(0, 0, 0, 0)']);
+  await editor.pressSequentially('01');
+  await expect(editor).toHaveValue('01:');
+  await editor.press('Backspace');
+  await expect(editor).toHaveValue('01');
+  await editor.press('ControlOrMeta+A');
+  await editor.pressSequentially('0130');
+  await expect(editor).toHaveValue('01:30');
+  await editor.press('ControlOrMeta+A');
+  await editor.pressSequentially('01:30');
+  await expect(editor).toHaveValue('01:30');
+  await page.screenshot({ path: test.info().outputPath('timer-clean-edit.png'), fullPage: true });
+  await dialog.getByRole('button', { name: 'Start', exact: true }).click();
+  await expect(dialog.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
+  await expect(dialog.getByRole('timer', { name: 'Nedtelling' })).toHaveText('01:30');
+  await page.clock.fastForward(10_000);
+  await dialog.getByRole('button', { name: 'Pause', exact: true }).click();
+  await expect(dialog.getByRole('timer', { name: 'Nedtelling' })).toHaveText(/^01:[12]\d$/);
+  await dialog.getByRole('button', { name: 'Nullstill', exact: true }).click();
+  await expect(dialog.getByRole('timer', { name: 'Nedtelling' })).toHaveText('01:30');
+  await page.keyboard.press('Escape');
+  await addWidget(page, 'Alarm');
+  const alarm = widgetCard(page, 'Alarm');
+  await alarm.getByRole('button', { name: 'Endre tid for alarm', exact: true }).click();
+  const alarmEditor = alarm.getByRole('textbox', { name: 'Rediger klokkeslett', exact: true });
+  await alarmEditor.pressSequentially('08:30');
+  await expect(alarmEditor).toHaveValue('08:30');
+  await alarm.getByRole('button', { name: 'Aktiver', exact: true }).click();
+  await expect(alarm.getByRole('timer', { name: 'Alarm' })).toHaveText('08:30');
+  await expect(alarm.getByRole('button', { name: 'Deaktiver', exact: true })).toBeVisible();
+});
+
 test('Pomodoro settings update segmented progress and stopwatch records laps', async ({ page }) => {
   await mockWidgetDashboard(page);
   await page.clock.install();
