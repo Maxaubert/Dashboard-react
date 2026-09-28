@@ -1,0 +1,221 @@
+import { test, expect, type Page } from '@playwright/test';
+import { existingHome, mockWidgetDashboard } from './widgets.fixture';
+
+test.beforeEach(async ({ page: _page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'widgets-mocked', 'Use tests/e2e/widgets.config.ts for isolated mock data.');
+});
+
+function widgets(page: Page) {
+  return page.getByRole('region', { name: 'Widgets', exact: true });
+}
+
+function widgetCard(page: Page, name: string) {
+  return widgets(page).getByRole('article').filter({ has: page.getByRole('heading', { name, exact: true }) });
+}
+
+async function addWidget(page: Page, name: string) {
+  await widgets(page).getByRole('button', { name: 'Legg til widget', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Legg til widget', exact: true });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: new RegExp(`^${name}(?:\\s|$)`) }).click();
+}
+
+async function addHabit(page: Page, name = 'Gå en tur') {
+  await addWidget(page, 'Vanesporing');
+  await page.getByLabel('Navn på vane', { exact: true }).fill(name);
+  await page.getByRole('button', { name: 'Legg til vane', exact: true }).click();
+  await expect(widgetCard(page, name)).toBeVisible();
+}
+
+test('existing stored habits reappear and survive unrelated settings changes', async ({ page }) => {
+  const habit = { id: 'legacy-habit', name: 'Les hver dag', color: '#9fd07a', completedDays: ['2026-09-20'], createdAt: '2026-09-01T12:00:00Z' };
+  const savedWidgets = [{ id: 'legacy-widget', type: 'habit', refId: habit.id }];
+  const store = await mockWidgetDashboard(page, { ...existingHome, widgets: savedWidgets, habits: [habit] });
+  await page.goto('/');
+  await expect(widgetCard(page, habit.name)).toBeVisible();
+  await page.getByRole('button', { name: 'Innstillinger', exact: true }).click();
+  const settings = page.getByRole('dialog', { name: 'Innstillinger', exact: true });
+  await settings.getByRole('switch', { name: 'Gjøremål', exact: true }).click();
+  await expect.poll(() => store.writes.length).toBe(1);
+  expect(store.saved().habits).toEqual([habit]);
+  expect(store.saved().widgets).toEqual(savedWidgets);
+  await page.keyboard.press('Escape');
+  await page.reload();
+  await expect(widgetCard(page, habit.name)).toBeVisible();
+});
+
+test('habit creation, completion and visibility persist through reloads', async ({ page }) => {
+  const store = await mockWidgetDashboard(page);
+  await page.goto('/');
+  await expect(widgets(page)).toBeVisible();
+  await addHabit(page);
+  await widgetCard(page, 'Gå en tur').getByRole('button', { name: 'Fullfør i dag', exact: true }).click();
+  await expect(widgetCard(page, 'Gå en tur').getByRole('button', { name: 'Angre i dag', exact: true })).toBeVisible();
+  await expect.poll(() => store.writes.length).toBeGreaterThanOrEqual(2);
+  await page.reload();
+  await expect(widgetCard(page, 'Gå en tur').getByRole('button', { name: 'Angre i dag', exact: true })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Innstillinger', exact: true }).click();
+  let settings = page.getByRole('dialog', { name: 'Innstillinger', exact: true });
+  await settings.getByRole('switch', { name: 'Widgets', exact: true }).click();
+  await expect.poll(() => store.saved().hidden).toContain('widgets');
+  await page.keyboard.press('Escape');
+  await expect(widgets(page)).toHaveCount(0);
+  await page.reload();
+  await expect(widgets(page)).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Innstillinger', exact: true }).click();
+  settings = page.getByRole('dialog', { name: 'Innstillinger', exact: true });
+  await expect(settings.getByRole('switch', { name: 'Widgets', exact: true })).toHaveAttribute('aria-checked', 'false');
+  await settings.getByRole('switch', { name: 'Widgets', exact: true }).click();
+  await page.keyboard.press('Escape');
+  await expect(widgetCard(page, 'Gå en tur').getByRole('button', { name: 'Angre i dag', exact: true })).toBeVisible();
+  await widgetCard(page, 'Gå en tur').getByRole('button', { name: 'Angre i dag', exact: true }).click();
+  await expect(widgetCard(page, 'Gå en tur').getByRole('button', { name: 'Fullfør i dag', exact: true })).toBeVisible();
+});
+
+test('failed habit save shows feedback, rolls back and can be retried', async ({ page }) => {
+  const store = await mockWidgetDashboard(page);
+  await page.goto('/');
+  await addHabit(page);
+  await expect.poll(() => store.writes.length).toBe(1);
+  const original = structuredClone(store.saved());
+  let failedOnce = false;
+  await page.route('**/rest/v1/documents*', async (route) => {
+    if (!failedOnce && route.request().method() === 'POST') {
+      failedOnce = true;
+      await route.fulfill({ status: 500, json: { message: 'Simulated save failure' } });
+    } else {
+      await route.fallback();
+    }
+  });
+  const habit = widgetCard(page, 'Gå en tur');
+  await habit.getByRole('button', { name: 'Fullfør i dag', exact: true }).click();
+  await expect(page.getByText('Kunne ikke lagre endringen', { exact: true })).toBeVisible();
+  await expect(habit.getByRole('button', { name: 'Fullfør i dag', exact: true })).toBeVisible();
+  expect(store.saved()).toEqual(original);
+  await habit.getByRole('button', { name: 'Fullfør i dag', exact: true }).click();
+  await expect.poll(() => store.writes.length).toBe(2);
+  await expect(habit.getByRole('button', { name: 'Angre i dag', exact: true })).toBeVisible();
+  await page.reload();
+  await expect(habit.getByRole('button', { name: 'Angre i dag', exact: true })).toBeVisible();
+});
+
+test('Pomodoro and stopwatch start, pause and reset independently', async ({ page }) => {
+  await mockWidgetDashboard(page);
+  await page.clock.install();
+  await page.goto('/');
+  await addWidget(page, 'Pomodoro');
+  await addWidget(page, 'Stoppeklokke');
+  const pomodoro = widgetCard(page, 'Pomodoro');
+  const stopwatch = widgetCard(page, 'Stoppeklokke');
+  await expect(pomodoro.getByText('25:00', { exact: true })).toBeVisible();
+  await pomodoro.getByRole('button', { name: 'Start', exact: true }).click();
+  await stopwatch.getByRole('button', { name: 'Start', exact: true }).click();
+  await page.clock.fastForward(65_000);
+  await expect(pomodoro.getByRole('timer', { name: 'Pomodoro' })).toHaveText(/^23:5\d$/);
+  await expect(stopwatch.getByRole('timer', { name: 'Stoppeklokke' })).toHaveText(/^01:0\d$/);
+  await expect(pomodoro.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
+  await expect(stopwatch.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
+  await pomodoro.getByRole('button', { name: 'Pause', exact: true }).click();
+  await stopwatch.getByRole('button', { name: 'Pause', exact: true }).click();
+  const pausedPomodoro = await pomodoro.innerText();
+  const pausedStopwatch = await stopwatch.innerText();
+  await page.clock.fastForward(10_000);
+  await expect(pomodoro).toHaveText(pausedPomodoro, { useInnerText: true });
+  await expect(stopwatch).toHaveText(pausedStopwatch, { useInnerText: true });
+  await pomodoro.getByRole('button', { name: 'Nullstill', exact: true }).click();
+  await stopwatch.getByRole('button', { name: 'Nullstill', exact: true }).click();
+  await expect(pomodoro.getByText('25:00', { exact: true })).toBeVisible();
+  await expect(stopwatch.getByRole('timer', { name: 'Stoppeklokke' })).toHaveText('00:00');
+  await expect(pomodoro.getByRole('button', { name: 'Start', exact: true })).toBeVisible();
+  await expect(stopwatch.getByRole('button', { name: 'Start', exact: true })).toBeVisible();
+});
+
+test('countdown alerts remain dismissible while widgets are hidden and alarm time is configurable', async ({ page }) => {
+  const store = await mockWidgetDashboard(page);
+  await page.clock.install();
+  await page.goto('/');
+  await addWidget(page, 'Alarm');
+  const alarm = widgetCard(page, 'Alarm');
+  await alarm.getByRole('button', { name: 'Tilpass alarm', exact: true }).click();
+  let settings = page.getByRole('dialog', { name: 'Tilpass alarm', exact: true });
+  await settings.getByLabel('Klokkeslett', { exact: true }).fill('08:30');
+  await settings.getByRole('button', { name: 'Lagre', exact: true }).click();
+  await expect(alarm.getByRole('timer', { name: 'Alarm' })).toHaveText('08:30');
+  await alarm.getByRole('button', { name: 'Aktiver', exact: true }).click();
+  await expect(alarm.getByRole('button', { name: 'Tilpass alarm', exact: true })).toBeDisabled();
+  await alarm.getByRole('button', { name: 'Deaktiver', exact: true }).click();
+  await expect(alarm.getByRole('button', { name: 'Aktiver', exact: true })).toBeVisible();
+
+  await addWidget(page, 'Nedtelling');
+  const countdown = widgetCard(page, 'Nedtelling');
+  await countdown.getByRole('button', { name: 'Tilpass nedtelling', exact: true }).click();
+  settings = page.getByRole('dialog', { name: 'Tilpass nedtelling', exact: true });
+  await settings.getByLabel('Minutter', { exact: true }).fill('1');
+  await settings.getByRole('button', { name: 'Lagre', exact: true }).click();
+  await expect(countdown.getByRole('timer', { name: 'Nedtelling' })).toHaveText('01:00');
+  await countdown.getByRole('button', { name: 'Start', exact: true }).click();
+  await page.getByRole('button', { name: 'Innstillinger', exact: true }).click();
+  settings = page.getByRole('dialog', { name: 'Innstillinger', exact: true });
+  await settings.getByRole('switch', { name: 'Widgets', exact: true }).click();
+  await expect.poll(() => store.saved().hidden).toContain('widgets');
+  await page.keyboard.press('Escape');
+  await page.clock.fastForward(61_000);
+  await expect(widgets(page)).toHaveCount(0);
+  const alert = page.getByRole('status').filter({ hasText: 'Nedtellingen er ferdig' });
+  await expect(alert).toBeVisible();
+  await alert.getByRole('button', { name: 'Stopp lyd', exact: true }).click();
+  await expect(alert).toHaveCount(0);
+});
+
+test('timer completion can be stopped above an open settings dialog', async ({ page }) => {
+  await mockWidgetDashboard(page);
+  await page.clock.install();
+  await page.goto('/');
+  await addWidget(page, 'Nedtelling');
+  const countdown = widgetCard(page, 'Nedtelling');
+  await countdown.getByRole('button', { name: 'Tilpass nedtelling', exact: true }).click();
+  const timerSettings = page.getByRole('dialog', { name: 'Tilpass nedtelling', exact: true });
+  await timerSettings.getByLabel('Minutter', { exact: true }).fill('1');
+  await timerSettings.getByRole('button', { name: 'Lagre', exact: true }).click();
+  await countdown.getByRole('button', { name: 'Start', exact: true }).click();
+  await page.getByRole('button', { name: 'Innstillinger', exact: true }).click();
+  await page.clock.fastForward(61_000);
+  const completion = page.getByRole('dialog', { name: 'Timer ferdig', exact: true });
+  await expect(completion).toBeVisible();
+  await expect(completion.getByText('Nedtellingen er ferdig', { exact: true })).toBeVisible();
+  await completion.getByRole('button', { name: 'Stopp lyd', exact: true }).click();
+  await expect(completion).toHaveCount(0);
+  const settings = page.getByRole('dialog', { name: 'Innstillinger', exact: true });
+  await expect(settings).toBeVisible();
+  const widgetSwitch = settings.getByRole('switch', { name: 'Widgets', exact: true });
+  await widgetSwitch.click();
+  await expect(widgetSwitch).toHaveAttribute('aria-checked', 'false');
+  await widgetSwitch.click();
+  await expect(widgetSwitch).toHaveAttribute('aria-checked', 'true');
+  await page.keyboard.press('Escape');
+  await expect(countdown.getByRole('timer', { name: 'Nedtelling' })).toHaveText('01:00');
+});
+
+test('widget cards and chooser fit desktop, mobile and zoom layout', async ({ page }) => {
+  await mockWidgetDashboard(page);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  await addHabit(page);
+  for (const name of ['Pomodoro', 'Nedtelling', 'Stoppeklokke', 'Alarm']) await addWidget(page, name);
+  await expect(widgets(page).getByRole('article')).toHaveCount(5);
+
+  for (const [label, width, height] of [
+    ['desktop', 1440, 1000], ['mobile', 390, 844], ['zoom-layout', 720, 500],
+  ] as const) {
+    await page.setViewportSize({ width, height });
+    await widgets(page).scrollIntoViewIfNeeded();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await expect(widgetCard(page, 'Gå en tur').getByRole('button', { name: 'Fullfør i dag', exact: true })).toBeVisible();
+    await page.screenshot({ path: test.info().outputPath(`widgets-${label}.png`), fullPage: true });
+  }
+  await widgets(page).getByRole('button', { name: 'Legg til widget', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Legg til widget', exact: true })).toBeVisible();
+  await page.screenshot({ path: test.info().outputPath('widgets-chooser.png'), fullPage: true });
+});

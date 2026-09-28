@@ -8,6 +8,7 @@ import { PlanBentoCard } from './PlanBentoCard';
 import { TodoBentoCard } from './TodoBentoCard';
 import { NewsBentoCard } from './NewsBentoCard';
 import { PromptLauncher } from '@/components/launcher/PromptLauncher';
+import { WidgetsSection } from '@/components/widgets/WidgetsSection';
 import '@/styles/bento.css';
 
 /**
@@ -61,6 +62,7 @@ export function HomeBento({ topActions }: { topActions?: ReactNode }) {
         {show('vaer') && <WeatherBentoCard />}
         {show('dagens-plan') && <PlanBentoCard />}
         {show('todo') && <TodoBentoCard />}
+        {show('widgets') && <WidgetsSection />}
         {show('nyhetssaker') && <NewsBentoCard />}
       </div>
     </div>
