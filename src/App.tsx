@@ -11,6 +11,7 @@ import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
 import { HomePage } from './pages/HomePage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { WidgetTimerProvider } from '@/components/widgets/WidgetTimerProvider';
 
 function AuthSync() { useAuthSync(); return null; }
 
@@ -40,6 +41,7 @@ export function App() {
             <Route
               element={
                 <RequireAuth>
+                  <WidgetTimerProvider>
                   <GlassModeProvider>
                     <PageOverlayProvider>
                       <AppShell>
@@ -48,6 +50,7 @@ export function App() {
                       <PageOverlay />
                     </PageOverlayProvider>
                   </GlassModeProvider>
+                  </WidgetTimerProvider>
                 </RequireAuth>
               }
             >

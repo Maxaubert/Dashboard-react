@@ -6,6 +6,7 @@ export const SECTION_IDS = [
   'ext-lenker',
   'vaer',
   'nyhetssaker',
+  'widgets',
 ] as const;
 export type SectionId = (typeof SECTION_IDS)[number];
 export const DEFAULT_SECTIONS: SectionId[] = [...SECTION_IDS];
@@ -19,6 +20,7 @@ export const SECTION_LABELS: Record<SectionId, string> = {
   'ext-lenker': 'Eksterne lenker',
   'vaer': 'Vær',
   'nyhetssaker': 'Nyheter',
+  'widgets': 'Widgets',
 };
 
 export const DAY_NO = ['Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag', 'Søndag'];

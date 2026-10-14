@@ -4,11 +4,12 @@ import { homeApi } from '@/api/home';
 import type { HomeEnvelope } from '@/api/types';
 import { bulkSaveMutation } from './bulkSaveMutation';
 import { queryKeys } from './queryKeys';
+import { useToast } from '@/components/ui/Toast';
 
-const EMPTY_HOME: HomeEnvelope = { version: 1, sections: [], hidden: [] };
+const EMPTY_HOME: HomeEnvelope = { version: 1, sections: [], hidden: [], widgets: [], habits: [] };
 
 /**
- * Fetches the single home-page envelope: { version, sections, hidden }.
+ * Fetches home layout, visibility, widgets and habit history.
  * Passes through `normaliseHome` so consumers never see missing arrays even if
  * the stored `home` document (`documents` table, via docStore) is partial.
  */
@@ -31,7 +32,15 @@ export function useHome() {
  */
 export function useSaveHome() {
   const qc = useQueryClient();
-  return useMutation(bulkSaveMutation<HomeEnvelope>(qc, queryKeys.home, homeApi.saveAll));
+  const { toast } = useToast();
+  const options = bulkSaveMutation<HomeEnvelope>(qc, queryKeys.home, homeApi.saveAll);
+  return useMutation({
+    ...options,
+    onError: (error, next, context, mutationContext) => {
+      options.onError?.(error, next, context, mutationContext);
+      toast({ tone: 'danger', title: 'Kunne ikke lagre endringen', description: 'Sjekk forbindelsen og prøv igjen.' });
+    },
+  });
 }
 
 /**
@@ -63,5 +72,7 @@ export function normaliseHome(raw: Partial<HomeEnvelope> | null | undefined): Ho
     version: 1,
     sections: Array.isArray(raw?.sections) ? raw!.sections : [],
     hidden: Array.isArray(raw?.hidden) ? raw!.hidden : [],
+    widgets: Array.isArray(raw?.widgets) ? raw.widgets : [],
+    habits: Array.isArray(raw?.habits) ? raw.habits : [],
   };
 }

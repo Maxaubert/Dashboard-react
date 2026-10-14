@@ -128,15 +128,27 @@ export type { NewsItem, PriceTag, WishlistGame } from '../../api/_lib/types';
 
 // ─── Home page ───────────────────────────────────────────────────────────────
 
-/**
- * Single envelope for all home-page server-persisted data. Stored rows may
- * still carry the removed `widgets` / `habits` arrays; `normaliseHome`
- * drops them on read.
- */
+/** Single envelope for all home-page server-persisted data. */
 export interface HomeEnvelope {
   version: 1;
   /** Section IDs in the order they render on the home page. */
   sections: string[];
   /** Section IDs the user has hidden via Settings. Empty = all visible. */
   hidden: string[];
+  widgets: HomeWidget[];
+  habits: HomeHabit[];
+}
+
+export interface HomeWidget {
+  id: string;
+  type: 'habit' | 'countdown' | 'pomodoro' | 'stopwatch' | 'alarm' | 'todo';
+  refId: string;
+}
+
+export interface HomeHabit {
+  id: string;
+  name: string;
+  color: string;
+  completedDays: string[];
+  createdAt: string;
 }
