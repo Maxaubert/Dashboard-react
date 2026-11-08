@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import { useLinks } from '@/hooks/useLinks';
 import { usePageOverlay } from '@/context/PageOverlayContext';
-import { LinkIconRender } from '@/components/links/LinkCard';
+import { LinkIconRender } from '@/components/links/LinkIconRender';
 import type { LinkItem } from '@/api/types';
 import { useBentoCarousel } from './useBentoCarousel';
 
-/** Eksterne lenker — circular (infinite-loop) row of favourite link cards. */
+/** Eksterne lenker - circular (infinite-loop) row of favourite link cards. */
 export function LinksBentoCard() {
   const { openOverlay } = usePageOverlay();
   const { data: envelope } = useLinks();

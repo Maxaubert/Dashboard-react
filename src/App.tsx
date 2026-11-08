@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Outlet, Route, Routes } from 'react-router-dom';
 import { useAuthSync } from './hooks/useCurrentUser';
@@ -7,11 +8,12 @@ import { RequireAuth } from './components/auth/RequireAuth';
 import { PageOverlayProvider } from '@/context/PageOverlayContext';
 import { PageOverlay } from '@/components/overlay/PageOverlay';
 import { GlassModeProvider } from '@/context/GlassModeContext';
-import { LoginPage } from './pages/LoginPage';
-import { SignupPage } from './pages/SignupPage';
 import { HomePage } from './pages/HomePage';
-import { NotFoundPage } from './pages/NotFoundPage';
 import { WidgetTimerProvider } from '@/components/widgets/WidgetTimerProvider';
+
+const LoginPage = lazy(() => import('./pages/LoginPage').then((m) => ({ default: m.LoginPage })));
+const SignupPage = lazy(() => import('./pages/SignupPage').then((m) => ({ default: m.SignupPage })));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 
 function AuthSync() { useAuthSync(); return null; }
 
@@ -32,32 +34,34 @@ export function App() {
       <ToastProvider>
         <BrowserRouter>
           <AuthSync />
-          <Routes>
-            {/* Public auth routes — no sidebar, no guard. */}
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
+          <Suspense fallback={null}>
+            <Routes>
+              {/* Public auth routes - no sidebar, no guard. */}
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
 
-            {/* Everything else lives behind the session guard. */}
-            <Route
-              element={
-                <RequireAuth>
-                  <WidgetTimerProvider>
-                  <GlassModeProvider>
-                    <PageOverlayProvider>
-                      <AppShell>
-                        <Outlet />
-                      </AppShell>
-                      <PageOverlay />
-                    </PageOverlayProvider>
-                  </GlassModeProvider>
-                  </WidgetTimerProvider>
-                </RequireAuth>
-              }
-            >
-              <Route path="/" element={<HomePage />} />
-              <Route path="*" element={<NotFoundPage />} />
-            </Route>
-          </Routes>
+              {/* Everything else lives behind the session guard. */}
+              <Route
+                element={
+                  <RequireAuth>
+                    <WidgetTimerProvider>
+                    <GlassModeProvider>
+                      <PageOverlayProvider>
+                        <AppShell>
+                          <Outlet />
+                        </AppShell>
+                        <PageOverlay />
+                      </PageOverlayProvider>
+                    </GlassModeProvider>
+                    </WidgetTimerProvider>
+                  </RequireAuth>
+                }
+              >
+                <Route path="/" element={<HomePage />} />
+                <Route path="*" element={<NotFoundPage />} />
+              </Route>
+            </Routes>
+          </Suspense>
         </BrowserRouter>
       </ToastProvider>
     </QueryClientProvider>
