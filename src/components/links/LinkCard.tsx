@@ -5,18 +5,16 @@ import {
   type PointerEventHandler,
 } from 'react';
 import type { LinkItem } from '@/api/types';
-import { faviconUrl } from '@/lib/favicon';
-import { resolveSvgIcon } from '@/data/svgIcons';
 import { cn } from '@/lib/cn';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { getDomain } from '@/lib/linkUtils';
+import { LinkIconRender } from './LinkIconRender';
 
 /* ── Link card ───────────────────────────────────────────────────────────── */
 interface LinkCardProps {
   link: LinkItem;
   onToggleFavorite: () => void;
-  /** Right-click handler — opens the Edit/Remove menu owned by LinksLibrary.
+  /** Right-click handler - opens the Edit/Remove menu owned by LinksLibrary.
    *  Omitted for the drag overlay clone, which has no menu. */
   onContextMenu?: (e: MouseEvent) => void;
 }
@@ -30,11 +28,6 @@ function LinkCard({ link, onToggleFavorite, onContextMenu }: LinkCardProps) {
       style={{ ['--ext-color' as string]: accent }}
       onContextMenu={onContextMenu}
     >
-      {/* Stretched anchor — fills the whole card so the entire surface
-       * is clickable, not just the icon/text patches. The favorite
-       * button sits above it via z-index in the CSS. Edit/Delete are on
-       * the right-click menu (see LinksLibrary), not Radix — Radix's
-       * ContextMenu doesn't open inside the modal Dialog popup. */}
       <a
         href={link.url}
         target="_blank"
@@ -43,8 +36,6 @@ function LinkCard({ link, onToggleFavorite, onContextMenu }: LinkCardProps) {
         aria-label={link.name}
       />
 
-      {/* Top: icon + arrow (visual only — clicks pass through to the
-       * stretched anchor above) */}
       <div className="ext-link-top">
         <div className="ext-link-icon-wrap">
           <LinkIconRender link={link} />
@@ -54,7 +45,6 @@ function LinkCard({ link, onToggleFavorite, onContextMenu }: LinkCardProps) {
         </svg>
       </div>
 
-      {/* Bottom: text + favorite star */}
       <div className="card-bottom">
         <div className="card-bottom-text">
           <div className="ext-link-name">{link.name}</div>
@@ -102,11 +92,6 @@ export function SortableLinkCard({
       style={style}
       className="touch-none"
       {...attributes}
-      // Not `{...listeners}`: dnd-kit's KeyboardSensor would swallow Enter and
-      // Space bubbling up from the nested star button and stretched anchor and
-      // start a sortable drag instead of activating the control. Pointer drag
-      // starts anywhere on the card; keyboard drag only when the wrapper
-      // itself is focused (Tab onto the card, then Space).
       onPointerDown={listeners?.onPointerDown as PointerEventHandler<HTMLDivElement> | undefined}
       onKeyDown={(e) => {
         if (e.target === e.currentTarget) {
@@ -126,26 +111,4 @@ export function LinkCardOverlay({ link }: { link: LinkItem }) {
       <LinkCard link={link} onToggleFavorite={() => {}} />
     </div>
   );
-}
-
-/* ── Icon renderer (used by both Lenker grid and Hjem favorites) ─────── */
-export function LinkIconRender({ link }: { link: LinkItem }) {
-  if (link.iconType === 'svg' && link.iconValue) {
-    const ic = resolveSvgIcon(link.iconValue);
-    if (ic) {
-      const Icon = ic.Component;
-      return <Icon size={26} strokeWidth={1.75} />;
-    }
-  }
-  // Legacy `emoji` icons — render the character so old data still displays.
-  if (link.iconType === 'emoji' && link.iconValue) {
-    return <span className="emoji-icon" style={{ fontSize: 26, lineHeight: 1 }}>{link.iconValue}</span>;
-  }
-  if (link.iconType === 'image' && link.iconValue) {
-    return <img src={link.iconValue} alt="" width={26} height={26} />;
-  }
-  // favicon (default) — derive domain from URL
-  const domain = getDomain(link.url);
-  if (!domain) return null;
-  return <img src={faviconUrl(domain)} alt="" width={26} height={26} />;
 }

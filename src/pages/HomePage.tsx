@@ -1,14 +1,17 @@
-import { useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { Settings } from 'lucide-react';
 import { HomeAccount } from '@/components/home/HomeAccount';
-import { SettingsModal } from '@/components/home/SettingsModal';
 import { HomeBento } from '@/components/home-bento/HomeBento';
 import { useHome, useMutateHome } from '@/hooks/useHome';
 import { useSteamCallback } from '@/hooks/useSteamCallback';
 import { SECTION_IDS, DEFAULT_SECTIONS, type SectionId } from '@/lib/home';
 
+const SettingsModal = lazy(() =>
+  import('@/components/home/SettingsModal').then((m) => ({ default: m.SettingsModal })),
+);
+
 /**
- * Home page — dark "bento grid" dashboard.
+ * Home page - dark "bento grid" dashboard.
  *
  * The grid itself lives in `HomeBento`. This shell keeps the cross-cutting
  * bits: the `?steam=` return from the Steam OpenID callback, the Settings
@@ -65,14 +68,18 @@ export function HomePage() {
           </>
         }
       />
-      <SettingsModal
-        open={settingsOpen}
-        onOpenChange={setSettingsOpen}
-        order={order}
-        hidden={hidden}
-        onToggle={toggleSection}
-        onReorder={setStoredOrder}
-      />
+      {settingsOpen && (
+        <Suspense fallback={null}>
+          <SettingsModal
+            open={settingsOpen}
+            onOpenChange={setSettingsOpen}
+            order={order}
+            hidden={hidden}
+            onToggle={toggleSection}
+            onReorder={setStoredOrder}
+          />
+        </Suspense>
+      )}
     </>
   );
 }

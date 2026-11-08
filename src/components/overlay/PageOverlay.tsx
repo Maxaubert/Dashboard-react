@@ -1,10 +1,11 @@
-import type { ComponentType } from 'react';
+import { lazy, Suspense, type ComponentType } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { usePageOverlay, type OverlayKey } from '@/context/PageOverlayContext';
-import { PlanPage } from '@/pages/PlanPage';
-import { TodoPage } from '@/pages/TodoPage';
-import { GamingPage } from '@/pages/GamingPage';
-import { LinksPage } from '@/pages/LinksPage';
+
+const PlanPage = lazy(() => import('@/pages/PlanPage').then((m) => ({ default: m.PlanPage })));
+const TodoPage = lazy(() => import('@/pages/TodoPage').then((m) => ({ default: m.TodoPage })));
+const GamingPage = lazy(() => import('@/pages/GamingPage').then((m) => ({ default: m.GamingPage })));
+const LinksPage = lazy(() => import('@/pages/LinksPage').then((m) => ({ default: m.LinksPage })));
 
 const PAGES: Record<OverlayKey, ComponentType> = {
   plan: PlanPage,
@@ -28,19 +29,21 @@ export function PageOverlay() {
   const label = LABELS[key];
   return (
     <Dialog.Root open onOpenChange={(o) => !o && closeOverlay()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="page-overlay-backdrop" />
-        <Dialog.Content className="page-overlay-panel">
-          <Dialog.Title className="sr-only">{label}</Dialog.Title>
-          <Dialog.Description className="sr-only">{`Siden ${label} i fullskjerm`}</Dialog.Description>
-          <Dialog.Close asChild>
-            <button className="page-overlay-close" aria-label="Lukk">✕</button>
-          </Dialog.Close>
-          <div className="page-overlay-scroll" data-overlay={key}>
-            <Page />
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
+      <Suspense fallback={null}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="page-overlay-backdrop" />
+          <Dialog.Content className="page-overlay-panel">
+            <Dialog.Title className="sr-only">{label}</Dialog.Title>
+            <Dialog.Description className="sr-only">{`Siden ${label} i fullskjerm`}</Dialog.Description>
+            <Dialog.Close asChild>
+              <button className="page-overlay-close" aria-label="Lukk">✕</button>
+            </Dialog.Close>
+            <div className="page-overlay-scroll" data-overlay={key}>
+              <Page />
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Suspense>
     </Dialog.Root>
   );
 }
