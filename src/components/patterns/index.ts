@@ -1,1 +1,2 @@
-export { IconPicker, type IconPickerHandle, type ResolvedIcon } from './IconPicker';
+export { IconPicker, type IconPickerHandle } from './IconPicker';
+export { ColorSwatchRow } from './ColorSwatchRow';

@@ -2,11 +2,9 @@ import { useEffect, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import type { WishlistGame } from '@/api/types';
 import { buildLineChartSvg, fetchItadHistory, type HistoryPoint } from '@/lib/itadHistory';
-import { cn } from '@/lib/cn';
-import { PTAG_LABEL, ptagsArr } from '@/lib/gaming';
+import { GamePriceSummary, GamePriceTags } from './GamePrice';
 
 export function GameModal({ game, onClose }: { game: WishlistGame; onClose: () => void }) {
-  const tags = ptagsArr(game);
   const [chartSvg, setChartSvg] = useState<string | null>(null);
   const [chartState, setChartState] = useState<'loading' | 'empty' | 'ok'>(
     game.itadId ? 'loading' : 'empty'
@@ -18,7 +16,6 @@ export function GameModal({ game, onClose }: { game: WishlistGame; onClose: () =
       return;
     }
     const cacheKey = `itad_hist_${game.itadId}`;
-    // Show cached version instantly
     let cached: HistoryPoint[] | null = null;
     try {
       const raw = localStorage.getItem(cacheKey);
@@ -41,7 +38,7 @@ export function GameModal({ game, onClose }: { game: WishlistGame; onClose: () =
           try {
             localStorage.setItem(cacheKey, JSON.stringify(pts));
           } catch {
-            /* quota exceeded — ignore */
+            /* quota exceeded – ignore */
           }
         } else if (!cached) {
           setChartState('empty');
@@ -69,7 +66,6 @@ export function GameModal({ game, onClose }: { game: WishlistGame; onClose: () =
               src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/library_hero.jpg`}
               alt={game.name}
               onError={(e) => {
-                // Fall back high-res library_hero -> header -> cdn header -> hide.
                 const img = e.target as HTMLImageElement;
                 if (game.imgUrl && img.src !== game.imgUrl) img.src = game.imgUrl;
                 else if (game.imgFallback && img.src !== game.imgFallback) img.src = game.imgFallback;
@@ -82,31 +78,10 @@ export function GameModal({ game, onClose }: { game: WishlistGame; onClose: () =
             <Dialog.Title className="gaming-modal-name">{game.name}</Dialog.Title>
             <Dialog.Description className="sr-only">{game.name}</Dialog.Description>
             <div className="gaming-modal-price-row">
-              {game.onSale && <span className="sale-badge">-{game.discount}%</span>}
-              {game.onSale && game.origPrice && (
-                <span className="game-orig-price">{game.origPrice}</span>
-              )}
-              {game.isFree ? (
-                <span className="game-price free">Gratis</span>
-              ) : game.price ? (
-                <span className="game-price">{game.price}</span>
-              ) : (
-                <span className="price-na">Ikke tilgjengelig</span>
-              )}
+              <GamePriceSummary game={game} />
             </div>
-            {tags.length > 0 && (
-              <div className="gaming-modal-ptags">
-                {tags.map((t) => {
-                  const def = PTAG_LABEL[t] ?? { cls: 'ptag-good', label: t };
-                  return (
-                    <span key={t} className={cn('ptag', def.cls)}>
-                      {def.label}
-                    </span>
-                  );
-                })}
-              </div>
-            )}
-            <div className="gaming-modal-chart-label">Prishistorikk — Steam</div>
+            <GamePriceTags game={game} className="gaming-modal-ptags" />
+            <div className="gaming-modal-chart-label">Prishistorikk – Steam</div>
             {chartState === 'loading' ? (
               <div className="gaming-modal-chart-loading">
                 <span className="chart-spinner" />

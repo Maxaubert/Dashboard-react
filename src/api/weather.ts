@@ -30,14 +30,14 @@ export interface DailyForecast {
   sunset: string; // ISO local datetime
 }
 
-export interface HourlyForecast {
+interface HourlyForecast {
   time: string; // ISO datetime, local time
   hour: number; // 0–23
   weatherCode: number;
   temperature: number;
 }
 
-export interface CurrentWeather {
+interface CurrentWeather {
   temperature: number;
   weatherCode: number;
   windSpeed: number;

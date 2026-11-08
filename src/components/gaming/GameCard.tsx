@@ -1,6 +1,6 @@
 import type { WishlistGame } from '@/api/types';
 import { cn } from '@/lib/cn';
-import { PTAG_LABEL, ptagsArr } from '@/lib/gaming';
+import { GamePriceSummary, GamePriceTags } from './GamePrice';
 
 interface Props {
   game: WishlistGame;
@@ -9,7 +9,6 @@ interface Props {
 
 /** One wishlist row in the gaming overlay: capsule image, name, genres, price column. */
 export function GameCard({ game, onClick }: Props) {
-  const tags = ptagsArr(game);
   return (
     <div
       className={cn('game-card', game.onSale && 'on-sale')}
@@ -35,18 +34,7 @@ export function GameCard({ game, onClick }: Props) {
             else img.style.display = 'none';
           }}
         />
-        {tags.length > 0 && (
-          <div className="img-ptags">
-            {tags.map((t) => {
-              const def = PTAG_LABEL[t] ?? { cls: 'ptag-good', label: t };
-              return (
-                <span key={t} className={cn('ptag', def.cls)}>
-                  {def.label}
-                </span>
-              );
-            })}
-          </div>
-        )}
+        <GamePriceTags game={game} className="img-ptags" />
       </div>
       <div className="game-info">
         <div className="game-name">{game.name}</div>
@@ -57,17 +45,7 @@ export function GameCard({ game, onClick }: Props) {
         </div>
       </div>
       <div className="game-price-col">
-        {game.onSale && <span className="sale-badge">-{game.discount}%</span>}
-        {game.onSale && game.origPrice && (
-          <span className="game-orig-price">{game.origPrice}</span>
-        )}
-        {game.isFree ? (
-          <span className="game-price free">Gratis</span>
-        ) : game.price ? (
-          <span className="game-price">{game.price}</span>
-        ) : (
-          <span className="price-na">Ikke tilgjengelig</span>
-        )}
+        <GamePriceSummary game={game} />
       </div>
     </div>
   );

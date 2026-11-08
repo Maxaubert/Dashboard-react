@@ -5,7 +5,7 @@
 
 // --- Wishlist (/api/wishlist) -------------------------------------------
 
-export type PriceTag = 'hot' | null;
+type PriceTag = 'hot' | null;
 
 export interface WishlistGame {
   appid: string;

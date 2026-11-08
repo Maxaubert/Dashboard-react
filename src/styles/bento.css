@@ -303,21 +303,19 @@
   gap: 8px 14px;
 }
 .bento-home .row-connect-btn {
-  border: 1px solid var(--line);
-  background: none;
-  color: var(--ink);
-  border-radius: 8px;
-  padding: 6px 12px;
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  border: 1px solid var(--color-page-todo);
+  background: var(--color-page-todo);
+  color: var(--color-page-todo-ink);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.76rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: 0.2s;
+  transition: background 0.15s, border-color 0.15s;
 }
 .bento-home .row-connect-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.25);
+  background: var(--color-page-todo-hover);
+  border-color: var(--color-page-todo-hover);
 }
 .bento-home .row-connect-btn:disabled {
   opacity: 0.5;
@@ -598,19 +596,20 @@
 .bento-home .wloc-input::placeholder { color: var(--faint); }
 .bento-home .wloc-input:focus { border-color: rgba(255, 255, 255, 0.35); }
 .bento-home .wloc-submit {
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 5px 10px;
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: 0.58rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  border: 1px solid var(--color-page-todo);
+  border-radius: 999px;
+  padding: 5px 12px;
+  background: var(--color-page-todo);
+  color: var(--color-page-todo-ink);
+  font-size: 0.72rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: 0.2s;
+  transition: background 0.15s, border-color 0.15s;
 }
-.bento-home .wloc-submit:hover:not(:disabled) { border-color: rgba(255, 255, 255, 0.25); }
+.bento-home .wloc-submit:hover:not(:disabled) {
+  background: var(--color-page-todo-hover);
+  border-color: var(--color-page-todo-hover);
+}
 .bento-home .wloc-submit:disabled { opacity: 0.5; cursor: default; }
 .bento-home .wloc-status {
   font-family: var(--font-mono);
@@ -829,17 +828,22 @@
   padding: 8px 0;
 }
 .bento-home .plan-add {
-  background: none;
-  border: 1px dashed var(--line);
-  color: var(--dim);
-  border-radius: 10px;
-  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  color: #d4d4d2;
+  border-radius: 999px;
+  padding: 7px 14px;
   font-family: inherit;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
-.bento-home .plan-add:hover { color: var(--ink); border-color: var(--dim); }
+.bento-home .plan-add:hover {
+  color: var(--ink);
+  border-color: var(--color-page-todo);
+  background: rgba(244, 143, 177, 0.08);
+}
 
 /* ── Todo (sage) ─────────────────────────────────────────────────────── */
 .bento-home .tohead {
@@ -915,23 +919,29 @@
 /* ── Nyhetssaker ─────────────────────────────────────────────────────── */
 .bento-home .nswitch { display: flex; gap: 6px; }
 .bento-home .nswitch button {
-  border: 1px solid var(--line);
-  background: none;
-  color: var(--dim);
-  border-radius: 8px;
-  padding: 5px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #d4d4d2;
+  border-radius: 999px;
+  padding: 5px 11px;
   font-family: var(--font-mono);
   font-size: 0.58rem;
+  font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: 0.2s;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-.bento-home .nswitch button:hover { color: var(--ink); }
-.bento-home .nswitch button.on {
-  background: rgba(255, 255, 255, 0.08);
+.bento-home .nswitch button:hover:not(.on) {
+  background: rgba(255, 255, 255, 0.11);
+  border-color: rgba(255, 255, 255, 0.24);
   color: var(--ink);
-  border-color: rgba(255, 255, 255, 0.25);
+}
+.bento-home .nswitch button.on {
+  background: #ededec;
+  color: #0e0e10;
+  border-color: #ededec;
+  font-weight: 600;
 }
 .bento-home .nscroll {
   display: flex;
@@ -978,46 +988,20 @@
   justify-content: center;
   width: 36px;
   height: 36px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: var(--card);
-  color: var(--dim);
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #d4d4d2;
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-.bento-home .bento-settings-btn:hover { color: var(--ink); border-color: var(--dim); }
+.bento-home .bento-settings-btn:hover {
+  background: rgba(255, 255, 255, 0.11);
+  color: var(--ink);
+  border-color: rgba(255, 255, 255, 0.24);
+}
 
-/* ── Hurtigsøk (prompt launcher) — dark variant, full-width above the grid.
- * The launcher's base style is dark, but the Papir HUD forces it light; we
- * override that within the bento and hide its "Prompt" section header. */
+/* ── Hurtigsøk (prompt launcher) – full-width above the grid ─────────── */
 .bento-home .bento-launcher { margin-bottom: 16px; }
 .bento-home .bento-launcher section { margin: 0; }
 .bento-home .bento-launcher .section-header { display: none; }
-.bento-home .prompt-launcher-card {
-  background: #141418 !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  border-radius: 16px !important;
-  box-shadow: none !important;
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
-}
-.bento-home .prompt-launcher-textarea { color: var(--ink); }
-.bento-home .prompt-launcher-textarea::placeholder { color: rgba(255, 255, 255, 0.34); }
-/* The engine/model pill text was dark orange, which reads as greyed-out on
- * the dark bar; make it white. */
-.bento-home .prompt-launcher-engine-pill { color: #fff; }
-.bento-home .prompt-launcher-engine-menu {
-  background: #1b1b1d;
-  border-color: rgba(255, 255, 255, 0.10);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-}
-.bento-home .prompt-launcher-engine-option { color: rgba(255, 255, 255, 0.85); }
-.bento-home .prompt-launcher-engine-option:hover { background: rgba(255, 255, 255, 0.06); }
-.bento-home .prompt-launcher-help {
-  border-color: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.5);
-}
-.bento-home .prompt-launcher-help:hover {
-  color: rgba(255, 255, 255, 0.85);
-  border-color: rgba(255, 255, 255, 0.22);
-}

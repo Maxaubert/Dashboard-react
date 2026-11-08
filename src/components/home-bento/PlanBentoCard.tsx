@@ -1,16 +1,17 @@
 import { useMemo } from 'react';
 import { usePlan } from '@/hooks/usePlan';
 import { usePageOverlay } from '@/context/PageOverlayContext';
+import { isoDate, parseTime } from '@/lib/plan';
 import type { PlanItem } from '@/api/types';
 
-/** Dagens plan — today's scheduled events. */
+/** Dagens plan – today's scheduled events. */
 export function PlanBentoCard() {
   const { openOverlay } = usePageOverlay();
   const { data: plan } = usePlan();
 
   const now = new Date();
   const todayDow = (now.getDay() + 6) % 7; // 0=Mon..6=Sun
-  const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const todayIso = isoDate(now);
   const nowMin = now.getHours() * 60 + now.getMinutes();
 
   const todays = useMemo(() => {
@@ -49,12 +50,8 @@ export function PlanBentoCard() {
 }
 
 function PlanRow({ event, nowMin, onOpen }: { event: PlanItem; nowMin: number; onOpen: () => void }) {
-  const parseMin = (t: string) => {
-    const [h, m] = t.split(':').map(Number);
-    return h * 60 + m;
-  };
-  const start = parseMin(event.startTime);
-  const end = parseMin(event.endTime);
+  const start = parseTime(event.startTime);
+  const end = parseTime(event.endTime);
   const past = end < nowMin;
   const active = start <= nowMin && nowMin < end;
 

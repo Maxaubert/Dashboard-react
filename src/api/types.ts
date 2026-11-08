@@ -124,7 +124,7 @@ export interface LinksEnvelope {
  * Owned by `api/_lib/types.ts` so the serverless functions never import
  * from `src/`. Re-exported here for the frontend.
  */
-export type { NewsItem, PriceTag, WishlistGame } from '../../api/_lib/types';
+export type { NewsItem, WishlistGame } from '../../api/_lib/types';
 
 // ─── Home page ───────────────────────────────────────────────────────────────
 

@@ -1,7 +1,7 @@
 import type { Category } from '@/api/types';
 import { FAVORITES_CATEGORY_ID, OTHER_CATEGORY_ID } from '@/api/types';
 
-export const FAVORITES_LABEL = 'Favoritter';
+const FAVORITES_LABEL = 'Favoritter';
 export const OTHER_LABEL = 'Annet';
 
 /**
