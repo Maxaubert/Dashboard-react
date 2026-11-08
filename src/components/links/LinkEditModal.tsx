@@ -2,9 +2,8 @@ import { useRef, useState } from 'react';
 import { useLinks } from '@/hooks/useLinks';
 import type { LinkItem } from '@/api/types';
 import { Modal } from '@/components/ui';
-import { IconPicker, type IconPickerHandle } from '@/components/patterns';
+import { ColorSwatchRow, IconPicker, type IconPickerHandle } from '@/components/patterns';
 import { LINK_COLOR_PRESETS } from '@/data/linkColors';
-import { cn } from '@/lib/cn';
 import { getDomain, normalizeUrl } from '@/lib/linkUtils';
 import { CategoryPickerRow } from '@/components/links/CategoryPickerRow';
 import { useCategories } from '@/hooks/useCategories';
@@ -127,26 +126,11 @@ export function LinkEditModal({ item, defaultCategoryId, onClose, onSave }: Link
       {/* Color */}
       <div className="modal-row">
         <label>Farge</label>
-        <div className="ext-color-row">
-          {LINK_COLOR_PRESETS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => update('color', c)}
-              style={{ background: c }}
-              className={cn('ext-color-swatch', form.color === c && 'selected')}
-              aria-label={`Velg farge ${c}`}
-            />
-          ))}
-          <div className="color-custom-wrap" title="Egendefinert farge">
-            <div className="color-custom-btn" />
-            <input
-              type="color"
-              value={form.color ?? '#e8214e'}
-              onChange={(e) => update('color', e.target.value)}
-            />
-          </div>
-        </div>
+        <ColorSwatchRow
+          colors={LINK_COLOR_PRESETS}
+          value={form.color ?? LINK_COLOR_PRESETS[6]}
+          onChange={(c) => update('color', c)}
+        />
       </div>
 
       {/* Category */}

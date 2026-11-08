@@ -21,7 +21,7 @@ import { CSS } from '@dnd-kit/utilities';
  *  path on dragEnd. The id uses a `::grid` suffix so it doesn't collide
  *  with the section's outer useSortable droppable; findLocalSection
  *  strips the suffix. */
-export function SectionGrid({
+function SectionGrid({
   sectionId,
   empty,
   children,

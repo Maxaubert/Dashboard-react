@@ -22,6 +22,3 @@ export const SECTION_LABELS: Record<SectionId, string> = {
   'nyhetssaker': 'Nyheter',
   'widgets': 'Widgets',
 };
-
-export const DAY_NO = ['Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag', 'Søndag'];
-export const MON_NO = ['jan', 'feb', 'mar', 'apr', 'mai', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'des'];

@@ -1,4 +1,4 @@
-export interface BaseTimer {
+interface BaseTimer {
   id: string;
   kind: 'countdown' | 'stopwatch' | 'pomodoro' | 'alarm';
   color: string;
@@ -52,7 +52,7 @@ export interface PomodoroTimer extends BaseTimer {
   completed: boolean;
 }
 
-export interface AlarmTimer extends BaseTimer {
+interface AlarmTimer extends BaseTimer {
   kind: 'alarm';
   /** HH:MM (24h) currently shown. Always present , defaults to lastSetTime. */
   targetTime: string;
@@ -72,7 +72,7 @@ export type TimerInstance = CountdownTimer | StopwatchTimer | PomodoroTimer | Al
 
 /* ── Defaults ───────────────────────────────────────────────────────── */
 
-export const POMODORO_MINUTE_MS = 60_000;
+const POMODORO_MINUTE_MS = 60_000;
 
 const DEFAULT_POMODORO: PomodoroSettings = { focusMin: 25, pauseMin: 5, targetCycles: 4 };
 
@@ -81,7 +81,7 @@ export function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, Math.round(n)));
 }
 
-export const ALARM_DEFAULT_TIME = '12:30';
+const ALARM_DEFAULT_TIME = '12:30';
 
 /**
  * Given an HH:MM (24h) target and a current epoch ms `now`, return the absolute

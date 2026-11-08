@@ -30,7 +30,7 @@ export function useHome() {
  * `useMutateHome` patches build on each other; saves are serialised and
  * rolled back on error (see `bulkSaveMutation`).
  */
-export function useSaveHome() {
+function useSaveHome() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const options = bulkSaveMutation<HomeEnvelope>(qc, queryKeys.home, homeApi.saveAll);

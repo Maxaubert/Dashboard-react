@@ -26,11 +26,11 @@ Personal dashboard. Static Vite/React frontend deployed to Vercel Hobby, with fo
 ## File organization (the established split)
 
 - `src/pages/*.tsx` -- **thin** page shells: state, mutations, top-level layout. Target: under 200 lines.
-- `src/components/<area>/*.tsx` -- per-page focused components (`home/`, `home-bento/`, `todo/`, `links/`, `gaming/`, `overlay/`, `launcher/`, `layout/`, `auth/`, `patterns/`, `ui/`).
+- `src/components/<area>/*.tsx` -- per-page focused components (`home/`, `home-bento/`, `todo/`, `plan/`, `links/`, `gaming/`, `overlay/`, `launcher/`, `layout/`, `auth/`, `patterns/`, `ui/`).
 - `src/lib/<area>.ts` -- pure helpers + constants, **no React imports**.
 - `src/hooks/*.ts` -- react-query wrappers and cross-cutting hooks. Query keys live in `src/hooks/queryKeys.ts`.
 - `src/api/*.ts` -- typed API clients (each resource gets its own file). Document-shaped data goes through `src/lib/docStore.ts`.
-- `src/data/*.ts` -- static config (icons, holidays, gaming events).
+- `src/data/*.ts` -- static config (icons, gaming events).
 - `api/` -- Vercel serverless functions and shared `_lib/` helpers. **Never import runtime code from `src/` here** (the type-only import of `src/api/types.ts` is the one exception).
 - `supabase/migrations/` -- SQL migration files applied via the Supabase CLI or dashboard.
 - `docs/superpowers/specs/` and `docs/superpowers/plans/` -- approved design specs and implementation plans (tracked).
